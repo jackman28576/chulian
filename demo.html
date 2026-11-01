@@ -871,6 +871,16 @@ window.Chulian = {
   window.__onMemberChange = () => { paintMember(); paintHero(); paintList(); };
   paintMember(); paintHero(); badge();
 
+  /* 窄屏换短提示语 */
+  const ta = $('input');
+  const setPh = () => {
+    ta.placeholder = window.innerWidth < 720
+      ? '说说今天的状态…'
+      : '说说今天的状态，比如：有点累、腰酸 4 分';
+  };
+  setPh();
+  addEventListener('resize', setPh);
+
   /* 建议词 */
   document.querySelectorAll('[data-fill]').forEach(b => {
     b.addEventListener('click', () => {
@@ -1190,13 +1200,18 @@ window.Chulian = {
     }
     requestAnimationFrame(loop);
 
-    addEventListener('resize', () => {
+    const fit = () => {
       const r = host.getBoundingClientRect();
       if (!r.width) return;
-      camera.aspect = r.width / r.height;
+      const asp = r.width / r.height;
+      camera.aspect = asp;
+      camera.fov = 32;
+      root.scale.setScalar(Math.min(1.12, Math.max(0.62, r.width / 620)));
       camera.updateProjectionMatrix();
       renderer.setSize(r.width, r.height);
-    });
+    };
+    fit();
+    addEventListener('resize', fit);
   })();
 })();
 </script>
