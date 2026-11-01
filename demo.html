@@ -38,7 +38,7 @@
   /* 顶部条 */
   .topbar{position:fixed;top:0;left:0;right:0;z-index:60;display:flex;align-items:center;gap:10px;padding:14px 20px;transition:background .3s,backdrop-filter .3s,border-color .3s;border-bottom:1px solid transparent}
   .topbar.solid{background:rgba(10,13,18,.62);backdrop-filter:saturate(160%) blur(22px);-webkit-backdrop-filter:saturate(160%) blur(22px);border-color:rgba(255,255,255,.08)}
-  .brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:#fff;transition:color .3s}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600;font-size:15px;color:#fff;transition:color .3s;white-space:nowrap;flex:0 0 auto}
   .topbar.solid .brand{color:#fff}
   .brand svg{width:20px;height:20px}
   .brand svg path,.brand svg rect{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
@@ -50,7 +50,7 @@
   .member .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .member svg{width:9px;height:9px;stroke:currentColor;fill:none;stroke-width:2.2;opacity:.7}
   .top-right{margin-left:auto;display:flex;gap:8px;align-items:center}
-  .tbtn{height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(10px);transition:all .3s}
+  .tbtn{height:30px;padding:0 12px;border-radius:999px;font-size:12.5px;white-space:nowrap;color:#fff;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);backdrop-filter:blur(10px);transition:all .3s}
   .topbar.solid .tbtn{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:rgba(255,255,255,.86)}
   .tbtn:hover{background:rgba(255,255,255,.28)}
   .topbar.solid .tbtn:hover{background:#F2F4F7;color:var(--ink)}
@@ -186,7 +186,20 @@
   .hr{height:1px;background:var(--line);margin:18px 0 6px}
 
   @media (max-width:720px){
-    .hero{padding:0 18px 34px}
+    .topbar{padding:10px 12px;gap:6px}
+    .brand{font-size:14px}
+    .brand svg{width:18px;height:18px}
+    .member{max-width:118px;height:30px;padding:0 8px 0 5px;gap:6px}
+    .member .nm{font-size:12px}
+    #badge{display:none}
+    .top-right{gap:6px}
+    .tbtn{height:28px;padding:0 10px;font-size:12px}
+    .hero{padding:0 16px 30px}
+    .hero h1{font-size:29px;line-height:1.24;text-shadow:0 2px 26px rgba(0,0,0,.6)}
+    .hero .sub{font-size:13.5px;margin-bottom:16px}
+    .glass{padding:6px 6px 6px 12px;border-radius:14px}
+    .hero .chips{margin-top:11px}
+    .hero .chips button{font-size:12px;padding:6px 11px}
     .hero .eyebrow{display:none}
     .content{padding:20px 14px 140px}
     .summary{grid-template-columns:1fr;gap:14px}
@@ -1172,6 +1185,58 @@ window.Chulian = {
   const handle = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.03, 14, 28), M.dark);
   handle.position.set(0.05, 0.37, 1.05); handle.rotation.x = Math.PI / 2; handle.castShadow = true; scene.add(handle);
 
+  // 跑步机
+  box(1.9, 0.1, 0.9, 0.02, M.steel, -3.9, 0.05, -2.3);
+  box(1.8, 0.06, 0.78, 0.02, M.rubber, -3.9, 0.11, -2.3);
+  box(0.1, 1.15, 0.12, 0.02, M.steel, -4.75, 0.62, -2.3);
+  box(0.1, 1.15, 0.12, 0.02, M.steel, -3.05, 0.62, -2.3);
+  box(0.72, 0.34, 0.1, 0.02, M.dark, -3.9, 1.12, -2.65);
+  box(0.62, 0.22, 0.03, 0.01, new THREE.MeshStandardMaterial({ color: 0x1b3550, emissive: 0x0d2136, emissiveIntensity: 0.8, roughness: .3 }), -3.9, 1.12, -2.59);
+  for (const dx of [-0.86, 0.86]) box(0.06, 0.06, 0.9, 0.02, M.steel, -3.9 + dx, 1.05, -2.25);
+
+  // 龙门架（双侧滑轨）
+  for (const dx of [-1.5, 1.5]) {
+    box(0.14, 2.6, 0.14, 0.03, M.steel, 3.1 + dx, 1.3, -2.6);
+    box(0.5, 0.06, 0.5, 0.02, M.steel, 3.1 + dx, 0.03, -2.6);
+    const pulley = new THREE.Mesh(new THREE.CylinderGeometry(0.06, 0.06, 0.08, 16), M.dark);
+    pulley.rotation.z = Math.PI / 2; pulley.position.set(3.1 + dx, 2.2, -2.6); scene.add(pulley);
+    const cable = new THREE.Mesh(new THREE.CylinderGeometry(0.008, 0.008, 2.1, 6), M.steel);
+    cable.position.set(3.1 + dx, 1.15, -2.52); scene.add(cable);
+    box(0.34, 0.06, 0.06, 0.02, M.dark, 3.1 + dx, 0.1, -2.52);
+  }
+  box(3.14, 0.12, 0.12, 0.03, M.steel, 3.1, 2.62, -2.6);
+
+  // 瑜伽垫（浅色）与卷起的垫子
+  const matLight = new THREE.MeshStandardMaterial({ color: 0x2e6f8c, roughness: 0.95 });
+  box(1.5, 0.03, 0.7, 0.02, matLight, -1.0, 0.015, 1.7);
+  const roll = new THREE.Mesh(new THREE.CylinderGeometry(0.13, 0.13, 0.9, 20), matLight);
+  roll.rotation.z = Math.PI / 2; roll.position.set(-2.2, 0.13, 1.75);
+  roll.castShadow = true; scene.add(roll);
+
+  // 墙面杠铃片架
+  for (let i = 0; i < 5; i++) {
+    const p2 = new THREE.Mesh(new THREE.CylinderGeometry(0.26, 0.26, 0.06, 32), M.dark);
+    p2.rotation.x = Math.PI / 2; p2.position.set(-3.6 + i * 0.62, 1.5, -5.05);
+    p2.castShadow = true; scene.add(p2);
+  }
+  box(3.4, 0.06, 0.1, 0.02, M.steel, -2.36, 1.82, -5.06);
+
+  // 绿植
+  box(0.3, 0.34, 0.3, 0.04, M.steel, -5.1, 0.17, 1.5);
+  const leaf = new THREE.Mesh(new THREE.IcosahedronGeometry(0.42, 0), new THREE.MeshStandardMaterial({ color: 0x2c4a34, roughness: 0.9, flatShading: true }));
+  leaf.position.set(-5.1, 0.72, 1.5); leaf.castShadow = true; scene.add(leaf);
+
+  // 毛巾柜
+  box(0.42, 0.7, 0.34, 0.03, M.steel, -4.35, 0.35, 0.9);
+  box(0.36, 0.1, 0.28, 0.02, new THREE.MeshStandardMaterial({ color: 0xcfd8e3, roughness: .9 }), -4.35, 0.75, 0.9);
+
+  // 地面标线
+  const lineMat = new THREE.MeshBasicMaterial({ color: 0x2a3340 });
+  for (let i = 0; i < 3; i++) {
+    const l = new THREE.Mesh(new THREE.PlaneGeometry(0.06, 3.6), lineMat);
+    l.rotation.x = -Math.PI / 2; l.position.set(-0.4 + i * 1.2, 0.004, 0.6); scene.add(l);
+  }
+
   // 相机轨迹：上滑时推进+横移
   const A = { p: new THREE.Vector3(5.4, 2.9, 8.2), t: new THREE.Vector3(0.4, 1.05, 0.3), fov: 34 };
   const B = { p: new THREE.Vector3(1.05, 10.2, 4.4), t: new THREE.Vector3(0.75, 0.05, 0.55), fov: 40 };
@@ -1204,12 +1269,18 @@ window.Chulian = {
   onScroll();
 
   const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3();
+  const pA = new THREE.Vector3(), pB = new THREE.Vector3();
   let t0 = performance.now();
   function frame(now) {
     const t = (now - t0) / 1000;
     scrollP += (targetP - scrollP) * 0.08;
     const k = ease(scrollP);
-    camPos.lerpVectors(A.p, B.p, k);
+    // 竖屏时把相机拉远，避免器械被裁
+    const aspect = renderer.domElement.width / Math.max(1, renderer.domElement.height);
+    const f = aspect < 0.95 ? 1.55 : 1;
+    pA.copy(A.p).sub(A.t).multiplyScalar(f).add(A.t);
+    pB.copy(B.p).sub(B.t).multiplyScalar(f).add(B.t);
+    camPos.lerpVectors(pA, pB, k);
     camTgt.lerpVectors(A.t, B.t, k);
     // 轻微呼吸感
     camPos.y += Math.sin(t * 0.5) * 0.012;
