@@ -919,7 +919,14 @@ window.Chulian = {
   }
 
   new MutationObserver(ms => {
-    for (const m of ms) if (m.addedNodes.length) { refresh(); break; }
+    for (const m of ms) if (m.addedNodes.length) {
+      refresh();
+      if (scrollY < 240) {
+        const c = document.querySelector('.content');
+        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      break;
+    }
   }).observe(wrap, { childList: true });
 
   function listInSheet() {
