@@ -923,7 +923,7 @@ window.Chulian = {
       refresh();
       if (scrollY < 240) {
         const c = document.querySelector('.content');
-        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
+        if (c) c.scrollIntoView({ behavior: 'auto', block: 'start' });
       }
       break;
     }
@@ -1022,7 +1022,7 @@ window.Chulian = {
     i1.value = ''; i2.value = ''; taAdapt(i1); taAdapt(i2);
     api().say(v);
     const c = document.querySelector('.content');
-    if (c && scrollY < c.offsetTop - 80) setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: 'start' }), 140);
+    if (c && scrollY < c.offsetTop - 80) setTimeout(() => c.scrollIntoView({ behavior: 'auto', block: 'start' }), 140);
   };
   $('send').onclick = submit;
   $('send2').onclick = submit;
