@@ -816,7 +816,9 @@ function switchTo(i, silent){
   state.current = i; state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null;
   save();
   const m = db();
+  const box = document.getElementById('wrap');
   const started = document.querySelectorAll('#wrap .row').length > 0;
+  if(!silent && box) box.innerHTML = '';
   if(!silent && started) bubble('a', `现在处理的是 ${m.A2_display_name}（${m.A1_member_id}），目标：${(m.A4_goal||[]).join('、')}。说说今天的状态就行。`);
   if(typeof window.__onMemberChange === 'function') window.__onMemberChange();
   return m;
