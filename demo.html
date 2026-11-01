@@ -12,7 +12,7 @@
     --accent:#0071E3; --accent-press:#0059B3;
     --stop:#D70015; --warn:#B25000; --info:#0071E3; --ok:#1D7A4C;
     --shadow-s:0 1px 2px rgba(0,0,0,.04), 0 1px 1px rgba(0,0,0,.03);
-    --shadow-m:0 8px 30px rgba(0,0,0,.07), 0 1px 2px rgba(0,0,0,.04);
+    --shadow-m:0 10px 34px rgba(0,0,0,.08), 0 1px 2px rgba(0,0,0,.04);
     --ease:cubic-bezier(.22,.8,.24,1);
   }
   *{box-sizing:border-box}
@@ -26,79 +26,47 @@
   body.ready{opacity:1}
   button{font:inherit;color:inherit}
 
-  /* ---------- 开场 ---------- */
-  #intro{
-    position:fixed;inset:0;z-index:1000;background:var(--bg);
-    display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;
-    transition:transform .72s var(--ease),opacity .5s ease;
-  }
+  /* 开场 */
+  #intro{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center;flex-direction:column;gap:22px;transition:transform .72s var(--ease),opacity .5s ease}
   #intro.done{transform:translateY(-100%);opacity:0;pointer-events:none}
   #intro .mark{width:74px;height:74px}
-  #intro .mark path,#intro .mark rect{
-    stroke:var(--ink);stroke-width:3.4;fill:none;stroke-linecap:round;stroke-linejoin:round;
-    stroke-dasharray:220;stroke-dashoffset:220;animation:draw 1.1s var(--ease) .1s forwards;
-  }
+  #intro .mark path,#intro .mark rect{stroke:var(--ink);stroke-width:3.4;fill:none;stroke-linecap:round;stroke-linejoin:round;stroke-dasharray:220;stroke-dashoffset:220;animation:draw 1.1s var(--ease) .1s forwards}
   #intro .mark .pulse{stroke:var(--accent);animation-delay:.55s}
   @keyframes draw{to{stroke-dashoffset:0}}
-  #intro h1{
-    margin:0;font-size:34px;font-weight:640;letter-spacing:.34em;text-indent:.34em;
-    opacity:0;animation:titleIn 1s var(--ease) .5s forwards;
-  }
-  #intro p{
-    margin:0;color:var(--sub);font-size:13px;letter-spacing:.16em;
-    opacity:0;animation:titleIn 1s var(--ease) .8s forwards;
-  }
+  #intro h1{margin:0;font-size:34px;font-weight:640;letter-spacing:.34em;text-indent:.34em;opacity:0;animation:titleIn 1s var(--ease) .5s forwards}
+  #intro p{margin:0;color:var(--sub);font-size:13px;letter-spacing:.16em;opacity:0;animation:titleIn 1s var(--ease) .8s forwards}
   @keyframes titleIn{from{opacity:0;transform:translateY(10px);letter-spacing:.5em}to{opacity:1;transform:none;letter-spacing:.12em}}
 
-  /* ---------- 顶栏 ---------- */
-  header{
-    position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:10px;
-    padding:0 20px;height:54px;
-    background:rgba(250,250,252,.78);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
-    border-bottom:.5px solid var(--hair);
-  }
-  .brand{display:flex;align-items:center;gap:9px;font-weight:600;letter-spacing:-.01em}
-  .brand svg{width:22px;height:22px}
+  /* 顶栏 */
+  header{position:sticky;top:0;z-index:50;display:flex;align-items:center;gap:8px;padding:0 18px;height:56px;
+    background:rgba(250,250,252,.76);backdrop-filter:saturate(180%) blur(20px);-webkit-backdrop-filter:saturate(180%) blur(20px);
+    border-bottom:.5px solid var(--hair)}
+  .brand{display:flex;align-items:center;gap:8px;font-weight:600;letter-spacing:-.01em;margin-right:6px}
+  .brand svg{width:21px;height:21px}
   .brand svg path,.brand svg rect{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
   .brand .pulse{stroke:var(--accent)}
-  .chip{
-    display:inline-flex;align-items:center;gap:6px;height:24px;padding:0 9px;border-radius:999px;
-    font-size:11.5px;color:var(--sub);background:rgba(0,0,0,.04);white-space:nowrap
-  }
-  .chip i{width:5px;height:5px;border-radius:50%;background:var(--ok);display:block}
-  header .right{margin-left:auto;display:flex;gap:8px}
-  .ghost{
-    height:30px;padding:0 13px;border-radius:999px;border:.5px solid var(--hair-strong);
-    background:rgba(255,255,255,.7);color:var(--sub);font-size:12.5px;cursor:pointer;
-    transition:all .2s var(--ease);
-  }
+  .member{display:flex;align-items:center;gap:8px;height:34px;padding:0 12px 0 8px;border-radius:999px;border:.5px solid var(--hair-strong);background:rgba(255,255,255,.8);cursor:pointer;transition:all .2s var(--ease);max-width:280px}
+  .member:hover{background:#fff;border-color:rgba(0,0,0,.2)}
+  .member .av2{width:22px;height:22px;border-radius:7px;background:#0B0B0F;color:#fff;display:grid;place-items:center;font-size:11px;font-weight:600}
+  .member .nm{font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .member .cv{width:10px;height:10px;stroke:var(--sub);fill:none;stroke-width:2;stroke-linecap:round}
+  header .right{margin-left:auto;display:flex;gap:8px;align-items:center}
+  .ghost{height:30px;padding:0 12px;border-radius:999px;border:.5px solid var(--hair-strong);background:rgba(255,255,255,.7);color:var(--sub);font-size:12.5px;cursor:pointer;transition:all .2s var(--ease);white-space:nowrap}
   .ghost:hover{background:#fff;color:var(--ink);border-color:rgba(0,0,0,.22)}
   .ghost:active{transform:scale(.97)}
+  #badge{font-size:11.5px;color:var(--sub);white-space:nowrap}
 
-  /* ---------- 主体 ---------- */
+  /* 主体 */
   main{flex:1;overflow-y:auto;scroll-behavior:smooth}
-  .wrap{max-width:720px;margin:0 auto;padding:34px 20px 150px}
+  .wrap{max-width:720px;margin:0 auto;padding:30px 20px 150px}
 
-  /* 空态：等距健身房 */
-  .hero{
-    transition:opacity .45s var(--ease),transform .45s var(--ease);
-    min-height:calc(100vh - 300px);display:flex;flex-direction:column;justify-content:center;
-  }
-  .hero.gone{
-    opacity:0;transform:translateY(-12px) scale(.98);pointer-events:none;
-    height:0;min-height:0;overflow:hidden;margin:0;padding:0
-  }
-  .hero h2{
-    margin:0 0 6px;font-size:30px;line-height:1.25;font-weight:640;letter-spacing:-.025em;
-  }
-  .hero .sub{margin:0 0 18px;color:var(--sub);font-size:14px}
-  #scene{width:100%;height:310px;display:block;margin:6px 0 2px}
-  .sugg{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
-  .sugg button{
-    border:.5px solid var(--hair-strong);background:var(--surface);border-radius:999px;
-    padding:8px 14px;font-size:13px;color:var(--ink);cursor:pointer;
-    box-shadow:var(--shadow-s);transition:all .2s var(--ease)
-  }
+  .hero{transition:opacity .45s var(--ease),transform .45s var(--ease);min-height:calc(100vh - 310px);display:flex;flex-direction:column;justify-content:center}
+  .hero.gone{opacity:0;transform:translateY(-12px) scale(.98);pointer-events:none;height:0;min-height:0;overflow:hidden;margin:0;padding:0}
+  .hero h2{margin:0 0 6px;font-size:30px;line-height:1.25;font-weight:640;letter-spacing:-.025em}
+  .hero .sub{margin:0 0 14px;color:var(--sub);font-size:14px}
+  #scene{width:100%;height:330px;display:block;margin:4px 0 0}
+  .sugg{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+  .sugg button{border:.5px solid var(--hair-strong);background:var(--surface);border-radius:999px;padding:8px 14px;font-size:13px;cursor:pointer;box-shadow:var(--shadow-s);transition:all .2s var(--ease)}
   .sugg button:hover{transform:translateY(-1px);box-shadow:var(--shadow-m)}
   .sugg button:active{transform:scale(.98)}
 
@@ -106,31 +74,16 @@
   .row{display:flex;gap:11px;margin-bottom:22px;align-items:flex-start;animation:rise .42s var(--ease) both}
   .row.me{flex-direction:row-reverse}
   @keyframes rise{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:none}}
-  .av{
-    flex:0 0 28px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;
-    font-size:12px;font-weight:600;letter-spacing:0
-  }
+  .av{flex:0 0 28px;width:28px;height:28px;border-radius:9px;display:grid;place-items:center;font-size:12px;font-weight:600}
   .av.a{background:#0B0B0F;color:#fff}
   .av.m{background:rgba(0,0,0,.07);color:var(--sub)}
   .bubble{max-width:78%;white-space:pre-wrap;word-break:break-word}
-  .row.a .bubble{
-    background:var(--surface);border:.5px solid var(--hair);border-radius:4px 18px 18px 18px;
-    padding:14px 16px;box-shadow:var(--shadow-s)
-  }
-  .row.me .bubble{
-    background:var(--accent);color:#fff;border-radius:18px 4px 18px 18px;padding:12px 16px;
-    box-shadow:0 6px 18px rgba(0,113,227,.22)
-  }
+  .row.a .bubble{background:var(--surface);border:.5px solid var(--hair);border-radius:4px 18px 18px 18px;padding:14px 16px;box-shadow:var(--shadow-s)}
+  .row.me .bubble{background:var(--accent);color:#fff;border-radius:18px 4px 18px 18px;padding:12px 16px;box-shadow:0 6px 18px rgba(0,113,227,.22)}
   .meta{margin-top:10px;font-size:12px;color:var(--sub);display:flex;gap:14px;flex-wrap:wrap}
-  .meta button{
-    background:none;border:0;color:var(--sub);font-size:12px;cursor:pointer;padding:0;
-    border-bottom:.5px dotted rgba(0,0,0,.28);transition:color .2s
-  }
+  .meta button{background:none;border:0;color:var(--sub);font-size:12px;cursor:pointer;padding:0;border-bottom:.5px dotted rgba(0,0,0,.28);transition:color .2s}
   .meta button:hover{color:var(--accent)}
-  .detail{
-    margin-top:10px;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;color:#3B3B40;
-    background:#F5F5F7;border-radius:10px;padding:12px;white-space:pre-wrap;display:none
-  }
+  .detail{margin-top:10px;font:12px/1.6 ui-monospace,SFMono-Regular,Consolas,monospace;color:#3B3B40;background:#F5F5F7;border-radius:10px;padding:12px;white-space:pre-wrap;display:none}
   .verdict{margin-top:10px;padding-left:12px;border-left:2px solid var(--hair)}
   .verdict.ok{border-color:var(--ok)}
   .verdict.warn{border-color:var(--warn)}
@@ -140,53 +93,67 @@
   .typing i{width:5px;height:5px;border-radius:50%;background:rgba(0,0,0,.28);animation:blink 1.2s infinite}
   .typing i:nth-child(2){animation-delay:.15s}
   .typing i:nth-child(3){animation-delay:.3s}
-  @keyframes blink{0%,60%,100%{opacity:.25;transform:translateY(0)}30%{opacity:1;transform:translateY(-2px)}}
+  @keyframes blink{0%,60%,100%{opacity:.25}30%{opacity:1}}
 
-  /* ---------- 输入 ---------- */
-  footer{
-    position:sticky;bottom:0;z-index:40;padding:14px 20px calc(16px + env(safe-area-inset-bottom));
-    background:linear-gradient(to top,rgba(250,250,252,.98) 55%,rgba(250,250,252,0));
-  }
+  /* 输入 */
+  footer{position:sticky;bottom:0;z-index:40;padding:14px 20px calc(16px + env(safe-area-inset-bottom));background:linear-gradient(to top,rgba(250,250,252,.98) 55%,rgba(250,250,252,0))}
   .composer{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
-  .field{
-    flex:1;display:flex;align-items:center;background:var(--surface);border:.5px solid var(--hair-strong);
-    border-radius:22px;box-shadow:var(--shadow-s);padding:2px 6px 2px 16px;min-height:46px;
-    transition:border-color .2s,box-shadow .2s
-  }
+  .field{flex:1;display:flex;align-items:center;background:var(--surface);border:.5px solid var(--hair-strong);border-radius:22px;box-shadow:var(--shadow-s);padding:2px 6px 2px 16px;min-height:46px;transition:border-color .2s,box-shadow .2s}
   .field:focus-within{border-color:rgba(0,113,227,.55);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
-  textarea{
-    flex:1;border:0;resize:none;background:transparent;padding:11px 6px;font:inherit;line-height:1.4;
-    max-height:120px;min-height:22px;outline:none;overflow:hidden
-  }
-  .send{
-    width:38px;height:38px;flex:0 0 38px;border-radius:50%;border:0;cursor:pointer;
-    background:var(--accent);color:#fff;display:grid;place-items:center;margin:4px;
-    transition:transform .18s var(--ease),background .2s
-  }
+  textarea{flex:1;border:0;resize:none;background:transparent;padding:11px 6px;font:inherit;line-height:1.4;max-height:120px;min-height:22px;outline:none;overflow:hidden}
+  .send{width:38px;height:38px;flex:0 0 38px;border-radius:50%;border:0;cursor:pointer;background:var(--accent);color:#fff;display:grid;place-items:center;margin:4px;transition:transform .18s var(--ease),background .2s}
   .send:hover{background:var(--accent-press)}
   .send:active{transform:scale(.94)}
   .send svg{width:17px;height:17px;stroke:#fff;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
-  .hint{max-width:720px;margin:8px auto 0;text-align:center;color:#9A9AA0;font-size:11px;letter-spacing:.01em}
+  .hint{max-width:720px;margin:8px auto 0;text-align:center;color:#9A9AA0;font-size:11px}
+
+  /* 弹层 */
+  .sheet-mask{position:fixed;inset:0;z-index:200;background:rgba(12,14,20,.32);backdrop-filter:blur(2px);opacity:0;pointer-events:none;transition:opacity .25s}
+  .sheet-mask.on{opacity:1;pointer-events:auto}
+  .sheet{position:fixed;left:50%;top:50%;z-index:201;width:min(460px,calc(100vw - 40px));max-height:80vh;overflow:auto;transform:translate(-50%,-46%) scale(.98);opacity:0;pointer-events:none;transition:all .3s var(--ease);background:var(--surface);border-radius:18px;box-shadow:0 30px 60px rgba(0,0,0,.18);padding:22px}
+  .sheet.on{transform:translate(-50%,-50%) scale(1);opacity:1;pointer-events:auto}
+  .sheet h3{margin:0 0 4px;font-size:17px;font-weight:640;letter-spacing:-.01em}
+  .sheet .desc{margin:0 0 16px;color:var(--sub);font-size:12.5px}
+  .mrow{display:flex;align-items:center;gap:10px;padding:11px 10px;border-radius:12px;cursor:pointer;transition:background .18s}
+  .mrow:hover{background:#F5F5F7}
+  .mrow.on{background:rgba(0,113,227,.07)}
+  .mrow .av3{width:32px;height:32px;border-radius:10px;background:#0B0B0F;color:#fff;display:grid;place-items:center;font-size:13px;font-weight:600;flex:0 0 32px}
+  .mrow .txt{min-width:0}
+  .mrow .txt b{display:block;font-size:13.5px;font-weight:600}
+  .mrow .txt small{display:block;color:var(--sub);font-size:11.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tagline{display:inline-block;font-size:10.5px;padding:1px 7px;border-radius:999px;background:rgba(215,0,21,.09);color:var(--stop);margin-left:6px}
+  .sheet label{display:block;font-size:11.5px;color:var(--sub);margin:12px 0 5px}
+  .sheet input,.sheet select{width:100%;padding:9px 11px;border:.5px solid var(--hair-strong);border-radius:10px;font:inherit;font-size:13.5px;outline:none;background:#fff}
+  .sheet input:focus,.sheet select:focus{border-color:rgba(0,113,227,.55);box-shadow:0 0 0 3px rgba(0,113,227,.1)}
+  .sheet .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .sheet .actions{display:flex;gap:8px;margin-top:18px}
+  .btn{border:0;border-radius:10px;padding:10px 16px;font-size:13.5px;cursor:pointer;transition:all .2s}
+  .btn.primary{background:var(--accent);color:#fff}
+  .btn.primary:hover{background:var(--accent-press)}
+  .btn.plain{background:#F0F0F3;color:var(--ink)}
+  .btn.plain:hover{background:#E7E7EB}
+  .btn[disabled]{opacity:.45;cursor:default}
+  .hr{height:.5px;background:var(--hair);margin:16px 0}
 
   @media (max-width:560px){
-    header{padding:0 14px}
-    header .chip{display:none}
+    header{padding:0 12px;gap:6px}
+    #badge{display:none}
+    .brand span{display:none}
+    .member{max-width:160px}
     .wrap{padding:18px 14px 120px}
-    .hero{min-height:calc(100vh - 250px);padding-top:0}
+    .hero{min-height:calc(100vh - 250px)}
     .hero h2{font-size:23px}
-    .hero .sub{font-size:13px;margin-bottom:10px}
-    #scene{height:230px}
-    .sugg{gap:7px}
+    .hero .sub{font-size:13px}
+    #scene{height:240px}
     .sugg button{padding:7px 12px;font-size:12.5px}
     .bubble{max-width:86%}
     .row{margin-bottom:18px}
     textarea{font-size:16px;padding:10px 4px}
     footer{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
     .hint{font-size:10.5px}
+    .sheet{width:calc(100vw - 24px);max-height:86vh}
   }
-  @media (prefers-reduced-motion:reduce){
-    *{animation-duration:.001s !important;transition-duration:.001s !important}
-  }
+  @media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}}
 </style>
 </head>
 <body>
@@ -206,11 +173,16 @@
       <rect x="3" y="3" width="18" height="18" rx="5.5"></rect>
       <path class="pulse" d="M3 13h4l2-3.5 3 7 2.4-4.6L16.6 13H21"></path>
     </svg>
-    初练
+    <span>初练</span>
   </div>
-  <span class="chip"><i></i>技能 2.0.0 · 55 项测试</span>
+  <button class="member" id="memberBtn">
+    <span class="av2" id="memberAv">林</span>
+    <span class="nm" id="memberName">林女士</span>
+    <svg class="cv" viewBox="0 0 12 12"><path d="M2 4.5 6 8.5 10 4.5"></path></svg>
+  </button>
   <div class="right">
-    <button class="ghost" id="switch">切换会员</button>
+    <span id="badge">技能 2.0.0 · 55 项测试 · 离线规则</span>
+    <button class="ghost" id="cfg">模型</button>
     <button class="ghost" id="reset">重来</button>
   </div>
 </header>
@@ -219,7 +191,7 @@
   <div class="wrap" id="wrap">
     <section class="hero" id="hero">
       <h2>今天状态怎么样？</h2>
-      <p class="sub">说一句就行，缺的信息我会问。</p>
+      <p class="sub" id="heroSub">说一句就行，缺的信息我会问。</p>
       <canvas id="scene" aria-hidden="true"></canvas>
       <div class="sugg">
         <button data-fill="今天有点累，腰酸4分，昨晚只睡了5小时">有点累，腰酸 4 分</button>
@@ -241,6 +213,53 @@
   </div>
   <div class="hint">判定由确定性规则引擎给出 · 不构成医疗建议 · 请勿输入真实健康信息</div>
 </footer>
+
+<!-- 会员选择 -->
+<div class="sheet-mask" id="mask1"></div>
+<div class="sheet" id="memberSheet" role="dialog" aria-label="选择会员">
+  <h3>会员</h3>
+  <p class="desc">选一位继续，或登记新会员。</p>
+  <div id="memberList"></div>
+  <div class="hr"></div>
+  <h3>登记会员</h3>
+  <p class="desc">只填必要信息，其余留空也能开始。</p>
+  <label>称呼</label>
+  <input id="regName" placeholder="例如：王女士">
+  <div class="grid2">
+    <div><label>训练经验（年）</label><input id="regYears" type="number" min="0" max="40" value="1"></div>
+    <div><label>水平</label>
+      <select id="regLevel"><option>初</option><option>中</option><option>高</option></select>
+    </div>
+  </div>
+  <label>健身目标</label>
+  <input id="regGoal" placeholder="例如：体态改善、增肌">
+  <label>既往诊断或手术（没有就留空）</label>
+  <input id="regInjury" placeholder="例如：腰椎间盘突出术后（2026-02）">
+  <label>专业人员给过的活动限制（没有就留空）</label>
+  <input id="regRestrict" placeholder="例如：避免脊柱屈曲负荷">
+  <div class="actions">
+    <button class="btn primary" id="regSave">登记并切换</button>
+    <button class="btn plain" id="regCancel">取消</button>
+  </div>
+</div>
+
+<!-- 模型接入 -->
+<div class="sheet-mask" id="mask2"></div>
+<div class="sheet" id="modelSheet" role="dialog" aria-label="模型接入">
+  <h3>模型接入</h3>
+  <p class="desc">填任意 OpenAI 兼容接口，理解更自由。判定仍由引擎给出；不填则用离线规则。</p>
+  <label>API Key</label>
+  <input id="cfg-key" placeholder="sk-..." autocomplete="off">
+  <label>Base URL</label>
+  <input id="cfg-base" placeholder="https://api.deepseek.com">
+  <label>模型名</label>
+  <input id="cfg-model" placeholder="deepseek-chat">
+  <div class="actions">
+    <button class="btn primary" id="cfg-save">保存</button>
+    <button class="btn plain" id="cfg-clear">清除</button>
+  </div>
+  <p class="desc" style="margin-top:12px">密钥只存在这台设备的浏览器里，不会写进文件。</p>
+</div>
 
 <script>
 
@@ -543,7 +562,7 @@ function extract(t){
   let m = half.match(/疲劳[^\d]{0,4}(\d{1,2})/);
   if(!m) m = half.match(/(?:累|困|疲惫)[^\d，,。！？]{0,3}(\d{1,2})\s*分/);
   if(m) d.fatigue = +m[1];
-  m = half.match(/(?:睡|睡眠)[^\d]{0,8}(\d+(?:\.\d+)?)\s*(?:小时|h|钟)/);
+  m = half.match(/(?:睡|睡眠)[^\d]{0,8}(\d+(?:\.\d+)?)\s*个?\s*(?:小时|h|钟)/);
   if(m) d.sleep_hours = +m[1];
   if(/疼|痛|酸|紧/.test(half)){
     m = half.match(/(\d{1,2})\s*分/);
@@ -687,237 +706,498 @@ function reply(text, u){
   if(ev.status_code === 'continue') actionChip(row, '出计划', () => say('出计划'));
 }
 
-/* ---------------- 界面事件 ---------------- */
-document.getElementById('send').onclick = () => { const v = input.value; if(!v.trim()) return; input.value=''; say(v); };
+/* ---------------- 输入 ---------------- */
+const sendBtn = document.getElementById('send');
+if (sendBtn) sendBtn.onclick = () => { const v = input.value; if(!v.trim()) return; input.value=''; say(v); };
 input.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); const v = input.value; if(!v.trim()) return; input.value=''; say(v); } });
 input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(120, input.scrollHeight) + 'px'; });
-const CFG = llmCfg();
-document.getElementById('cfg').onclick = () => {
-  const p = document.getElementById('panel');
-  p.style.display = p.style.display === 'none' ? 'block' : 'none';
-  const c = llmCfg();
-  document.getElementById('cfg-key').value = c.key || '';
-  document.getElementById('cfg-base').value = c.base || 'https://api.deepseek.com';
-  document.getElementById('cfg-model').value = c.model || 'deepseek-chat';
-};
-document.getElementById('cfg-save').onclick = () => {
-  const c = {key: document.getElementById('cfg-key').value.trim(),
-             base: document.getElementById('cfg-base').value.trim() || 'https://api.deepseek.com',
-             model: document.getElementById('cfg-model').value.trim() || 'deepseek-chat'};
-  localStorage.setItem(CFG_KEY, JSON.stringify(c));
-  document.getElementById('panel').style.display = 'none';
-  refreshBadge();
-  bubble('a', c.key ? `已接入大模型（${c.model}），可以让说法更自由了。判定仍然由引擎给出。` : '已清除模型配置，回到离线规则模式。');
-};
-document.getElementById('cfg-clear').onclick = () => {
-  localStorage.removeItem(CFG_KEY);
-  document.getElementById('panel').style.display = 'none';
-  refreshBadge();
-  bubble('a','已回到离线规则模式。');
-};
-function refreshBadge(){
-  const c = llmCfg();
-  document.getElementById('badge').textContent = '技能 2.0.0 · 55 项测试 · ' + (c.key ? '大模型（' + (c.model || 'deepseek-chat') + '）' : '离线规则引擎');
+
+/* ---------------- 对外接口：由外壳驱动会员与模型 ---------------- */
+function switchTo(i, silent){
+  if(!(i >= 0 && i < state.members.length)) return null;
+  state.current = i; state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null;
+  save();
+  const m = db();
+  const started = document.querySelectorAll('#wrap .row').length > 0;
+  if(!silent && started) bubble('a', `现在处理的是 ${m.A2_display_name}（${m.A1_member_id}），目标：${(m.A4_goal||[]).join('、')}。说说今天的状态就行。`);
+  if(typeof window.__onMemberChange === 'function') window.__onMemberChange();
+  return m;
 }
-refreshBadge();
+function addMember(m){ state.members.push(m); save(); return state.members.length - 1; }
 
-document.getElementById('switch').onclick = () => say('切换会员');
-document.getElementById('reset').onclick = () => { localStorage.removeItem(KEY); location.reload(); };
-if(window.innerWidth < 560){ input.placeholder = '说说今天的状态…'; }
+window.Chulian = {
+  db, save, say, bubble, switchTo, addMember, llmCfg, CFG_KEY,
+  get current(){ return state.current; },
+  get members(){ return state.members; }
+};
 
-const m0 = db();
-bubble('a', `我是初练，管这台会员档案。现在处理的是 ${m0.A2_display_name}（${m0.A1_member_id}），上次的记录我都读过了。\n说说今天的状态就行，比如"今天有点累，腰酸 4 分，昨晚睡了 5 小时"。`);
+/* ---------------- 首屏由外壳渲染，消息区留空 ---------------- */
 
 </script>
 <script>
-/* ---------------- 开场、3D 场景与微交互 ---------------- */
+/* ---------------- 外壳：开场、会员、模型、3D 场景 ---------------- */
 (function(){
-  const intro = document.getElementById('intro');
-  const hero  = document.getElementById('hero');
-  const wrap  = document.getElementById('wrap');
+  const $ = id => document.getElementById(id);
+  const intro = $('intro'), hero = $('hero'), wrap = $('wrap');
 
-  // 开场：2.1 秒后上移离场，页面淡入
   document.body.classList.add('ready');
   setTimeout(() => intro.classList.add('done'), 2100);
   setTimeout(() => { intro.style.display = 'none'; }, 2900);
 
-  // 第一条消息出现时收起空态
-  const hideHero = () => {
-    if (!hero || hero.classList.contains('gone')) return;
-    hero.classList.add('gone');
-  };
-  new MutationObserver((ms) => {
+  const hideHero = () => { if (hero && !hero.classList.contains('gone')) hero.classList.add('gone'); };
+  if (wrap.querySelector('.row')) hideHero();
+  new MutationObserver(ms => {
     for (const m of ms) if (m.addedNodes.length) { hideHero(); break; }
   }).observe(wrap, { childList: true });
 
-  // 窄屏换短提示语
-  const ta = document.getElementById('input');
-  const setPh = () => {
-    ta.placeholder = window.innerWidth < 560 ? '说说今天的状态…' : '说说今天的状态，比如：有点累、腰酸 4 分';
-  };
-  setPh();
-  addEventListener('resize', setPh);
+  /* 会员 */
+  const api = () => window.Chulian;
+  function paintMember() {
+    const m = api() && api().db();
+    if (!m) return;
+    $('memberAv').textContent = (m.A2_display_name || '会').slice(0, 1);
+    $('memberName').textContent = (m.A2_display_name || '').replace(/（合成）/, '');
+  }
+  function paintList() {
+    const box = $('memberList'); box.innerHTML = '';
+    if (!api()) return;
+    api().members.forEach((m, i) => {
+      const row = document.createElement('div');
+      row.className = 'mrow' + (i === api().current ? ' on' : '');
+      const flags = (m.A12_risk_flags || []).length;
+      row.innerHTML = `<div class="av3">${(m.A2_display_name || '会').slice(0,1)}</div>
+        <div class="txt"><b>${m.A2_display_name || ''}${flags ? `<span class="tagline">风险标记 ${flags}</span>` : ''}</b>
+        <small>${m.A1_member_id} ｜ ${(m.A4_goal || []).join('、') || '未设目标'}</small></div>`;
+      row.onclick = () => {
+        if (i !== api().current) api().switchTo(i);
+        paintMember(); closeSheets();
+      };
+      box.appendChild(row);
+    });
+  }
+  function openSheet(which) {
+    $('mask1').classList.toggle('on', which === 'member');
+    $('memberSheet').classList.toggle('on', which === 'member');
+    $('mask2').classList.toggle('on', which === 'model');
+    $('modelSheet').classList.toggle('on', which === 'model');
+    if (which === 'member') { paintList(); }
+    if (which === 'model') {
+      const c = api().llmCfg();
+      $('cfg-key').value = c.key || '';
+      $('cfg-base').value = c.base || 'https://api.deepseek.com';
+      $('cfg-model').value = c.model || 'deepseek-chat';
+    }
+  }
+  function closeSheets() {
+    ['mask1','mask2','memberSheet','modelSheet'].forEach(id => $(id).classList.remove('on'));
+  }
+  $('memberBtn').onclick = () => openSheet('member');
+  $('cfg').onclick = () => openSheet('model');
+  $('mask1').onclick = closeSheets;
+  $('mask2').onclick = closeSheets;
+  $('regCancel').onclick = closeSheets;
+  addEventListener('keydown', e => { if (e.key === 'Escape') closeSheets(); });
 
-  // 建议词填入
+  function badge() {
+    const c = api() ? api().llmCfg() : {};
+    $('badge').textContent = '技能 2.0.0 · 55 项测试 · ' + (c.key ? '大模型（' + (c.model || 'deepseek-chat') + '）' : '离线规则');
+  }
+  $('cfg-save').onclick = () => {
+    const c = {
+      key: $('cfg-key').value.trim(),
+      base: $('cfg-base').value.trim() || 'https://api.deepseek.com',
+      model: $('cfg-model').value.trim() || 'deepseek-chat'
+    };
+    localStorage.setItem('chulian-llm-v1', JSON.stringify(c));
+    closeSheets(); badge();
+    api().bubble('a', c.key ? `已接入大模型（${c.model}），说法可以更自由。判定仍由引擎给出。` : '已回到离线规则模式。');
+  };
+  $('cfg-clear').onclick = () => {
+    localStorage.removeItem('chulian-llm-v1');
+    closeSheets(); badge();
+    api().bubble('a', '已回到离线规则模式。');
+  };
+  $('reset').onclick = () => { localStorage.removeItem('chulian-single-v1'); location.reload(); };
+
+  /* 登记会员 */
+  $('regSave').onclick = () => {
+    const name = $('regName').value.trim();
+    if (!name) { $('regName').focus(); return; }
+    const years = +($('regYears').value || 0);
+    const level = $('regLevel').value;
+    const goals = ($('regGoal').value.trim() || '体态改善').split(/[、,，\s]+/).filter(Boolean);
+    const injury = $('regInjury').value.trim();
+    const restrict = $('regRestrict').value.trim();
+    const now = new Date().toISOString();
+    const seq = (api().members.length + 1).toString().padStart(4, '0');
+    const meta = { source: '会员本人', recorded_at: now, recorded_by: '会员本人' };
+    const m = {
+      schema_version: '1.0',
+      A1_member_id: 'L-' + seq,
+      A2_display_name: name + '（合成）',
+      A3_age_band: '', A3_sex: '未提供（本人声明）',
+      A4_goal: goals,
+      A5_experience: Object.assign({ years, equipment: level, long_term_coach: false }, meta),
+      A6_recent_activity: Object.assign({ weeks: 4, sessions_per_week: 2, items: ['普拉提私教'],
+        minutes_per_session: 50, intensity_self: '中', intensity_increase_pct: 0 }, meta),
+      A7_diagnoses: injury ? [{ item: injury, date: '', source: '会员本人' }] : [],
+      A8_professional_advice: restrict ? [{ advice_id: 'A8-01', content: restrict,
+        by: '场馆专业人员', date: now.slice(0, 10), prohibit_training: false }] : [],
+      A9_restrictions: restrict ? [{ item: restrict, level: '禁用', ref: 'A8-01' }] : [],
+      A9_confirmation: { status: restrict ? 'confirmed' : 'confirmed_none',
+        source: '专业人员', recorded_at: now, recorded_by: '场馆专业人员' },
+      A10_diet: Object.assign({ text: '' }, meta),
+      A11_sleep_profile: Object.assign({ bedtime: '23:30', average_hours: 7, quality: 3, issue: '无' }, meta),
+      A12_risk_flags: injury ? ['损伤或术后记录（来自 A7）'] : [],
+      A13_consent: Object.assign({ voluntary: true, scope: ['训练计划', '风险提示'], synthetic: true, desensitized: true }, meta),
+      B_current: {}, C1_visits: [], C2_plans: [], C3_appointments: [], C4_followups: [],
+      C5_reviews: [], C6_assessments: [], C7_revisions: [], C8_movements: [], C9_quests: [],
+      data_quality_conflicts: []
+    };
+    const idx = api().addMember(m);
+    api().switchTo(idx);
+    paintMember(); closeSheets();
+    ['regName','regInjury','regRestrict','regGoal'].forEach(id => $(id).value = '');
+  };
+
+  function paintHero() {
+    const m = api() && api().db();
+    if (!m) return;
+    const flags = (m.A12_risk_flags || []).length;
+    $('heroSub').textContent = `现在处理的是 ${(m.A2_display_name || '').replace(/（合成）/, '')}（${m.A1_member_id}）`
+      + (flags ? `，档案里有 ${flags} 项风险标记` : '，档案里暂时没有风险标记') + '。说一句就行。';
+  }
+
+  window.__onMemberChange = () => { paintMember(); paintHero(); paintList(); };
+  paintMember(); paintHero(); badge();
+
+  /* 建议词 */
   document.querySelectorAll('[data-fill]').forEach(b => {
     b.addEventListener('click', () => {
-      const input = document.getElementById('input');
-      input.value = b.dataset.fill;
-      input.dispatchEvent(new Event('input'));
-      input.focus();
+      const t = $('input');
+      t.value = b.dataset.fill;
+      t.dispatchEvent(new Event('input'));
+      t.focus();
     });
   });
 
-  /* ---- 等距健身房：canvas 2D ---- */
-  const cv = document.getElementById('scene');
+  /* 3D 场景 */
+  const cv = $('scene');
   if (cv) {
     const ctx = cv.getContext('2d');
-    let W = 0, H = 0, dpr = window.devicePixelRatio || 1;
-    let SCALE = 1.34;
+    let W = 0, H = 0, dpr = Math.min(window.devicePixelRatio || 1, 2), S = 1, tilt = 0, target = 0;
     const resize = () => {
       const r = cv.getBoundingClientRect();
       W = r.width; H = r.height;
       cv.width = W * dpr; cv.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
-      SCALE = W < 520 ? 0.86 : 1.34;
+      S = W < 520 ? 0.92 : 1.42;
     };
-    resize();
-    addEventListener('resize', resize);
-
-    let tilt = 0, tiltTarget = 0, px = 0;
+    resize(); addEventListener('resize', resize);
     cv.addEventListener('pointermove', e => {
       const r = cv.getBoundingClientRect();
-      tiltTarget = ((e.clientX - r.left) / r.width - 0.5) * 0.16;
+      target = ((e.clientX - r.left) / r.width - .5) * .22;
     });
-    cv.addEventListener('pointerleave', () => { tiltTarget = 0; });
+    cv.addEventListener('pointerleave', () => { target = 0; });
 
     const iso = (x, y, z) => {
       const a = Math.PI / 6 + tilt;
-      return [ (x - y) * Math.cos(a) * SCALE, ((x + y) * Math.sin(a) - z) * SCALE ];
+      return [ (x - y) * Math.cos(a) * S, ((x + y) * Math.sin(a) - z) * S ];
     };
 
-    function shadow(cx, cy, rx, ry, alpha) {
-      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
-      g.addColorStop(0, `rgba(10,14,22,${alpha})`);
-      g.addColorStop(1, 'rgba(10,14,22,0)');
-      ctx.save();
-      ctx.translate(cx, cy);
-      ctx.scale(1, ry / rx);
-      ctx.beginPath(); ctx.arc(0, 0, rx, 0, Math.PI * 2);
-      ctx.fillStyle = g; ctx.fill();
-      ctx.restore();
+    function face(pts, fill, edge) {
+      ctx.beginPath();
+      pts.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+      ctx.closePath();
+      ctx.fillStyle = fill; ctx.fill();
+      ctx.lineJoin = 'round';
+      ctx.strokeStyle = fill; ctx.lineWidth = 3; ctx.stroke();
+      if (edge) { ctx.strokeStyle = edge; ctx.lineWidth = 1; ctx.stroke(); }
     }
 
-    function box(cx, cy, w, d, h, tone) {
-      const p = (x, y, z) => { const q = iso(x, y, z); return [cx + q[0], cy + q[1]]; };
-      const faces = [
-        { pts: [p(-w/2,-d/2,0), p(w/2,-d/2,0), p(w/2,d/2,0), p(-w/2,d/2,0)], fill: tone[0] },
-        { pts: [p(-w/2,d/2,0), p(w/2,d/2,0), p(w/2,d/2,h), p(-w/2,d/2,h)], fill: tone[1] },
-        { pts: [p(w/2,-d/2,0), p(w/2,d/2,0), p(w/2,d/2,h), p(w/2,-d/2,h)], fill: tone[2] }
-      ];
-      faces.forEach(f => {
-        ctx.beginPath();
-        f.pts.forEach((pt, i) => i ? ctx.lineTo(pt[0], pt[1]) : ctx.moveTo(pt[0], pt[1]));
-        ctx.closePath();
-        ctx.fillStyle = f.fill; ctx.fill();
-      });
-    }
-
+    let GROUND = 9;
     function plate(cx, cy, r, fill) {
-      ctx.beginPath(); ctx.ellipse(cx, cy, r, r * 0.5, 0, 0, Math.PI * 2);
+      ctx.beginPath();
+      ctx.ellipse(cx, cy, r, r * 0.48, 0, 0, Math.PI * 2);
       ctx.fillStyle = fill; ctx.fill();
     }
 
-    function floor(cx, cy, size) {
-      ctx.save();
-      ctx.lineWidth = 1;
-      const steps = 9;
+    function box(cx, cy, w, d, h, tone, accent) {
+      const p = (x, y, z) => { const q = iso(x, y, z + GROUND); return [cx + q[0], cy + q[1]]; };
+      const top = [p(-w/2,-d/2,h), p(w/2,-d/2,h), p(w/2,d/2,h), p(-w/2,d/2,h)];
+      const left = [p(-w/2,-d/2,0), p(-w/2,d/2,0), p(-w/2,d/2,h), p(-w/2,-d/2,h)];
+      const right = [p(w/2,-d/2,0), p(w/2,d/2,0), p(w/2,d/2,h), p(w/2,-d/2,h)];
+      face(left, tone[2]);
+      face(right, tone[1]);
+      face(top, tone[0], accent);
+    }
+
+    function shadow(cx, cy, rx, ry, a) {
+      const g = ctx.createRadialGradient(cx, cy, 0, cx, cy, rx);
+      g.addColorStop(0, `rgba(9,12,20,${a})`);
+      g.addColorStop(1, 'rgba(9,12,20,0)');
+      ctx.save(); ctx.translate(cx, cy); ctx.scale(1, ry / rx);
+      ctx.beginPath(); ctx.arc(0, 0, rx, 0, Math.PI * 2); ctx.fillStyle = g; ctx.fill(); ctx.restore();
+    }
+
+    // 浮空岛：一块有厚度的地面
+    function island(cx, cy) {
+      const p = (x, y, z) => { const q = iso(x, y, z); return [cx + q[0], cy + q[1]]; };
+      const w = 112, d = 112, h = 8;
+      const left = [p(-w,-d,0), p(-w,d,0), p(-w,d,h), p(-w,-d,h)];
+      const right = [p(w,-d,0), p(w,d,0), p(w,d,h), p(w,-d,h)];
+      face(left, '#E4E8EF');
+      face(right, '#D2D8E2');
+      face([p(-w,-d,h), p(w,-d,h), p(w,d,h), p(-w,d,h)], '#FFFFFF');
+      return h;
+    }
+
+    function floor(cx, cy) {
+      const size = 300, steps = 12;
+      ctx.save(); ctx.lineWidth = 1;
       for (let i = 0; i <= steps; i++) {
-        const t = -size / 2 + (size / steps) * i;
-        const alpha = 0.09 * (1 - Math.abs(t) / size);
-        ctx.strokeStyle = `rgba(10,14,22,${alpha})`;
-        let a = iso(t, -size / 2, 0), b = iso(t, size / 2, 0);
-        ctx.beginPath(); ctx.moveTo(cx + a[0], cy + a[1]); ctx.lineTo(cx + b[0], cy + b[1]); ctx.stroke();
-        a = iso(-size / 2, t, 0); b = iso(size / 2, t, 0);
-        ctx.beginPath(); ctx.moveTo(cx + a[0], cy + a[1]); ctx.lineTo(cx + b[0], cy + b[1]); ctx.stroke();
+        const t = -size/2 + (size/steps)*i;
+        const a = .085 * (1 - Math.abs(t)/size*1.15);
+        ctx.strokeStyle = `rgba(12,18,28,${Math.max(a,0)})`;
+        let A = iso(t, -size/2, 0), B = iso(t, size/2, 0);
+        ctx.beginPath(); ctx.moveTo(cx+A[0], cy+A[1]); ctx.lineTo(cx+B[0], cy+B[1]); ctx.stroke();
+        A = iso(-size/2, t, 0); B = iso(size/2, t, 0);
+        ctx.beginPath(); ctx.moveTo(cx+A[0], cy+A[1]); ctx.lineTo(cx+B[0], cy+B[1]); ctx.stroke();
       }
       ctx.restore();
     }
 
     const T = {
-      white: ['#FFFFFF', '#E6E9EF', '#D3D8E1'],
-      grey:  ['#F4F5F8', '#DEE2E9', '#C9CED9'],
-      dark:  ['#2A2E36', '#1B1F26', '#12151A'],
-      blue:  ['#E8F0FD', '#CFDFF9', '#B9CEF2']
+      white: ['#FFFFFF', '#E9ECF2', '#D6DBE4'],
+      soft:  ['#F7F8FA', '#E2E6ED', '#CDD3DD'],
+      dark:  ['#3A3F49', '#23272F', '#171A20'],
+      blue:  ['#EAF2FE', '#D3E2FA', '#BBD0F0'],
+      metal: ['#DDE1E8', '#C3C9D4', '#AEB5C2']
     };
 
     let t0 = performance.now();
     function frame(now) {
       const t = (now - t0) / 1000;
-      tilt += (tiltTarget - tilt) * 0.08;
+      tilt += (target + Math.sin(t * .25) * .02 - tilt) * .07;
       ctx.clearRect(0, 0, W, H);
-      const cx = W / 2 + tilt * 120, cy = H * 0.55;
-      const bob = Math.sin(t * 0.9) * 2.4;
+      const cx = W/2 + tilt * 90, cy = H * .56 + Math.sin(t * .8) * 2;
 
-      // 背景光晕
-      const glow = ctx.createRadialGradient(cx, cy - 30, 10, cx, cy - 30, Math.max(W, H) * 0.62);
-      glow.addColorStop(0, 'rgba(0,113,227,.055)');
-      glow.addColorStop(.55, 'rgba(0,113,227,.018)');
+      const glow = ctx.createRadialGradient(cx, cy - 40, 8, cx, cy - 40, Math.max(W, H) * .6);
+      glow.addColorStop(0, 'rgba(0,113,227,.07)');
+      glow.addColorStop(.5, 'rgba(0,113,227,.02)');
       glow.addColorStop(1, 'rgba(0,113,227,0)');
-      ctx.fillStyle = glow;
-      ctx.fillRect(0, 0, W, H);
+      ctx.fillStyle = glow; ctx.fillRect(0, 0, W, H);
 
-      floor(cx, cy + bob, 320);
+      // 岛下投影
+      shadow(cx + 4, cy + 20, 168, 44, .10);
 
-      // 接触阴影
-      shadow(cx - 44, cy + 8 + bob, 96, 26, 0.13);
-      shadow(cx + 62, cy + 6 + bob, 62, 20, 0.12);
-      shadow(cx + 4, cy + 34 + bob, 46, 16, 0.1);
+      const F = island(cx, cy);
+      GROUND = F;
 
-      // 训练床：底板、软垫、两组支腿
-      box(cx - 44, cy - 22 + bob, 112, 40, 8, T.grey);
-      box(cx - 44, cy - 22 + bob, 104, 34, 9, T.white);
-      box(cx - 86, cy - 12 + bob, 9, 9, 20, T.grey);
-      box(cx - 2, cy - 12 + bob, 9, 9, 20, T.grey);
-      // 靠背
-      box(cx - 92, cy - 40 + bob, 30, 30, 6, T.white);
+      // 物体落在岛面上的接触阴影
+      const at = (x, y) => { const q = iso(x, y, GROUND); return [cx + q[0], cy + q[1]]; };
+      let p0 = at(-24, -6);  shadow(p0[0], p0[1], 74, 18, .12);
+      p0 = at(58, -34);      shadow(p0[0], p0[1], 40, 13, .12);
+      p0 = at(-66, 26);      shadow(p0[0], p0[1], 34, 12, .09);
+      p0 = at(6, 40);        shadow(p0[0], p0[1], 30, 10, .10);
 
-      // 跑步机（左前方）
-      box(cx - 118, cy + 44 + bob, 74, 30, 6, T.dark);
-      box(cx - 118, cy + 44 + bob, 66, 24, 3, T.grey);
+      // 训练床
+      box(cx - 24, cy - 6, 86, 26, 6, T.metal);
+      box(cx - 24, cy - 6, 78, 20, 7, T.white);
+      box(cx - 62, cy - 6, 6, 6, 13, T.dark);
+      box(cx + 14, cy - 6, 6, 6, 13, T.dark);
+      box(cx - 70, cy - 20, 18, 16, 4, T.white);
 
-      // 器械架与横杆
-      box(cx + 58, cy - 30 + bob, 24, 24, 66, T.grey);
-      box(cx + 58, cy - 68 + bob, 54, 5, 3, T.dark);
-      plate(cx + 30, cy - 70 + bob, 10, '#2A2E36');
-      plate(cx + 86, cy - 70 + bob, 10, '#2A2E36');
+      // 器械架 + 杠铃
+      box(cx + 58, cy - 34, 15, 15, 46, T.metal);
+      box(cx + 58, cy - 58, 42, 3, 3, T.dark);
+      plate(cx + 37, cy - 58, 7, '#23272F');
+      plate(cx + 79, cy - 58, 7, '#23272F');
+
+      // 训练垫
+      box(cx - 66, cy + 26, 36, 22, 2, T.blue);
 
       // 哑铃
-      box(cx + 2, cy + 30 + bob, 26, 12, 5, T.white);
-      box(cx + 2, cy + 30 + bob, 6, 14, 12, T.dark);
+      box(cx + 6, cy + 40, 24, 9, 3, T.soft);
+      box(cx - 4, cy + 40, 6, 10, 8, T.dark);
+      box(cx + 16, cy + 40, 6, 10, 8, T.dark);
 
-      // 蓝色训练垫
-      box(cx - 108, cy + 18 + bob, 52, 36, 3, T.blue);
+      // 壶铃
+      box(cx + 58, cy + 40, 11, 11, 9, T.dark);
 
-      // 蓝色脉冲：标记正在核对的位置
-      const pulse = 0.5 + 0.5 * Math.sin(t * 2);
-      const q = iso(-44, -22, 12);
+      // 蓝色脉冲
+      const pulse = .5 + .5 * Math.sin(t * 1.8);
+      const q = iso(-24, -6, GROUND + 14);
       ctx.save();
-      ctx.globalAlpha = 0.3 + pulse * 0.35;
-      ctx.fillStyle = '#0071E3';
-      ctx.beginPath();
-      ctx.arc(cx + q[0], cy + q[1] + bob, 3.2, 0, Math.PI * 2);
-      ctx.fill();
-      ctx.globalAlpha = 0.1 + pulse * 0.14;
-      ctx.beginPath();
-      ctx.arc(cx + q[0], cy + q[1] + bob, 8 + pulse * 6, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.globalAlpha = .34 + pulse * .3; ctx.fillStyle = '#0071E3';
+      ctx.beginPath(); ctx.arc(cx + q[0], cy + q[1], 3.2, 0, Math.PI * 2); ctx.fill();
+      ctx.globalAlpha = .09 + pulse * .12;
+      ctx.beginPath(); ctx.arc(cx + q[0], cy + q[1], 9 + pulse * 8, 0, Math.PI * 2); ctx.fill();
       ctx.restore();
 
       requestAnimationFrame(frame);
     }
     requestAnimationFrame(frame);
   }
+
+  /* 真三维场景：联网时用 three.js，离线自动留在上面的等距插画 */
+  (async () => {
+    let THREE = null;
+    try {
+      THREE = await import('https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js');
+    } catch (e) { return; }
+    if (!THREE || !cv) return;
+
+    const W0 = cv.clientWidth || 640, H0 = cv.clientHeight || 330;
+    cv.style.display = 'none';
+    const host = document.createElement('div');
+    host.style.cssText = 'width:100%;height:330px;position:relative;margin:4px 0 0;'
+      + 'background:radial-gradient(60% 70% at 50% 62%, #FFFFFF 0%, rgba(250,250,252,0) 72%)';
+    cv.parentNode.insertBefore(host, cv.nextSibling);
+
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+    renderer.setSize(W0, H0);
+    renderer.shadowMap.enabled = true;
+    renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+    host.appendChild(renderer.domElement);
+
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(32, W0 / H0, 0.1, 100);
+    camera.position.set(3.25, 2.35, 3.75);
+    camera.lookAt(0, 0.5, 0);
+
+    const hemi = new THREE.HemisphereLight(0xffffff, 0xdde3ec, 0.9);
+    scene.add(hemi);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.28));
+    const key = new THREE.DirectionalLight(0xffffff, 2.7);
+    key.position.set(3, 6, 4);
+    key.castShadow = true;
+    key.shadow.mapSize.set(1024, 1024);
+    key.shadow.radius = 6;
+    key.shadow.bias = -0.0008;
+    const cam = key.shadow.camera;
+    cam.left = -4; cam.right = 4; cam.top = 4; cam.bottom = -4; cam.near = 0.5; cam.far = 16;
+    scene.add(key);
+    const rim = new THREE.DirectionalLight(0xdfe9ff, 0.6);
+    rim.position.set(-4, 2.5, -3);
+    scene.add(rim);
+
+    const mat = (c, r = 0.9, m = 0) => new THREE.MeshStandardMaterial({ color: c, roughness: r, metalness: m });
+    const M = {
+      white: mat(0xffffff, 0.92),
+      soft: mat(0xf1f3f7, 0.9),
+      grey: mat(0xccd3df, 0.85),
+      dark: mat(0x24272e, 0.45, 0.35),
+      blue: mat(0x0a63d6, 0.72),
+      metal: mat(0xc9ceda, 0.35, 0.55)
+    };
+
+    const root = new THREE.Group();
+    root.scale.setScalar(1.0);
+    scene.add(root);
+
+    function add(geo, material, x, y, z, rx = 0, ry = 0, rz = 0, shadow = true) {
+      const m = new THREE.Mesh(geo, material);
+      m.position.set(x, y, z);
+      m.rotation.set(rx, ry, rz);
+      m.castShadow = shadow; m.receiveShadow = true;
+      root.add(m); return m;
+    }
+
+    // 地面
+    const floor = add(new THREE.CircleGeometry(3.0, 96), mat(0xeff2f7, 0.96), 0, 0, 0, -Math.PI / 2);
+    floor.castShadow = false;
+
+    // 接触阴影贴片
+    const cvs = document.createElement('canvas');
+    cvs.width = cvs.height = 128;
+    const c2 = cvs.getContext('2d');
+    const rg = c2.createRadialGradient(64, 64, 0, 64, 64, 64);
+    rg.addColorStop(0, 'rgba(10,14,22,.38)');
+    rg.addColorStop(.55, 'rgba(10,14,22,.16)');
+    rg.addColorStop(1, 'rgba(10,14,22,0)');
+    c2.fillStyle = rg; c2.fillRect(0, 0, 128, 128);
+    const blobTex = new THREE.CanvasTexture(cvs);
+    function blob(x, z, r, op) {
+      const m = new THREE.Mesh(new THREE.PlaneGeometry(r * 2, r * 2),
+        new THREE.MeshBasicMaterial({ map: blobTex, transparent: true, opacity: op || .9, depthWrite: false }));
+      m.rotation.x = -Math.PI / 2;
+      m.position.set(x, 0.006, z);
+      scene.add(m);
+    }
+    blob(-0.3, 0, 0.95, .85);
+    blob(0.95, 0, 0.5, .7);
+    blob(-0.72, 0.86, 0.62, .6);
+    blob(0.4, 0.9, 0.42, .55);
+    const edge = new THREE.Mesh(new THREE.RingGeometry(2.99, 3.02, 96), mat(0xe3e7ee, 0.9));
+    edge.rotation.x = -Math.PI / 2; edge.position.y = 0.001; scene.add(edge);
+    // 训练床
+    add(new THREE.BoxGeometry(1.46, 0.07, 0.5), M.grey, -0.3, 0.4, 0);
+    add(new THREE.BoxGeometry(1.4, 0.1, 0.44), M.white, -0.3, 0.47, 0);
+    for (const dx of [-0.86, 0.26]) {
+      for (const dz of [-0.17, 0.17]) {
+        add(new THREE.BoxGeometry(0.06, 0.4, 0.06), M.metal, dx, 0.2, dz);
+      }
+    }
+    // 靠背
+    add(new THREE.BoxGeometry(0.4, 0.09, 0.42), M.white, -0.86, 0.62, 0, 0, 0, 0.62);
+    add(new THREE.BoxGeometry(0.06, 0.34, 0.06), M.metal, -0.86, 0.36, 0);
+
+    // 深蹲架
+    for (const dz of [-0.34, 0.34]) {
+      add(new THREE.BoxGeometry(0.08, 0.96, 0.08), M.metal, 0.95, 0.48, dz);
+      add(new THREE.BoxGeometry(0.26, 0.05, 0.14), M.grey, 0.95, 0.03, dz);
+    }
+    add(new THREE.BoxGeometry(0.07, 0.05, 0.7), M.metal, 0.95, 0.96, 0);
+    // 杠铃
+    add(new THREE.CylinderGeometry(0.02, 0.02, 1.22, 18), M.dark, 0.95, 1.0, 0, 0, 0, Math.PI / 2);
+    for (const dx of [-0.52, 0.52]) {
+      add(new THREE.CylinderGeometry(0.16, 0.16, 0.045, 30), M.dark, 0.95 + dx, 1.0, 0, 0, 0, Math.PI / 2);
+      add(new THREE.CylinderGeometry(0.1, 0.1, 0.05, 24), M.grey, 0.95 + dx * 0.86, 1.0, 0, 0, 0, Math.PI / 2);
+    }
+
+    // 蓝色训练垫
+    add(new THREE.BoxGeometry(0.72, 0.04, 0.94), M.blue, -0.72, 0.02, 0.86);
+
+    // 哑铃
+    add(new THREE.CylinderGeometry(0.024, 0.024, 0.4, 16), M.metal, 0.18, 0.1, 0.9, 0, 0, Math.PI / 2);
+    for (const dx of [-0.16, 0.16]) {
+      add(new THREE.CylinderGeometry(0.09, 0.09, 0.06, 24), M.dark, 0.18 + dx, 0.1, 0.9, 0, 0, Math.PI / 2);
+    }
+
+    // 壶铃
+    add(new THREE.SphereGeometry(0.145, 28, 20), M.dark, 0.62, 0.145, 0.9);
+    add(new THREE.TorusGeometry(0.085, 0.026, 12, 24), M.dark, 0.62, 0.3, 0.9, 0, 0, 0);
+
+    let targetRot = 0.5, rot = 0.5, ty = 0;
+    host.addEventListener('pointermove', e => {
+      const r = host.getBoundingClientRect();
+      targetRot = 0.5 + ((e.clientX - r.left) / r.width - 0.5) * 0.9;
+    });
+    host.addEventListener('pointerleave', () => { targetRot = 0.5; });
+
+    const cameraTarget = new THREE.Vector3(0, 0.55, 0);
+    function loop(now) {
+      const t = now / 1000;
+      rot += (targetRot - rot) * 0.06;
+      root.rotation.y = rot + Math.sin(t * 0.22) * 0.06;
+      root.position.y = Math.sin(t * 0.8) * 0.015;
+      camera.position.y = 2.5 + Math.sin(t * 0.5) * 0.03;
+      camera.lookAt(cameraTarget);
+      renderer.render(scene, camera);
+      requestAnimationFrame(loop);
+    }
+    requestAnimationFrame(loop);
+
+    addEventListener('resize', () => {
+      const r = host.getBoundingClientRect();
+      if (!r.width) return;
+      camera.aspect = r.width / r.height;
+      camera.updateProjectionMatrix();
+      renderer.setSize(r.width, r.height);
+    });
+  })();
 })();
 </script>
 
