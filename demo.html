@@ -123,7 +123,7 @@
   .empty{color:rgba(255,255,255,.5);font-size:13.5px}
 
   /* 对话 */
-  .chatcard{padding:8px 0 0}
+  .chatcard{padding:8px 0 0;scroll-margin-top:76px}
   .chat-head{display:flex;align-items:center;gap:8px;padding:6px 22px 14px}
   .chat-head b{font-size:13.5px;font-weight:600}
   .chat-head span{font-size:11.5px;color:var(--muted)}
@@ -270,6 +270,11 @@
 </header>
 
 <main class="content">
+  <section class="card chatcard">
+    <div class="chat-head"><b>初练</b><span>会员健康档案助手</span></div>
+    <div class="log"><div class="wrap" id="wrap"></div></div>
+  </section>
+
   <section class="card summary">
     <div class="ringwrap">
       <svg width="150" height="150" viewBox="0 0 150 150">
@@ -283,7 +288,7 @@
         <circle id="ringArc" cx="75" cy="75" r="62" fill="none" stroke="url(#ringGrad)" stroke-width="12"
                 stroke-linecap="round" stroke-dasharray="390" stroke-dashoffset="390"></circle>
       </svg>
-      <div class="mid"><b id="ringNum">—</b><span>状态指数</span></div>
+      <div class="mid"><b id="ringNum">—</b><span id="ringLabel">状态指数</span></div>
     </div>
     <div class="metrics">
       <div class="metric"><span class="k">疲劳</span><span class="v" id="t-fatigue">—<small>/10</small></span><div class="bar"><i id="b-fatigue" style="width:0"></i></div></div>
@@ -293,7 +298,7 @@
   </section>
 
   <section class="card">
-    <div class="card-h"><h3>今日判定</h3><span class="code" id="d-rule"></span><span class="right"><button class="tbtn" id="d-more" style="height:28px;padding:0 12px;font-size:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);color:#fff">依据</button></span></div>
+    <div class="card-h"><h3 id="d-title">今日判定</h3><span class="code" id="d-rule"></span><span class="right"><button class="tbtn" id="d-more" style="height:28px;padding:0 12px;font-size:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);color:#fff">依据</button></span></div>
     <div class="verdict-head"><span class="pill idle" id="d-tag">等待今日状态</span></div>
     <p id="d-reason" style="margin:0 0 12px;color:var(--ink2);font-size:14px;line-height:1.7">会员说一句今天的状态，这里会出现判定。</p>
     <div class="chips" id="d-basis"></div>
@@ -302,11 +307,6 @@
   <section class="card">
     <div class="card-h"><h3>训练计划</h3><span class="right" id="p-ver"></span></div>
     <div id="p-body"><div class="empty">复核通过后生成第一版计划。</div></div>
-  </section>
-
-  <section class="card chatcard">
-    <div class="chat-head"><b>初练</b><span>会员健康档案助手</span></div>
-    <div class="log"><div class="wrap" id="wrap"></div></div>
   </section>
 
   <section class="card">
@@ -669,7 +669,7 @@ function extract(t){
     d.pain_text = pm ? pm[1] : '不适';
   }
   if(/无不适|没有不舒服|没什么不舒服|没有不适|挺好的|还好|没感觉/.test(half)){ d.pain = 0; d.pain_text = '无明显不适'; }
-  if(/胸痛|胸口疼|胸闷|心慌|晕|昏/.test(half)) d.acute = ['胸痛'];
+  if(/胸痛|胸(口|部).{0,4}(疼|痛|闷|紧|压)|胸闷|心慌|晕|昏/.test(half)) d.acute = ['胸痛'];
   return d;
 }
 
@@ -890,7 +890,10 @@ window.Chulian = {
     $('memberAv').textContent = plain.slice(0, 1) || '会';
     $('memberName').textContent = plain;
 
-    const hasVisit = !!(b.B1_visit_id && b.B3_fatigue !== undefined);
+    const hasAcute = !!(b.B2_body_feeling && (b.B2_body_feeling.acute_signals || []).length);
+    const hasVisit = !!(b.B1_visit_id && (b.B3_fatigue !== undefined || hasAcute));
+    const recAt = b.recorded_at ? new Date(b.recorded_at) : null;
+    const isToday = !!recAt && recAt.toDateString() === new Date().toDateString();
     const fatigue = b.B3_fatigue;
     const sleep = b.B4_sleep_last && b.B4_sleep_last.hours;
     const pain = b.B2_body_feeling ? (b.B2_body_feeling.pain_score ?? 0) : undefined;
@@ -905,11 +908,16 @@ window.Chulian = {
 
     let score = null;
     if (hasVisit) {
-      const f = fatigue || 0, s = sleep === undefined ? 7 : sleep, p = pain || 0;
-      score = Math.max(4, Math.min(98, Math.round(100 - f * 5.5 - Math.max(0, 7.5 - s) * 9 - p * 3.5)));
+      if (hasAcute) {
+        score = 0;
+      } else {
+        const f = fatigue || 0, s = sleep === undefined ? 7 : sleep, p = pain || 0;
+        score = Math.max(4, Math.min(98, Math.round(100 - f * 5.5 - Math.max(0, 7.5 - s) * 9 - p * 3.5)));
+      }
     }
     $('ringNum').textContent = score === null ? '—' : score;
     const arc = $('ringArc');
+    arc.setAttribute('stroke', hasVisit && hasAcute ? '#E0453A' : 'url(#ringGrad)');
     arc.style.strokeDashoffset = score === null ? RING : RING * (1 - score / 100);
     arc.style.transition = 'stroke-dashoffset .7s ease';
 
@@ -918,13 +926,17 @@ window.Chulian = {
     if (!hasVisit) {
       tag.className = 'pill idle'; tag.textContent = '等待今日状态'; rule.textContent = '';
       reason.textContent = '会员说一句今天的状态，这里会出现判定。'; basis.innerHTML = '';
+      $('d-title').textContent = '今日判定';
+      $('ringLabel').textContent = '状态指数';
       $('heroSub').textContent = '说一句就能开始。判断交给规则，解释留给人。';
     } else {
       tag.className = 'pill ' + (TONE[ev.status] || 'info'); tag.textContent = ev.status;
       rule.textContent = ev.rule || '';
       reason.textContent = (ev.next_step || '') + (ev.reasons && ev.reasons[0] ? '　·　' + ev.reasons[0] : '');
       basis.innerHTML = (ev.basis_field_ids || []).slice(0, 8).map(f => `<span class="chip">${f}</span>`).join('');
-      $('heroSub').textContent = score === null ? '' : `状态指数 ${score}，${ev.status}（${ev.rule}）。`;
+      $('d-title').textContent = isToday ? '今日判定' : '上次判定';
+      $('ringLabel').textContent = isToday ? '状态指数' : '上次状态指数';
+      $('heroSub').textContent = score === null ? '' : `${isToday ? '' : '上次'}状态指数 ${score}，${ev.status}（${ev.rule}）。`;
     }
 
     const plans = api().plans || [];
@@ -950,8 +962,8 @@ window.Chulian = {
     for (const m of ms) if (m.addedNodes.length) {
       refresh();
       if (scrollY < 240) {
-        const c = document.querySelector('.content');
-        if (c) c.scrollIntoView({ behavior: 'auto', block: 'start' });
+        const c = document.querySelector('.chatcard');
+        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
       break;
     }
