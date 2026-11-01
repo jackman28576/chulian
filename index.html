@@ -5,6 +5,9 @@
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <meta name="theme-color" content="#0B0C0F">
 <title>初练 · 会员健康档案</title>
+<script type="importmap">
+{"imports":{"three":"https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js","three/addons/":"https://cdn.jsdelivr.net/npm/three@0.160.0/examples/jsm/"}}
+</script>
 <style>
   :root{
     --bg:#F6F7FA; --card:#FFFFFF; --ink:#0B0C0F; --ink2:#4B5563; --muted:#8A93A3;
@@ -53,8 +56,11 @@
   #badge{font-size:11.5px;color:rgba(255,255,255,.7)}
   .topbar.solid #badge{color:var(--muted)}
 
+  /* 三维舞台（滚动运镜） */
+  #stage{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:none;pointer-events:none}
+
   /* 大图首屏 */
-  .hero{position:relative;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 24px 46px;color:#fff;overflow:hidden}
+  .hero{position:relative;z-index:2;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 24px 46px;color:#fff;overflow:hidden}
   .hero .media{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.02);transition:transform 1.2s ease,filters .6s ease}
   .hero .media::after{content:"";position:absolute;inset:0;background:
     linear-gradient(90deg,rgba(4,6,10,.78) 0%,rgba(4,6,10,.42) 38%,rgba(4,6,10,0) 68%),
@@ -74,7 +80,7 @@
   .hero .chips button:hover{background:rgba(255,255,255,.2)}
 
   /* 内容 */
-  .content{max-width:760px;margin:0 auto;padding:26px 20px 150px}
+  .content{position:relative;z-index:3;background:var(--bg);max-width:820px;margin:-34px auto 0;padding:30px 20px 150px;border-radius:28px 28px 0 0;box-shadow:0 -18px 40px rgba(0,0,0,.18)}
   .card{background:var(--card);border-radius:20px;box-shadow:var(--shadow);padding:20px 22px;margin-bottom:14px}
   .summary{display:grid;grid-template-columns:150px 1fr;gap:22px;align-items:center}
   .ringwrap{position:relative;width:150px;height:150px}
@@ -225,6 +231,8 @@
     <button class="tbtn" id="reset">重来</button>
   </div>
 </div>
+
+<canvas id="stage"></canvas>
 
 <header class="hero" id="hero">
   <div class="media" id="heroMedia"></div>
@@ -1042,6 +1050,177 @@ window.Chulian = {
     const last = btns.reverse().find(b => b.textContent.includes('依据'));
     if (last) { last.click(); last.scrollIntoView({ block: 'center', behavior: 'smooth' }); }
   };
+})();
+
+/* ---------- 三维健身房 + 随滚动推进的运镜 ---------- */
+(async () => {
+  const cv = document.getElementById('stage');
+  let THREE, RoundedBoxGeometry, RoomEnvironment;
+  try {
+    THREE = await import('three');
+    ({ RoundedBoxGeometry } = await import('three/addons/geometries/RoundedBoxGeometry.js'));
+    ({ RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js'));
+  } catch (e) { return; }   // 离线时留在静态大图
+
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  renderer.shadowMap.enabled = true;
+  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.toneMapping = THREE.ACESFilmicToneMapping;
+  renderer.toneMappingExposure = 1.05;
+
+  const scene = new THREE.Scene();
+  scene.background = new THREE.Color(0x0A0C10);
+  scene.fog = new THREE.Fog(0x0A0C10, 8, 22);
+  const pmrem = new THREE.PMREMGenerator(renderer);
+  scene.environment = pmrem.fromScene(new RoomEnvironment(), 0.05).texture;
+
+  const camera = new THREE.PerspectiveCamera(38, innerWidth / innerHeight, 0.1, 60);
+
+  const hemi = new THREE.HemisphereLight(0x93a7c4, 0x0a0c10, 0.55); scene.add(hemi);
+  const key = new THREE.DirectionalLight(0xdbe8ff, 3.0);
+  key.position.set(4.5, 6.2, 3.2); key.castShadow = true;
+  key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 6; key.shadow.bias = -0.0006;
+  const sc = key.shadow.camera; sc.left = -7; sc.right = 7; sc.top = 7; sc.bottom = -7; sc.near = 0.5; sc.far = 24;
+  scene.add(key);
+  const warm = new THREE.PointLight(0xffb877, 30, 16, 2); warm.position.set(-3.0, 1.4, -1.4); scene.add(warm);
+  const rim = new THREE.DirectionalLight(0x6f9dff, 1.4); rim.position.set(-5, 2.6, -4); scene.add(rim);
+
+  const M = {
+    floor: new THREE.MeshStandardMaterial({ color: 0x14161b, roughness: 0.55, metalness: 0.1 }),
+    rubber: new THREE.MeshStandardMaterial({ color: 0x1a1d23, roughness: 0.95 }),
+    steel: new THREE.MeshStandardMaterial({ color: 0xb9c2cf, roughness: 0.32, metalness: 0.85 }),
+    dark: new THREE.MeshStandardMaterial({ color: 0x262a31, roughness: 0.42, metalness: 0.6 }),
+    pad: new THREE.MeshStandardMaterial({ color: 0x2b3039, roughness: 0.82 }),
+    mat: new THREE.MeshStandardMaterial({ color: 0x0f4a6b, roughness: 0.9 }),
+    wall: new THREE.MeshStandardMaterial({ color: 0x0d1015, roughness: 1 })
+  };
+
+  const box = (w, h, d, r, mat, x, y, z) => {
+    const g = new RoundedBoxGeometry(w, h, d, 3, r);
+    const m = new THREE.Mesh(g, mat);
+    m.position.set(x, y, z); m.castShadow = true; m.receiveShadow = true;
+    scene.add(m); return m;
+  };
+  const cyl = (rt, rb, h, seg, mat, x, y, z, rot) => {
+    const m = new THREE.Mesh(new THREE.CylinderGeometry(rt, rb, h, seg), mat);
+    m.position.set(x, y, z); if (rot) m.rotation.copy(rot);
+    m.castShadow = true; m.receiveShadow = true; scene.add(m); return m;
+  };
+
+  // 地面与墙
+  const floor = new THREE.Mesh(new THREE.PlaneGeometry(60, 60), M.floor);
+  floor.rotation.x = -Math.PI / 2; floor.receiveShadow = true; scene.add(floor);
+  const lane = new THREE.Mesh(new THREE.PlaneGeometry(9, 3.2), M.rubber);
+  lane.rotation.x = -Math.PI / 2; lane.position.set(0, 0.003, 0.6); lane.receiveShadow = true; scene.add(lane);
+  const wall = new THREE.Mesh(new THREE.PlaneGeometry(24, 10), M.wall);
+  wall.position.set(0, 5, -5.2); wall.receiveShadow = true; scene.add(wall);
+  // 墙上灯带
+  const bar = new THREE.Mesh(new THREE.PlaneGeometry(6.2, 0.09), new THREE.MeshBasicMaterial({ color: 0xbcd4ff }));
+  bar.position.set(-1.4, 3.6, -5.18); scene.add(bar);
+  const bloom = new THREE.Mesh(new THREE.PlaneGeometry(7.4, 1.9),
+    new THREE.MeshBasicMaterial({ color: 0x24405f, transparent: true, opacity: 0.25 }));
+  bloom.position.set(-1.4, 2.9, -5.17); scene.add(bloom);
+  // 镜子
+  const win = new THREE.Mesh(new THREE.PlaneGeometry(2.6, 3.4),
+    new THREE.MeshBasicMaterial({ color: 0x2a4a6e, transparent: true, opacity: 0.5 }));
+  win.position.set(3.6, 2.0, -5.15); scene.add(win);
+  const winGlow = new THREE.PointLight(0x6fa8ff, 12, 12, 2); winGlow.position.set(3.6, 2.2, -4.6); scene.add(winGlow);
+
+  // 训练床
+  box(1.5, 0.08, 0.5, 0.03, M.steel, -0.6, 0.42, 0.2);
+  box(1.44, 0.13, 0.46, 0.05, M.pad, -0.6, 0.51, 0.2);
+  box(0.42, 0.12, 0.44, 0.05, M.pad, -1.12, 0.64, 0.2).rotation.z = 0.55;
+  for (const dx of [-1.14, -0.06]) for (const dz of [0.02, 0.38]) box(0.06, 0.4, 0.06, 0.02, M.steel, dx, 0.2, dz);
+
+  // 深蹲架
+  for (const dz of [0.0, 0.95]) {
+    box(0.11, 2.3, 0.11, 0.02, M.steel, 1.45, 1.15, dz);
+    box(0.4, 0.06, 0.36, 0.02, M.steel, 1.45, 0.03, dz);
+    // 孔位
+    for (let i = 0; i < 9; i++) {
+      const hole = new THREE.Mesh(new THREE.CylinderGeometry(0.014, 0.014, 0.13, 8), new THREE.MeshBasicMaterial({ color: 0x05070a }));
+      hole.rotation.z = Math.PI / 2; hole.position.set(1.45, 0.45 + i * 0.22, dz + 0.056);
+      scene.add(hole);
+    }
+  }
+  box(0.09, 0.09, 1.0, 0.02, M.steel, 1.45, 2.22, 0.47);
+  // 杠铃
+  cyl(0.021, 0.021, 2.1, 24, M.dark, 1.45, 2.3, 0.47, new THREE.Euler(0, 0, Math.PI / 2));
+  for (const dx of [-0.92, 0.92]) {
+    cyl(0.22, 0.22, 0.06, 40, M.dark, 1.45 + dx, 2.3, 0.47, new THREE.Euler(0, 0, Math.PI / 2));
+    cyl(0.075, 0.075, 0.07, 24, M.steel, 1.45 + dx * 1.11, 2.3, 0.47, new THREE.Euler(0, 0, Math.PI / 2));
+  }
+
+  // 哑铃架
+  box(1.0, 0.07, 0.4, 0.02, M.steel, 0.3, 0.62, -0.75);
+  box(1.0, 0.07, 0.4, 0.02, M.steel, 0.3, 0.24, -0.75);
+  for (let i = 0; i < 4; i++) {
+    const x = -0.02 + i * 0.22;
+    cyl(0.085, 0.085, 0.15, 20, M.dark, x, 0.72, -0.75, new THREE.Euler(0, 0, Math.PI / 2));
+    cyl(0.085, 0.085, 0.15, 20, M.dark, x, 0.34, -0.75, new THREE.Euler(0, 0, Math.PI / 2));
+  }
+
+  // 训练垫 + 壶铃
+  box(1.2, 0.035, 2.0, 0.02, M.mat, -1.95, 0.02, 0.9);
+  const kb = new THREE.Mesh(new THREE.SphereGeometry(0.19, 32, 24), M.dark);
+  kb.position.set(0.05, 0.19, 1.05); kb.castShadow = true; kb.receiveShadow = true; scene.add(kb);
+  const handle = new THREE.Mesh(new THREE.TorusGeometry(0.105, 0.03, 14, 28), M.dark);
+  handle.position.set(0.05, 0.37, 1.05); handle.rotation.x = Math.PI / 2; handle.castShadow = true; scene.add(handle);
+
+  // 相机轨迹：上滑时推进+横移
+  const A = { p: new THREE.Vector3(5.4, 2.9, 8.2), t: new THREE.Vector3(0.4, 1.05, 0.3), fov: 34 };
+  const B = { p: new THREE.Vector3(2.95, 1.72, 4.25), t: new THREE.Vector3(0.95, 1.18, 0.65), fov: 42 };
+  const ease = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
+
+  function sizeOf() {
+    const w = innerWidth || document.documentElement.clientWidth || 1200;
+    const h = innerHeight || document.documentElement.clientHeight || 800;
+    return [Math.max(320, w), Math.max(240, h)];
+  }
+  function resize() {
+    const [w, h] = sizeOf();
+    renderer.setSize(w, h, false);
+    camera.aspect = w / h;
+    camera.updateProjectionMatrix();
+  }
+  resize();
+  addEventListener('resize', resize);
+  addEventListener('orientationchange', resize);
+  document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
+  if (window.ResizeObserver) new ResizeObserver(resize).observe(cv);
+
+  let scrollP = 0, targetP = 0;
+  const heroEl = document.getElementById('hero');
+  const onScroll = () => {
+    const h = heroEl ? heroEl.offsetHeight : innerHeight;
+    targetP = Math.max(0, Math.min(1, scrollY / Math.max(1, h)));
+  };
+  addEventListener('scroll', onScroll, { passive: true });
+  onScroll();
+
+  const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3();
+  let t0 = performance.now();
+  function frame(now) {
+    const t = (now - t0) / 1000;
+    scrollP += (targetP - scrollP) * 0.08;
+    const k = ease(scrollP);
+    camPos.lerpVectors(A.p, B.p, k);
+    camTgt.lerpVectors(A.t, B.t, k);
+    // 轻微呼吸感
+    camPos.y += Math.sin(t * 0.5) * 0.012;
+    camera.position.copy(camPos);
+    camera.fov = A.fov + (B.fov - A.fov) * k;
+    camera.updateProjectionMatrix();
+    camera.lookAt(camTgt);
+    renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  cv.style.display = 'block';
+  const media = document.getElementById('heroMedia');
+  if (media) media.style.display = 'none';
+  requestAnimationFrame(frame);
 })();
 </script>
 </body>
