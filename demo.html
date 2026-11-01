@@ -1014,6 +1014,8 @@ window.Chulian = {
     if (!v) return;
     i1.value = ''; i2.value = ''; taAdapt(i1); taAdapt(i2);
     api().say(v);
+    const c = document.querySelector('.content');
+    if (c && scrollY < c.offsetTop - 80) setTimeout(() => c.scrollIntoView({ behavior: 'smooth', block: 'start' }), 140);
   };
   $('send').onclick = submit;
   $('send2').onclick = submit;
