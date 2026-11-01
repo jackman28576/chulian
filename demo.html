@@ -150,12 +150,13 @@
   .composer{max-width:720px;margin:0 auto;display:flex;gap:10px;align-items:flex-end}
   .field{
     flex:1;display:flex;align-items:center;background:var(--surface);border:.5px solid var(--hair-strong);
-    border-radius:22px;box-shadow:var(--shadow-s);padding:2px 6px 2px 16px;transition:border-color .2s,box-shadow .2s
+    border-radius:22px;box-shadow:var(--shadow-s);padding:2px 6px 2px 16px;min-height:46px;
+    transition:border-color .2s,box-shadow .2s
   }
   .field:focus-within{border-color:rgba(0,113,227,.55);box-shadow:0 0 0 3px rgba(0,113,227,.12)}
   textarea{
-    flex:1;border:0;resize:none;background:transparent;padding:11px 6px;font:inherit;line-height:1.45;
-    max-height:120px;min-height:24px;outline:none
+    flex:1;border:0;resize:none;background:transparent;padding:11px 6px;font:inherit;line-height:1.4;
+    max-height:120px;min-height:22px;outline:none;overflow:hidden
   }
   .send{
     width:38px;height:38px;flex:0 0 38px;border-radius:50%;border:0;cursor:pointer;
@@ -170,12 +171,18 @@
   @media (max-width:560px){
     header{padding:0 14px}
     header .chip{display:none}
-    .wrap{padding:24px 14px 130px}
-    .hero h2{font-size:24px}
-    #scene{height:210px}
-    .bubble{max-width:88%}
-    textarea{font-size:16px}
-    footer{padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
+    .wrap{padding:18px 14px 120px}
+    .hero{min-height:calc(100vh - 250px);padding-top:0}
+    .hero h2{font-size:23px}
+    .hero .sub{font-size:13px;margin-bottom:10px}
+    #scene{height:230px}
+    .sugg{gap:7px}
+    .sugg button{padding:7px 12px;font-size:12.5px}
+    .bubble{max-width:86%}
+    .row{margin-bottom:18px}
+    textarea{font-size:16px;padding:10px 4px}
+    footer{padding:8px 12px calc(10px + env(safe-area-inset-bottom))}
+    .hint{font-size:10.5px}
   }
   @media (prefers-reduced-motion:reduce){
     *{animation-duration:.001s !important;transition-duration:.001s !important}
@@ -743,6 +750,14 @@ bubble('a', `我是初练，管这台会员档案。现在处理的是 ${m0.A2_d
     for (const m of ms) if (m.addedNodes.length) { hideHero(); break; }
   }).observe(wrap, { childList: true });
 
+  // 窄屏换短提示语
+  const ta = document.getElementById('input');
+  const setPh = () => {
+    ta.placeholder = window.innerWidth < 560 ? '说说今天的状态…' : '说说今天的状态，比如：有点累、腰酸 4 分';
+  };
+  setPh();
+  addEventListener('resize', setPh);
+
   // 建议词填入
   document.querySelectorAll('[data-fill]').forEach(b => {
     b.addEventListener('click', () => {
@@ -758,11 +773,13 @@ bubble('a', `我是初练，管这台会员档案。现在处理的是 ${m0.A2_d
   if (cv) {
     const ctx = cv.getContext('2d');
     let W = 0, H = 0, dpr = window.devicePixelRatio || 1;
+    let SCALE = 1.34;
     const resize = () => {
       const r = cv.getBoundingClientRect();
       W = r.width; H = r.height;
       cv.width = W * dpr; cv.height = H * dpr;
       ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+      SCALE = W < 520 ? 0.86 : 1.34;
     };
     resize();
     addEventListener('resize', resize);
@@ -774,7 +791,6 @@ bubble('a', `我是初练，管这台会员档案。现在处理的是 ${m0.A2_d
     });
     cv.addEventListener('pointerleave', () => { tiltTarget = 0; });
 
-    const SCALE = 1.34;
     const iso = (x, y, z) => {
       const a = Math.PI / 6 + tilt;
       return [ (x - y) * Math.cos(a) * SCALE, ((x + y) * Math.sin(a) - z) * SCALE ];
