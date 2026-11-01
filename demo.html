@@ -59,6 +59,7 @@
 
   /* 三维舞台（滚动运镜） */
   #stage{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:none;pointer-events:none}
+  #veil{position:fixed;inset:0;z-index:2;background:#07080b;opacity:0;pointer-events:none;will-change:opacity}
 
   /* 大图首屏 */
   .hero{position:relative;z-index:2;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 24px 46px;color:#fff;overflow:hidden}
@@ -213,6 +214,14 @@
     .dock{padding:10px 14px calc(12px + env(safe-area-inset-bottom))}
     .bubble{max-width:88%}
   }
+  @media (max-width:720px){
+    .card,.glass,.dock .inner,.topbar.solid,.member,.tbtn,.hero .chips button,.sheet{
+      backdrop-filter:none !important;-webkit-backdrop-filter:none !important}
+    .card{background:rgba(22,26,34,.88)}
+    .glass{background:rgba(30,35,45,.92)}
+    .dock .inner{background:rgba(26,31,40,.94)}
+    .topbar.solid{background:rgba(10,13,18,.92)}
+  }
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}}
 </style>
 </head>
@@ -248,6 +257,7 @@
 </div>
 
 <canvas id="stage"></canvas>
+<div id="veil"></div>
 
 <header class="hero" id="hero">
   <div class="media" id="heroMedia"></div>
@@ -1061,8 +1071,13 @@ window.Chulian = {
     if (!v) return;
     i1.value = ''; i2.value = ''; taAdapt(i1); taAdapt(i2);
     api().say(v);
-    const c = document.querySelector('.content');
-    if (c && scrollY < c.offsetTop - 80) setTimeout(() => c.scrollIntoView({ behavior: 'auto', block: 'start' }), 140);
+    const chat = document.querySelector('.chatcard');
+    if (chat) {
+      const r = chat.getBoundingClientRect();
+      if (r.top < -20 || r.top > 160) {
+        setTimeout(() => chat.scrollIntoView({ behavior: 'smooth', block: 'start' }), 60);
+      }
+    }
   };
   $('send').onclick = submit;
   $('send2').onclick = submit;
@@ -1094,8 +1109,9 @@ window.Chulian = {
     ({ RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js'));
   } catch (e) { return; }   // 离线时留在静态大图
 
-  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false });
-  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const SMALL = matchMedia('(max-width: 720px)').matches || matchMedia('(pointer: coarse)').matches;
+  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: !SMALL, alpha: false });
+  renderer.setPixelRatio(Math.min(devicePixelRatio, SMALL ? 1.5 : 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -1112,7 +1128,7 @@ window.Chulian = {
   const hemi = new THREE.HemisphereLight(0x93a7c4, 0x0a0c10, 0.55); scene.add(hemi);
   const key = new THREE.DirectionalLight(0xdbe8ff, 3.0);
   key.position.set(4.5, 6.2, 3.2); key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048); key.shadow.radius = 6; key.shadow.bias = -0.0006;
+  key.shadow.mapSize.set(SMALL ? 1024 : 2048, SMALL ? 1024 : 2048); key.shadow.radius = 6; key.shadow.bias = -0.0006;
   const sc = key.shadow.camera; sc.left = -7; sc.right = 7; sc.top = 7; sc.bottom = -7; sc.near = 0.5; sc.far = 24;
   scene.add(key);
   const warm = new THREE.PointLight(0xffb877, 30, 16, 2); warm.position.set(-3.0, 1.4, -1.4); scene.add(warm);
@@ -1257,6 +1273,7 @@ window.Chulian = {
   const B = { p: new THREE.Vector3(1.05, 10.2, 4.4), t: new THREE.Vector3(0.75, 0.05, 0.55), fov: 40 };
   const ease = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 
+  let needsDraw = true;
   function sizeOf() {
     const w = innerWidth || document.documentElement.clientWidth || 1200;
     const h = innerHeight || document.documentElement.clientHeight || 800;
@@ -1267,6 +1284,7 @@ window.Chulian = {
     renderer.setSize(w, h, false);
     camera.aspect = w / h;
     camera.updateProjectionMatrix();
+    needsDraw = true;
   }
   resize();
   addEventListener('resize', resize);
@@ -1274,8 +1292,9 @@ window.Chulian = {
   document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
   if (window.ResizeObserver) new ResizeObserver(resize).observe(cv);
 
-  let scrollP = 0, targetP = 0;
+  let scrollP = 0, targetP = 0, lastNow = 0, introLeft = 110, tick = 0;
   const heroEl = document.getElementById('hero');
+  const veil = document.getElementById('veil');
   const onScroll = () => {
     const h = heroEl ? heroEl.offsetHeight : innerHeight;
     targetP = Math.max(0, Math.min(1, scrollY / Math.max(1, h)));
@@ -1285,10 +1304,13 @@ window.Chulian = {
 
   const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3();
   const pA = new THREE.Vector3(), pB = new THREE.Vector3();
-  let t0 = performance.now();
   function frame(now) {
-    const t = (now - t0) / 1000;
-    scrollP += (targetP - scrollP) * 0.08;
+    const dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 0.0166;
+    lastNow = now;
+    const t = now / 1000;
+    // 与帧率无关的缓动，高刷屏不会冲得太快
+    scrollP += (targetP - scrollP) * (1 - Math.pow(0.92, dt * 60));
+    if (Math.abs(targetP - scrollP) < 0.0004) scrollP = targetP;
     const k = ease(scrollP);
     // 竖屏时把相机拉远，避免器械被裁
     const aspect = renderer.domElement.width / Math.max(1, renderer.domElement.height);
@@ -1297,17 +1319,27 @@ window.Chulian = {
     pB.copy(B.p).sub(B.t).multiplyScalar(f).add(B.t);
     camPos.lerpVectors(pA, pB, k);
     camTgt.lerpVectors(A.t, B.t, k);
-    // 轻微呼吸感
-    camPos.y += Math.sin(t * 0.5) * 0.012;
+    if (!SMALL) camPos.y += Math.sin(t * 0.5) * 0.012;
     camera.position.copy(camPos);
     camera.fov = A.fov + (B.fov - A.fov) * k;
     camera.updateProjectionMatrix();
     camera.lookAt(camTgt);
-    // 滚动时背景渐糊、渐暗，卡片像浮在玻璃上
-    cv.style.filter = 'blur(' + (scrollP * 7).toFixed(2) + 'px) saturate(' + (1 - 0.18 * scrollP).toFixed(2) + ') brightness(' + (1 - 0.34 * scrollP).toFixed(2) + ')';
+    if (SMALL) {
+      // 手机端不对整屏画布做模糊，改用一层压暗，避免逐帧重绘掉帧
+      cv.style.filter = 'none';
+      if (veil) veil.style.opacity = (scrollP * 0.55).toFixed(3);
+    } else {
+      cv.style.filter = 'blur(' + (scrollP * 7).toFixed(2) + 'px) saturate(' + (1 - 0.18 * scrollP).toFixed(2) + ') brightness(' + (1 - 0.34 * scrollP).toFixed(2) + ')';
+      if (veil) veil.style.opacity = '0';
+    }
     const hi = document.querySelector('.hero .inner');
     if (hi) hi.style.opacity = Math.max(0, 1 - scrollP * 1.5).toFixed(2);
-    renderer.render(scene, camera);
+    const moving = scrollP !== targetP;
+    let draw = !SMALL || introLeft > 0 || moving || needsDraw;
+    if (draw && SMALL && introLeft <= 0 && needsDraw === false && (tick++ % 2)) draw = false;
+    if (draw) renderer.render(scene, camera);
+    needsDraw = false;
+    if (introLeft > 0) introLeft--;
     requestAnimationFrame(frame);
   }
 
