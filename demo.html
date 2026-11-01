@@ -615,7 +615,7 @@ function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e
 function db(){ return state.members[state.current]; }
 
 const wrap = document.getElementById('wrap');
-const log = document.getElementById('log');
+const log = document.getElementById('log') || document.querySelector('.log');
 const input = document.getElementById('input');
 
 function bubble(who, text, details, tone){
@@ -638,7 +638,8 @@ function bubble(who, text, details, tone){
     meta.appendChild(btn); body.appendChild(meta); body.appendChild(d);
   }
   row.appendChild(av); row.appendChild(body); wrap.appendChild(row);
-  log.scrollTop = log.scrollHeight; return row;
+  if (log) log.scrollTop = log.scrollHeight;
+  return row;
 }
 function actionChip(row, label, fn){
   const meta = document.createElement('div'); meta.className = 'meta';
@@ -815,7 +816,9 @@ function switchTo(i, silent){
   state.current = i; state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null;
   save();
   const m = db();
+  const box = document.getElementById('wrap');
   const started = document.querySelectorAll('#wrap .row').length > 0;
+  if(!silent && box) box.innerHTML = '';
   if(!silent && started) bubble('a', `现在处理的是 ${m.A2_display_name}（${m.A1_member_id}），目标：${(m.A4_goal||[]).join('、')}。说说今天的状态就行。`);
   if(typeof window.__onMemberChange === 'function') window.__onMemberChange();
   return m;
@@ -1312,36 +1315,41 @@ window.Chulian = {
   const TOTAL = 135.3;
   const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-  // 顶部说明条 + 底部字幕条
   const bar = document.createElement('div');
   bar.id = 'demo-caption';
-  bar.style.cssText = 'position:fixed;left:0;right:0;bottom:96px;z-index:99998;display:flex;justify-content:center;pointer-events:none';
-  bar.innerHTML = '<div style="background:rgba(17,24,39,.88);color:#fff;padding:10px 22px;border-radius:999px;font-size:17px;letter-spacing:.3px;box-shadow:0 6px 20px rgba(0,0,0,.25)">准备中…</div>';
+  bar.style.cssText = 'position:fixed;left:0;right:0;bottom:104px;z-index:99998;display:flex;justify-content:center;pointer-events:none';
+  bar.innerHTML = '<div style="background:rgba(12,16,22,.82);color:#f2f6fb;padding:10px 22px;border-radius:999px;font-size:17px;letter-spacing:.3px;border:1px solid rgba(255,255,255,.14);backdrop-filter:blur(12px);box-shadow:0 6px 20px rgba(0,0,0,.35)">准备中…</div>';
   document.body.appendChild(bar);
   const capEl = bar.firstElementChild;
 
   const tag = document.createElement('div');
-  tag.style.cssText = 'position:fixed;right:16px;top:14px;z-index:99999;background:rgba(17,24,39,.85);color:#fff;font-size:12px;padding:5px 10px;border-radius:8px;letter-spacing:.5px';
+  tag.style.cssText = 'position:fixed;right:18px;bottom:18px;z-index:99999;background:rgba(12,16,22,.8);color:#e7eef8;font-size:12px;padding:5px 10px;border-radius:8px;letter-spacing:.5px;border:1px solid rgba(255,255,255,.14)';
   tag.textContent = '演示 · 合成数据 · 不构成医疗建议';
   document.body.appendChild(tag);
 
-  const setCap = (t) => { capEl.textContent = t; };
+  const noBar = document.createElement('style');
+  noBar.textContent = 'html{scrollbar-width:none}::-webkit-scrollbar{display:none}';
+  document.head.appendChild(noBar);
 
-  async function type(text, sel) {
-    const el = document.querySelector(sel || '#input');
+  const setCap = t => { capEl.textContent = t; };
+  const inputEl = () => document.getElementById('input2') || document.getElementById('input');
+  const sendEl = () => document.getElementById('send2') || document.getElementById('send');
+
+  async function type(text) {
+    const el = inputEl();
     if (!el) return;
     el.focus();
     el.value = '';
     for (const ch of text) {
       el.value += ch;
-      el.dispatchEvent(new Event('input', {bubbles: true}));
+      el.dispatchEvent(new Event('input', { bubbles: true }));
       await sleep(28);
     }
   }
   async function send(text) {
     await type(text);
     await sleep(260);
-    document.getElementById('send').click();
+    sendEl().click();
     await sleep(750);
   }
   const clickText = async (word) => {
@@ -1349,14 +1357,32 @@ window.Chulian = {
     if (b) { b.click(); await sleep(700); }
     return !!b;
   };
+  const lastRow = () => { const r = document.querySelectorAll('#wrap .row'); return r[r.length - 1]; };
+  const scrollTo = (el, offset = 100) => {
+    if (!el) return;
+    const y = el.getBoundingClientRect().top + window.scrollY - offset;
+    window.scrollTo({ top: Math.max(0, y), behavior: 'auto' });
+  };
+  const planCard = () => { const b = document.getElementById('p-body'); return b ? b.closest('.card') : null; };
 
-  // 开场标题
   const cover = document.createElement('div');
-  cover.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(246,247,249,.96)';
-  cover.innerHTML = '<div style="text-align:center"><div style="font-size:44px;font-weight:700;letter-spacing:2px">初练</div>' +
-    '<div style="margin-top:10px;font-size:19px;color:#3b4654">会员健康档案智能体</div>' +
-    '<div style="margin-top:18px;font-size:14px;color:#79838f">2026 旋创赛 · 第二轮 · 赛道二 ｜ 三旋千机坊</div></div>';
+  cover.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:#07080b';
+  cover.innerHTML = '<div style="text-align:center"><div style="font-size:46px;font-weight:700;letter-spacing:4px;color:#fff">初练</div>' +
+    '<div style="margin-top:12px;font-size:19px;color:#9fb2c8">会员健康档案智能体</div>' +
+    '<div style="margin-top:20px;font-size:14px;color:#6d8098">2026 旋创赛 · 第二轮 · 赛道二 ｜ 三旋千机坊</div></div>';
   document.body.appendChild(cover);
+
+  // 录屏模式（?sync=1）等待录屏端放下 GO 标记，保证音画对齐；线上演示直接开始
+  if (new URLSearchParams(location.search).has('sync')) {
+    while (true) {
+      try {
+        const r = await fetch('/GO?t=' + Date.now(), { cache: 'no-store' });
+        if (r.ok) break;
+      } catch (e) {}
+      await sleep(200);
+    }
+  }
+
   await sleep(7000);
   cover.style.transition = 'opacity .6s'; cover.style.opacity = '0';
   await sleep(700); cover.remove();
@@ -1367,54 +1393,63 @@ window.Chulian = {
     if (wait > 0) await sleep(wait);
   };
 
-  // 分段执行
   for (const s of STEPS) {
     await at(s.t + 0.3);
     setCap(s.caption);
     switch (s.action) {
       case 'intro': break;
-      case 'visit1': await send('今天有点累，腰酸4分，昨晚只睡了5小时'); break;
-      case 'visit2': await send('7'); break;
+      case 'visit1':
+        await send('今天有点累，腰酸4分，昨晚只睡了5小时');
+        await sleep(500); scrollTo(lastRow(), 140);
+        break;
+      case 'visit2':
+        await send('7');
+        await sleep(500); scrollTo(lastRow(), 150);
+        break;
       case 'evidence': {
-        await sleep(600);
-        const b = [...document.querySelectorAll('.meta button')].find(x => x.textContent.includes('查看依据'));
-        if (b) { b.click(); await sleep(900); }
-        window.scrollTo(0, document.body.scrollHeight);
+        await sleep(400);
+        const row = lastRow();
+        const b = [...row.querySelectorAll('button')].find(x => x.textContent.includes('查看依据'));
+        if (b) { b.click(); await sleep(700); }
+        scrollTo(row, 90);
         break;
       }
       case 'review': {
-        await clickText('复核通过'); await sleep(900);
-        await clickText('出计划'); await sleep(1200);
-        window.scrollTo(0, document.body.scrollHeight);
+        await clickText('复核通过'); await sleep(600);
+        await clickText('出计划'); await sleep(900);
+        scrollTo(planCard(), 80);
         break;
       }
-      case 'feedback': await send('练完了，疲劳8，完成度80'); break;
+      case 'feedback':
+        await send('练完了，疲劳8，完成度80');
+        await sleep(600); scrollTo(planCard(), 80);
+        break;
       case 'contrast': {
         if (window.Chulian) { window.Chulian.switchTo(1); } await sleep(900);
         await send('今天状态还行，没有不舒服，睡了7个半小时');
         await send('疲劳2分');
         await sleep(500);
         await clickText('出计划');
-        await sleep(900);
-        window.scrollTo(0, document.body.scrollHeight);
+        await sleep(700);
+        scrollTo(planCard(), 80);
         break;
       }
       case 'safety': {
         await send('我这是不是腰椎间盘突出？');
-        await sleep(600);
+        await sleep(400);
         await send('今天胸口有点闷，还有点头晕');
-        await sleep(900);
-        window.scrollTo(0, document.body.scrollHeight);
+        await sleep(700);
+        scrollTo(lastRow(), 140);
         break;
       }
       case 'closing': {
         const c = document.createElement('div');
-        c.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(246,247,249,.97)';
-        c.innerHTML = '<div style="max-width:720px;padding:0 32px;line-height:2;font-size:16px;color:#17202b">' +
-          '<div style="font-size:24px;font-weight:700;margin-bottom:18px">已实现 · 局限 · 下一步</div>' +
-          '<div><b>已实现</b>：八项任务闭环、四档风险判定、计划版本与留痕、越界拒绝——全部合成数据演示</div>' +
-          '<div style="margin-top:10px"><b>局限</b>：本地原型，未接入场馆表单与真实预约系统；规则阈值需专业人员审阅</div>' +
-          '<div style="margin-top:10px"><b>下一步</b>：对接场馆填报表单，由专业人员审定规则，再做多用户与权限</div></div>';
+        c.style.cssText = 'position:fixed;inset:0;z-index:99997;display:flex;align-items:center;justify-content:center;background:rgba(7,8,11,.97)';
+        c.innerHTML = '<div style="max-width:760px;padding:42px 48px;line-height:2;font-size:16px;color:#e8eef7;border:1px solid rgba(255,255,255,.12);border-radius:20px;background:rgba(255,255,255,.04)">' +
+          '<div style="font-size:25px;font-weight:700;margin-bottom:20px">已实现 · 局限 · 下一步</div>' +
+          '<div><b style="color:#9fd4ff">已实现</b>：八项任务闭环、四档风险判定、计划版本与留痕、越界拒绝，全部使用合成数据演示</div>' +
+          '<div style="margin-top:12px"><b style="color:#ffd29a">局限</b>：本地原型，未接入场馆表单与真实预约系统；规则阈值需专业人员审阅</div>' +
+          '<div style="margin-top:12px"><b style="color:#a8e6b8">下一步</b>：对接场馆填报表单，由专业人员审定规则，再做多用户与权限</div></div>';
         document.body.appendChild(c);
         await sleep(2200);
         break;
