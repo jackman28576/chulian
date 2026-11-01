@@ -615,7 +615,7 @@ function save(){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e
 function db(){ return state.members[state.current]; }
 
 const wrap = document.getElementById('wrap');
-const log = document.getElementById('log');
+const log = document.getElementById('log') || document.querySelector('.log');
 const input = document.getElementById('input');
 
 function bubble(who, text, details, tone){
@@ -638,7 +638,8 @@ function bubble(who, text, details, tone){
     meta.appendChild(btn); body.appendChild(meta); body.appendChild(d);
   }
   row.appendChild(av); row.appendChild(body); wrap.appendChild(row);
-  log.scrollTop = log.scrollHeight; return row;
+  if (log) log.scrollTop = log.scrollHeight;
+  return row;
 }
 function actionChip(row, label, fn){
   const meta = document.createElement('div'); meta.className = 'meta';
