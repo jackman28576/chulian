@@ -434,7 +434,7 @@ function addFeedback(db, payload){
 
 /* ---------------- 大模型（可选，浏览器直连） ---------------- */
 const CFG_KEY = 'chulian-llm-v1';
-const SYS_PROMPT = `你是「初练」——健身场馆的会员健康档案助手。
+const SYS_PROMPT = `你是「初练」，健身场馆的会员健康档案助手。
 把用户说的话转成结构化字段和意图，供确定性规则引擎使用。只输出 JSON：
 {"intent":"visit|review|plan|feedback|diagnosis|switch|smalltalk",
  "fields":{"fatigue":数字或null,"sleep_hours":数字或null,"pain":数字或null,
@@ -444,7 +444,7 @@ const SYS_PROMPT = `你是「初练」——健身场馆的会员健康档案助
 只有明确说出胸痛/胸口疼/胸闷/心慌/晕倒才填 acute_signals；
 说"是不是某病/严重吗"→diagnosis；"复核/通过"→review；"出计划"→plan；
 "练完了/反馈"→feedback；"换个人/切换会员"→switch。
-绝不输出分档结论——那是引擎的事。`;
+分档结论由引擎输出，你不写。`;
 
 function llmCfg(){
   try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch(e) { return {}; }
@@ -602,7 +602,7 @@ function reply(text, u){
     m.C5_reviews.push({review_id:`PR-${visit}-${String(m.C5_reviews.length+1).padStart(2,'0')}`, visit_id:visit,
       decision:'approved', note:'仅允许中立位低负荷练习，禁止脊柱屈曲负荷', recorded_by:'合成教练', recorded_at:new Date().toISOString()});
     state.stage = 'reviewed'; save();
-    const row = bubble('a','记下了：合成教练已复核通过（仅允许中立位低负荷，禁止脊柱屈曲）。\n注意——复核通过不等于解除活动限制，那条限制仍然生效。');
+    const row = bubble('a','记下了：合成教练已复核通过（仅允许中立位低负荷，禁止脊柱屈曲）。\n注意，复核通过不改动活动限制，那条限制仍然生效。');
     actionChip(row, '出计划', () => say('出计划'));
     return;
   }
