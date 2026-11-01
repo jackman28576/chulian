@@ -476,9 +476,13 @@ function reply(text, u){
   }
 
   const d = state.draft;
+  // 急性信号一票否决：不等其余字段，直接判定
+  const hasAcute = Array.isArray(d.acute) && d.acute.length > 0;
   const needKeys = [];
-  if(d.fatigue === undefined) needKeys.push('fatigue');
-  if(d.sleep_hours === undefined) needKeys.push('sleep_hours');
+  if(!hasAcute){
+    if(d.fatigue === undefined) needKeys.push('fatigue');
+    if(d.sleep_hours === undefined) needKeys.push('sleep_hours');
+  }
   if(needKeys.length){
     state.need = needKeys.slice();
     const labelOf = k => k === 'fatigue' ? '疲劳（0–10）' : '昨晚睡了几小时';
@@ -505,8 +509,10 @@ function reply(text, u){
   const ev = assess(m);
   state.last = ev; state.stage = 'assessed'; state.draft = {}; save();
 
-  bubble('a', ((u && u.ack) ? u.ack + '\n' : '') + `好，按你说的记下了：疲劳 ${m.B_current.B3_fatigue}/10、睡眠 ${m.B_current.B4_sleep_last.hours}h` +
-    (m.B_current.B2_body_feeling.pain_score ? `、疼痛 ${m.B_current.B2_body_feeling.pain_score}/10` : '') + '。');
+  if(!hasAcute){
+    bubble('a', ((u && u.ack) ? u.ack + '\n' : '') + `好，按你说的记下了：疲劳 ${m.B_current.B3_fatigue}/10、睡眠 ${m.B_current.B4_sleep_last.hours}h` +
+      (m.B_current.B2_body_feeling.pain_score ? `、疼痛 ${m.B_current.B2_body_feeling.pain_score}/10` : '') + '。');
+  }
   const detail = JSON.stringify({分档:ev.status, 规则:ev.rule, 依据字段:ev.basis_field_ids, 理由:ev.reasons, 下一步:ev.next_step}, null, 2);
   const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
   if(ev.status_code === 'review') actionChip(row, '复核通过', () => say('复核通过'));
