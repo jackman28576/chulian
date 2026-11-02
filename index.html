@@ -185,6 +185,37 @@
   .btn.plain{background:rgba(255,255,255,.14);color:#fff}
   .hr{height:1px;background:var(--line);margin:18px 0 6px}
 
+  /* v2.1 新增卡片 */
+  .lab{display:block;font-size:11.5px;color:var(--muted);margin:0 0 5px}
+  .fgrid{display:grid;grid-template-columns:1.3fr 1fr;gap:10px;margin-top:12px}
+  .fgrid .wide{grid-column:1/-1}
+  .fgrid input,.fgrid select{width:100%;padding:9px 11px;border-radius:10px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.06);color:#fff;font:inherit;font-size:13px;outline:none}
+  .fgrid input:focus,.fgrid select:focus{border-color:rgba(0,199,190,.5)}
+  .acts{display:flex;align-items:center;gap:8px;margin-top:12px;flex-wrap:wrap}
+  .act{height:32px;padding:0 13px;border-radius:10px;font-size:12.5px;background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.16);color:#fff}
+  .act:hover{background:rgba(255,255,255,.18)}
+  .act.primary{background:#fff;color:#0B0E13;border-color:#fff}
+  .act:disabled{opacity:.4;cursor:not-allowed}
+  .hint{font-size:11.5px;color:var(--muted)}
+  .hint.bad{color:#FF9C92}
+  .arow{display:flex;gap:10px;align-items:center;padding:9px 0;border-top:1px solid rgba(255,255,255,.10);font-size:13px;color:var(--ink2)}
+  .arow:first-child{border-top:0}
+  .arow .st{font:11px var(--mono);padding:2px 7px;border-radius:6px;background:rgba(255,255,255,.10);margin-left:auto;white-space:nowrap}
+  .st.booked{background:rgba(52,199,89,.16);color:#7BE3A2}
+  .st.rescheduled{background:rgba(255,176,32,.16);color:#FFC96B}
+  .st.cancelled{background:rgba(255,255,255,.09);color:rgba(255,255,255,.55)}
+  .bigbar{height:8px;border-radius:5px;background:rgba(255,255,255,.12);overflow:hidden;margin:10px 0 6px}
+  .bigbar i{display:block;height:8px;background:linear-gradient(90deg,#34C759,#00C7BE);width:0;transition:width .5s}
+  .kpis{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:8px}
+  .kpi{background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:10px 12px}
+  .kpi b{display:block;font-size:17px;font-weight:620;letter-spacing:-.01em}
+  .kpi span{font-size:11px;color:var(--muted)}
+  .tagline{display:flex;gap:6px;flex-wrap:wrap;margin-top:8px}
+  .wrapnote{font-size:12px;color:var(--muted);margin-top:6px}
+  @media (max-width:720px){
+    .fgrid{grid-template-columns:1fr}
+    .kpis{grid-template-columns:1fr 1fr}
+  }
   @media (max-width:720px){
     .topbar{padding:10px 12px;gap:6px}
     .brand{font-size:14px}
@@ -241,7 +272,7 @@
     <svg viewBox="0 0 12 12"><path d="M2 4.5 6 8.5 10 4.5"></path></svg>
   </button>
   <div class="top-right">
-    <span id="badge">技能 2.0.0 · 55 项测试 · 离线规则</span>
+    <span id="badge">技能 2.1.0 · 62 项测试 · 离线规则</span>
     <button class="tbtn" id="cfg">模型</button>
     <button class="tbtn" id="reset">重来</button>
   </div>
@@ -313,6 +344,64 @@
     <div class="card-h"><h3>到店记录</h3><span class="right" id="v-count"></span></div>
     <div id="v-body"><div class="empty">还没有记录。</div></div>
   </section>
+  <section class="card">
+    <div class="card-h"><h3>预约与场馆服务</h3><span class="right" id="ap-state"></span></div>
+    <div id="ap-body"><div class="empty">生成计划后可预约；改约与取消都会留下记录。</div></div>
+    <div class="fgrid">
+      <div><label class="lab">到店时间</label><input id="ap-time" type="datetime-local"></div>
+      <div><label class="lab">项目</label><select id="ap-svc"><option>普拉提私教</option><option>普拉提小班</option><option>康复评估</option></select></div>
+      <div><label class="lab">改约/取消原因</label><input id="ap-reason" placeholder="例：临时出差"></div>
+      <div><label class="lab">教练</label><input id="ap-coach" placeholder="场馆教练"></div>
+    </div>
+    <div class="acts">
+      <button class="act primary" id="ap-create">预约 / 改约</button>
+      <button class="act" id="ap-cancel">取消预约</button>
+      <span class="hint" id="ap-hint"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><h3>动作评估 · 运动模式</h3><span class="right" id="mv-state"></span></div>
+    <div id="mv-body"><div class="empty">录一次动作节奏，得到可核查的稳定性与左右对称结果。</div></div>
+    <div class="fgrid">
+      <div><label class="lab">动作</label><select id="mv-ex"></select></div>
+      <div><label class="lab">节奏时长（3 组，秒，逗号分隔）</label><input id="mv-tempo" value="2.1,2.0,2.4"></div>
+      <div><label class="lab">左侧 / 右侧时长（秒）</label><input id="mv-lr" value="2.2,1.9"></div>
+      <div><label class="lab">资料来源</label><input id="mv-src" value="教练现场记录（合成）"></div>
+    </div>
+    <div class="acts">
+      <button class="act primary" id="mv-run">评估</button>
+      <button class="act" id="mv-demo">载入演示数据</button>
+      <span class="hint" id="mv-hint"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><h3>虚拟任务 · 场景联动</h3><span class="right" id="q-state"></span></div>
+    <div id="q-body"><div class="empty">完成训练后回填完成度，映射为场景进度与得分。</div></div>
+    <div class="acts">
+      <button class="act" data-q="60">完成 60%</button>
+      <button class="act" data-q="80">完成 80%</button>
+      <button class="act primary" data-q="100">完成 100%</button>
+      <span class="hint" id="q-hint"></span>
+    </div>
+  </section>
+
+  <section class="card">
+    <div class="card-h"><h3>随访与慢病管理</h3><span class="right" id="fl-state"></span></div>
+    <div id="fl-body"><div class="empty">康复与慢病相关记录只做随访，不生成诊疗建议。</div></div>
+    <div class="fgrid">
+      <div class="wide"><label class="lab">随访内容</label><input id="fl-content" placeholder="例：记录本次执行与腰部感受，下次复核"></div>
+      <div><label class="lab">依据的专业意见</label><select id="fl-ref"></select></div>
+      <div><label class="lab">涉及活动</label><select id="fl-tags"><option>中立位呼吸</option><option>肩胛控制</option><option>脊柱屈曲类动作</option><option>居家步行</option></select></div>
+      <div><label class="lab">下次复核</label><input id="fl-next" type="date"></div>
+      <div><label class="lab">慢病监测（合成）</label><input id="fl-mono" placeholder="例：晨起血压 118/76"></div>
+    </div>
+    <div class="acts">
+      <button class="act primary" id="fl-add">记录随访</button>
+      <span class="hint" id="fl-hint"></span>
+    </div>
+  </section>
 </main>
 
 <div class="dock" id="dock">
@@ -339,6 +428,11 @@
       <div><label>水平</label><select id="regLevel"><option>初</option><option>中</option><option>高</option></select></div>
     </div>
     <label>健身目标</label><input id="regGoal" placeholder="例如：体态改善、增肌">
+    <div class="grid2">
+      <div><label>每周可训练（次）</label><input id="regDays" type="number" min="1" max="7" value="2"></div>
+      <div><label>每次时长（分钟）</label><input id="regMinutes" type="number" min="15" max="120" value="50"></div>
+    </div>
+    <label>偏好时段</label><input id="regWhen" placeholder="例如：工作日傍晚">
     <label>既往诊断或手术</label><input id="regInjury" placeholder="没有就留空">
     <label>专业活动限制</label><input id="regRestrict" placeholder="没有就留空">
     <div class="actions"><button class="btn primary" id="regSave">登记并切换</button></div>
@@ -360,7 +454,7 @@
 
 <script>
 
-const MEMBERS = [{"schema_version": "1.0", "_note": "全部字段均为比赛演示合成数据，不对应真实会员。不得将本规则原型用于真实医疗或康复决策。", "A1_member_id": "L-0231", "A2_display_name": "林女士（合成）", "A3_age_band": "30-39", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善", "术后恢复"], "A5_experience": {"years": 1, "equipment": "初级", "long_term_coach": false, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 1, "items": ["普拉提团课"], "minutes_per_session": 50, "intensity_self": "低", "intensity_increase_pct": 0, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [{"item": "腰椎间盘突出术后（合成）", "date": "2026-02", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}], "A8_professional_advice": [{"advice_id": "A8-01", "content": "术后12个月内避免脊柱屈曲负荷与前屈负重（合成专业意见）", "by": "康复科（合成）", "date": "2026-03-10", "prohibit_training": false, "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}], "A9_restrictions": [{"item": "脊柱屈曲类动作", "level": "禁用", "ref": "A8-01", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}], "A9_confirmation": {"status": "confirmed", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律，控糖中，乳糖不耐", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "00:30", "average_hours": 6.0, "quality": 3, "issue": "入睡慢", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": ["脊柱屈曲负荷禁忌（来自A9）", "术后恢复期（来自A7）"], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示", "饮食睡眠建议"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261029-01", "B2_body_feeling": {"text": "腰部酸胀4/10，无放射痛", "pain_score": 4, "acute_signals": []}, "B3_fatigue": 7, "B4_sleep_last": {"hours": 5, "quality": 2}, "B5_vitals": {"resting_hr": 68, "temperature_c": 36.5, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-29T10:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}, {"schema_version": "1.0", "_note": "常规会员对照样本（合成）。用于演示“无风险标记 → 继续训练 → 直接拿到计划”，与 L-0231 的复核路径形成对比。", "A1_member_id": "L-0247", "A2_display_name": "周先生（合成）", "A3_age_band": "40-49", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善", "增肌"], "A5_experience": {"years": 3, "equipment": "中级", "long_term_coach": true, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 3, "items": ["普拉提私教", "快走"], "minutes_per_session": 60, "intensity_self": "中", "intensity_increase_pct": 10, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [], "A8_professional_advice": [], "A9_restrictions": [], "A9_confirmation": {"status": "confirmed_none", "source": "专业人员", "recorded_at": "2026-10-21T19:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律，无特殊限制", "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "23:30", "average_hours": 7.2, "quality": 4, "issue": "无", "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": [], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示", "饮食睡眠建议"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261026-01", "B2_body_feeling": {"text": "无明显不适，肩颈略紧", "pain_score": 0, "acute_signals": []}, "B3_fatigue": 3, "B4_sleep_last": {"hours": 7, "quality": 4}, "B5_vitals": {"resting_hr": 72, "temperature_c": 36.6, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-26T18:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}, {"schema_version": "1.0", "_note": "压力测试样本（合成）：到店主诉胸痛，用于验证急性信号一票否决。非演示主路径。", "A1_member_id": "L-0305", "A2_display_name": "王女士（合成）", "A3_age_band": "50-59", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善"], "A5_experience": {"years": 2, "equipment": "初级", "long_term_coach": false, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 2, "items": ["普拉提团课"], "minutes_per_session": 50, "intensity_self": "低", "intensity_increase_pct": 0, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [], "A8_professional_advice": [], "A9_restrictions": [], "A9_confirmation": {"status": "confirmed_none", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "23:00", "average_hours": 7.0, "quality": 3, "issue": "无", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": [], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261027-01", "B2_body_feeling": {"text": "今天来时觉得胸口发闷，有点痛", "pain_score": 0, "acute_signals": ["胸痛"]}, "B3_fatigue": 5, "B4_sleep_last": {"hours": 6, "quality": 3}, "B5_vitals": {"resting_hr": 88, "temperature_c": 36.7, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-27T10:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}];
+const MEMBERS = [{"schema_version": "1.0", "A14_availability": {"days_per_week": 2, "minutes_per_session": 50, "preferred_time": "工作日傍晚", "equipment": ["普拉提训练床", "弹力带", "普拉提圈"], "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "_note": "全部字段均为比赛演示合成数据，不对应真实会员。不得将本规则原型用于真实医疗或康复决策。", "A1_member_id": "L-0231", "A2_display_name": "林女士（合成）", "A3_age_band": "30-39", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善", "术后恢复"], "A5_experience": {"years": 1, "equipment": "初级", "long_term_coach": false, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 1, "items": ["普拉提团课"], "minutes_per_session": 50, "intensity_self": "低", "intensity_increase_pct": 0, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [{"item": "腰椎间盘突出术后（合成）", "date": "2026-02", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}], "A8_professional_advice": [{"advice_id": "A8-01", "content": "术后12个月内避免脊柱屈曲负荷与前屈负重（合成专业意见）", "by": "康复科（合成）", "date": "2026-03-10", "prohibit_training": false, "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}], "A9_restrictions": [{"item": "脊柱屈曲类动作", "level": "禁用", "ref": "A8-01", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}], "A9_confirmation": {"status": "confirmed", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律，控糖中，乳糖不耐", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "00:30", "average_hours": 6.0, "quality": 3, "issue": "入睡慢", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": ["脊柱屈曲负荷禁忌（来自A9）", "术后恢复期（来自A7）"], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示", "饮食睡眠建议"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261029-01", "B2_body_feeling": {"text": "腰部酸胀4/10，无放射痛", "pain_score": 4, "acute_signals": []}, "B3_fatigue": 7, "B4_sleep_last": {"hours": 5, "quality": 2}, "B5_vitals": {"resting_hr": 68, "temperature_c": 36.5, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-29T10:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}, {"schema_version": "1.0", "A14_availability": {"days_per_week": 3, "minutes_per_session": 60, "preferred_time": "工作日晚上", "equipment": ["普拉提训练床", "弹力带", "普拉提圈"], "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "_note": "常规会员对照样本（合成）。用于演示“无风险标记 → 继续训练 → 直接拿到计划”，与 L-0231 的复核路径形成对比。", "A1_member_id": "L-0247", "A2_display_name": "周先生（合成）", "A3_age_band": "40-49", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善", "增肌"], "A5_experience": {"years": 3, "equipment": "中级", "long_term_coach": true, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 3, "items": ["普拉提私教", "快走"], "minutes_per_session": 60, "intensity_self": "中", "intensity_increase_pct": 10, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [], "A8_professional_advice": [], "A9_restrictions": [], "A9_confirmation": {"status": "confirmed_none", "source": "专业人员", "recorded_at": "2026-10-21T19:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律，无特殊限制", "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "23:30", "average_hours": 7.2, "quality": 4, "issue": "无", "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": [], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示", "饮食睡眠建议"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261026-01", "B2_body_feeling": {"text": "无明显不适，肩颈略紧", "pain_score": 0, "acute_signals": []}, "B3_fatigue": 3, "B4_sleep_last": {"hours": 7, "quality": 4}, "B5_vitals": {"resting_hr": 72, "temperature_c": 36.6, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-26T18:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}, {"schema_version": "1.0", "A14_availability": {"days_per_week": 2, "minutes_per_session": 50, "preferred_time": "周末上午", "equipment": ["普拉提训练床", "弹力带", "普拉提圈"], "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "_note": "压力测试样本（合成）：到店主诉胸痛，用于验证急性信号一票否决。非演示主路径。", "A1_member_id": "L-0305", "A2_display_name": "王女士（合成）", "A3_age_band": "50-59", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善"], "A5_experience": {"years": 2, "equipment": "初级", "long_term_coach": false, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 2, "items": ["普拉提团课"], "minutes_per_session": 50, "intensity_self": "低", "intensity_increase_pct": 0, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [], "A8_professional_advice": [], "A9_restrictions": [], "A9_confirmation": {"status": "confirmed_none", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "23:00", "average_hours": 7.0, "quality": 3, "issue": "无", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": [], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261027-01", "B2_body_feeling": {"text": "今天来时觉得胸口发闷，有点痛", "pain_score": 0, "acute_signals": ["胸痛"]}, "B3_fatigue": 5, "B4_sleep_last": {"hours": 6, "quality": 3}, "B5_vitals": {"resting_hr": 88, "temperature_c": 36.7, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-27T10:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}];
 /* ---------------- 确定性引擎（从 chulian.py 移植） ---------------- */
 const STATUS = {pause:'暂停活动', review:'提交专业复核', missing:'补充资料', continue:'继续训练'};
 const TONE = {pause:'stop', review:'warn', missing:'info', continue:'ok'};
@@ -497,6 +591,29 @@ function planGate(db, ev){
   if(ev.status_code === 'missing') return [false, '当前为「补充资料」，资料不完整时不得生成正式计划；请先补齐后再评估'];
   return [false, '当前为「'+ev.status+'」，未通过复核，不能生成正式计划'];
 }
+function planMenu(db, sets, minutes){
+  const restrText = (db.A9_restrictions || []).map(r => String(r.item || '')).join(' ');
+  const banFlexion = /屈曲|前屈|弯腰|卷腹/.test(restrText);
+  const banImpact = /跑|跳|冲击|负重|深蹲/.test(restrText);
+  const exp = (db.A5_experience || {}).equipment || '初级';
+  const pool = [
+    { name: '仰卧中立位呼吸', focus: '呼吸模式', tags: '呼吸', load: '低', limit: '躯干中立，不卷动骨盆' },
+    { name: '墙面肩胛俯卧撑', focus: '肩胛控制', tags: '上肢', load: '低', limit: '肘不超过肩线' },
+    { name: '四足支撑髋部绕环', focus: '髋关节分离', tags: '髋', load: '低', limit: '骨盆保持水平' },
+    { name: '侧卧抬腿', focus: '臀中肌', tags: '下肢', load: '低', limit: '躯干不后倒' },
+    { name: '坐姿弹力带划船', focus: '上背耐力', tags: '上肢', load: '中', limit: '肩不耸起' },
+    { name: '站姿提踵', focus: '踝稳定', tags: '下肢', load: '低', limit: banImpact ? '改为坐姿，避免冲击' : '扶墙完成' },
+    { name: '骨盆卷动（小幅）', focus: '脊柱活动', tags: '脊柱屈曲', load: '低', limit: '仅中立位到微屈' },
+    { name: '仰卧交替抬腿（小幅度）', focus: '核心稳定', tags: '脊柱屈曲', load: '中', limit: '腰椎贴床' }
+  ];
+  let list = pool.filter(a => !(banFlexion && a.tags === '脊柱屈曲'));
+  if (banImpact) list = list.filter(a => a.name !== '站姿提踵');
+  const count = minutes >= 60 ? 5 : minutes >= 40 ? 4 : 3;
+  const levelRank = { '初级': 0, '中级': 1, '高级': 2 }[exp.equipment] ?? 0;
+  if (levelRank === 0) list = list.filter(a => a.load === '低').concat(list.filter(a => a.load !== '低'));
+  if (levelRank === 2) list = list.filter(a => a.load !== '低').concat(list.filter(a => a.load === '低'));
+  return { actions: list.slice(0, count).map(a => ({ name: a.name, focus: a.focus, sets: sets, reps: '6—8 次', load: a.load, limit: a.limit })), banned: banFlexion, pool: list };
+}
 function createPlan(db){
   db.C2_plans = db.C2_plans || []; db.C1_visits = db.C1_visits || [];
   const ev = assess(db);
@@ -506,10 +623,18 @@ function createPlan(db){
   const same = db.C1_visits.filter(v => v.visit_id === visit).pop();
   const reduced = same && typeof same.fatigue === 'number' && same.fatigue >= 7;
   const sets = reduced ? 1 : (ev.status_code === 'review' ? 2 : 3);
-  const exp = db.A5_experience || {};
+  const avail = db.A14_availability || {};
+  const days = Math.max(1, Math.min(7, Number(avail.days_per_week) || 2));
+  const minutes = Math.max(15, Math.min(120, Number(avail.minutes_per_session) || 50));
+  const when = avail.preferred_time || '与场馆确认的时段';
+  const equip = (avail.equipment && avail.equipment.length ? avail.equipment : ['普拉提训练床', '弹力带']).join('、');
   const goals = (db.A4_goal||[]).join('、') || '一般体能维护';
+  const exp = db.A5_experience || {};
   const restr = (db.A9_restrictions||[]).map(r => r.item).join('；') || '按已确认的活动边界执行';
-  const training = `围绕${goals}安排中立位呼吸、肩胛控制与轻柔髋部活动，每项 ${sets} 组，每组 6—8 次；经验级别：${exp.equipment || '未注明'}。`;
+  const menu = planMenu(db, sets, minutes);
+  const training = `围绕${goals}的动作组合（每项 ${sets} 组×6—8 次）：` +
+    menu.actions.map(a => a.name).join('；') +
+    `。器械：${equip}；经验级别：${exp.equipment || '未注明'}。`;
   const dietText = (db.A10_diet && db.A10_diet.text) || '未提供饮食偏好';
   const diet = `维持规律三餐与适量饮水，结合既有记录（${dietText}）避免推荐不适宜食物；不提供治疗性饮食方案。`;
   const sp = db.A11_sleep_profile || {};
@@ -520,15 +645,17 @@ function createPlan(db){
   const sleep = `保持固定起床时间，睡前30分钟减少屏幕刺激；结合既有睡眠记录（${parts.join('、') || '未提供'}），先观察作息稳定性。`;
   const version = 'v' + (db.C2_plans.length + 1);
   (db.C2_plans||[]).forEach(p => { if(p.status === 'active'){ p.status = 'superseded'; p.superseded_by = version; } });
-  const reasons = ['依据会员目标、训练经验、活动限制和当日风险状态生成'];
+  const reasons = ['依据会员目标、训练经验、可用时间与当日风险状态生成'];
   const last = db.C1_visits[db.C1_visits.length-1];
   if(last) reasons.push(`上次离店（${last.visit_id}）完成度 ${last.completion_pct}%，疲劳 ${last.fatigue}/10`);
+  if(menu.banned) reasons.push('专业限制含脊柱屈曲禁忌，动作库已剔除屈曲类动作');
   if(reduced) reasons.push('离店疲劳达到 7/10 以上，下一版训练量下调');
   const limitations = [restr, '专业限制优先；不替代医疗、营养或康复专业意见'];
   if((db.A9_confirmation||{}).status === 'not_provided') limitations.unshift('活动限制未提供：本次不安排脊柱屈曲与关节高负荷动作（保守边界）');
   const prev = db.C2_plans[db.C2_plans.length-1];
-  const plan = {version, status:'active', training, diet, sleep,
-    basis_field_ids:['A4','A5','A9','A10','A11','B1'].concat(last?['C1']:[]),
+  const plan = {version, status:'active', training, diet, sleep, actions: menu.actions,
+    schedule: {days_per_week: days, minutes_per_session: minutes, preferred_time: when, equipment: equip},
+    basis_field_ids:['A4','A5','A9','A10','A11','A14','B1'].concat(last?['C1']:[]),
     limitations, change_reasons: reasons,
     diff_from_previous: prev ? ['training','diet','sleep'].filter(k => prev[k] !== ({training,diet,sleep})[k])
       .map(k => ({section:{training:'训练',diet:'饮食',sleep:'睡眠'}[k], before:prev[k], after:{training,diet,sleep}[k], reason:reasons.join('；')})) : []};
@@ -538,21 +665,56 @@ function createPlan(db){
 function addFeedback(db, payload){
   db.C1_visits = db.C1_visits || []; db.C7_revisions = db.C7_revisions || [];
   const cur = (db.B_current||{}).B1_visit_id;
-  if(cur && payload.visit_id !== cur) throw new Error(`反馈的到店记录 ${payload.visit_id} 与当前到店记录 ${cur} 不一致；计划调整只依据本次到店反馈`);
-  ['completion_pct','rpe','sleep_hours','fatigue'].forEach(k => num(payload[k], k, 0, 100));
-  const keys = ['visit_id','completion_pct','rpe','diet_adherence','sleep_hours','fatigue','notes'];
-  const exist = db.C1_visits.find(v => v.visit_id === payload.visit_id);
-  if(exist && keys.every(k => exist[k] === payload[k])) return [exist, null];
+  const visit = payload.visit_id || cur;
+  if(cur && visit !== cur) throw new Error(`反馈的到店记录 ${visit} 与当前到店记录 ${cur} 不一致；计划调整只依据本次到店反馈`);
+  if(!visit) throw new Error('还没有今天的到店记录，先说一句今天的状态');
+  const chk = (v, k, lo, hi) => {
+    if(typeof v !== 'number' || !isFinite(v)) throw new Error(k + ' 必须是数字');
+    if(v < lo || v > hi) throw new Error(k + ' 应位于 ' + lo + '—' + hi);
+    return v;
+  };
+  const lastSleep = ((db.B_current||{}).B4_sleep_last||{}).hours;
+  const rec = {
+    visit_id: visit,
+    completion_pct: chk(payload.completion_pct === undefined ? 80 : payload.completion_pct, '完成度', 0, 100),
+    rpe: chk(payload.rpe === undefined ? 6 : payload.rpe, 'RPE', 0, 10),
+    diet_adherence: payload.diet_adherence || (db.A10_diet && db.A10_diet.text) || '未记录',
+    sleep_hours: chk(payload.sleep_hours === undefined ? (typeof lastSleep === 'number' ? lastSleep : 7) : payload.sleep_hours, '睡眠', 0, 24),
+    fatigue: chk(payload.fatigue, '疲劳', 0, 10),
+    notes: payload.notes || '对话录入',
+    training_completed: payload.training_completed || (((db.C2_plans||[]).slice(-1)[0]||{}).actions||[]).map(a=>a.name).join('、') || '未记录',
+    recorded_at: new Date().toISOString(), recorded_by: '会员本人', source: '会员本人'
+  };
+  const keys = ['visit_id','completion_pct','rpe','diet_adherence','sleep_hours','fatigue','notes','training_completed'];
+  const exist = db.C1_visits.find(v => v.visit_id === visit);
+  if(exist && keys.every(k => exist[k] === rec[k])) return [exist, null];
+  let stored;
   if(exist){
-    db.C7_revisions.push({record_id:'C1-'+payload.visit_id, before: JSON.parse(JSON.stringify(exist)), after: JSON.parse(JSON.stringify(payload))});
-    Object.assign(exist, payload);
+    db.C7_revisions.push({record_id:'C1-'+visit, before: JSON.parse(JSON.stringify(exist)), after: JSON.parse(JSON.stringify(rec)), recorded_at: rec.recorded_at});
+    Object.assign(exist, rec); stored = exist;
   }else{
-    db.C1_visits.push(Object.assign({record_id:'C1-'+payload.visit_id}, payload));
+    stored = Object.assign({record_id:'C1-'+visit}, rec);
+    db.C1_visits.push(stored);
   }
   const ev = assess(db);
   let plan = null;
   if(planGate(db, ev)[0]) plan = createPlan(db);
-  return [exist || db.C1_visits[db.C1_visits.length-1], plan];
+  return [stored, plan];
+}
+function parseFeedback(t){
+  const s = String(t||'').replace(/\s+/g,'');
+  const out = {};
+  let m = s.match(/疲劳[^\d]{0,4}(\d{1,2})/) || s.match(/(?:累|疲惫)[^\d，,。！？]{0,3}(\d{1,2})\s*分/);
+  if(m) out.fatigue = Math.min(10, +m[1]);
+  m = s.match(/完成度\D{0,4}(\d{1,3})/) || s.match(/(\d{1,3})\s*%/);
+  if(m) out.completion_pct = Math.min(100, +m[1]);
+  m = s.match(/睡眠[^\d]{0,4}(\d+(?:\.\d+)?)/) || s.match(/睡[^\d]{0,3}(\d+(?:\.\d+)?)\s*(?:小时|h)/);
+  if(m) out.sleep_hours = +m[1];
+  m = s.match(/RPE\D{0,3}(\d{1,2})/i);
+  if(m) out.rpe = Math.min(10, +m[1]);
+  if(/没按|没吃|外卖|聚餐|破戒/.test(s)) out.diet_adherence = '部分偏离';
+  else if(/规律|按计划/.test(s)) out.diet_adherence = '三餐规律';
+  return out;
 }
 
 /* ---------------- 大模型（可选，浏览器直连） ---------------- */
@@ -653,33 +815,57 @@ async function say(text){
   reply(text, u || {intent:'', fields:{}, ack:''});
 }
 
-function extract(t){
-  const s = t.replace(/\s/g,'');
-  const d = {};
-  const half = s.replace(/(\d+)个半小时/g,'$1.5小时').replace(/半小时/g,'0.5小时');
-  let m = half.match(/疲劳[^\d]{0,4}(\d{1,2})/);
-  if(!m) m = half.match(/(?:累|困|疲惫)[^\d，,。！？]{0,3}(\d{1,2})\s*分/);
-  if(m) d.fatigue = +m[1];
-  m = half.match(/(?:睡|睡眠)[^\d]{0,8}(\d+(?:\.\d+)?)\s*个?\s*(?:小时|h|钟)/);
-  if(m) d.sleep_hours = +m[1];
-  if(/疼|痛|酸|紧/.test(half)){
-    m = half.match(/(\d{1,2})\s*分/);
-    d.pain = m ? +m[1] : 3;
-    const pm = half.match(/([腰膝肩背颈][^\s，,。]{0,3})/);
-    d.pain_text = pm ? pm[1] : '不适';
+function cnNum(str){
+  const map = {'零':0,'一':1,'二':2,'两':2,'三':3,'四':4,'五':5,'六':6,'七':7,'八':8,'九':9};
+  if(str.indexOf('点') >= 0){
+    const parts = str.split('点');
+    const intPart = cnNum(parts[0] === '' ? '零' : parts[0]);
+    const decPart = (parts[1] || '').split('').map(c => map[c] === undefined ? 0 : map[c]).join('');
+    return parseFloat(intPart) + (decPart ? parseFloat('0.' + decPart) : 0);
   }
-  if(/无不适|没有不舒服|没什么不舒服|没有不适|挺好的|还好|没感觉/.test(half)){ d.pain = 0; d.pain_text = '无明显不适'; }
-  if(/胸痛|胸(口|部).{0,4}(疼|痛|闷|紧|压)|胸闷|心慌|晕|昏/.test(half)) d.acute = ['胸痛'];
+  if(str === '十') return 10;
+  if(str.charAt(0) === '十') return 10 + (map[str.charAt(1)] || 0);
+  if(str.length === 2 && str.charAt(1) === '十') return (map[str.charAt(0)] || 0) * 10;
+  if(str.length === 3 && str.charAt(1) === '十') return (map[str.charAt(0)] || 0) * 10 + (map[str.charAt(2)] || 0);
+  return map[str] === undefined ? NaN : map[str];
+}
+function extract(t){
+  // 分句解析：同一句里的数字只归最近的关键词，避免"睡6小时"的 6 被当成疼痛分
+  let s = String(t || '').replace(/\s+/g, '');
+  s = s.replace(/[零一二两三四五六七八九十]+(?:点[零三四五六七八九]+)?/g, m => String(cnNum(m)));
+  s = s.replace(/(\d+(?:\.\d+)?)个?半小时/g, (m, p) => (parseFloat(p) + 0.5) + '小时');
+  s = s.replace(/半小时/g, '0.5小时');
+  const d = {};
+  const clauses = s.split(/[，,。；;！？!?、]/).filter(Boolean);
+  const firstNum = c => { const m = c.match(/(\d+(?:\.\d+)?)/); return m ? parseFloat(m[1]) : null; };
+  for (const c of clauses) {
+    let m;
+    if (d.fatigue === undefined && (m = c.match(/(?:疲劳|累|困|疲惫|乏力)[^\d]{0,5}(\d+(?:\.\d+)?)/))) d.fatigue = parseFloat(m[1]);
+    if (d.sleep_hours === undefined && (m = c.match(/(?:睡眠|睡了|睡)[^\d]{0,8}(\d+(?:\.\d+)?)/))) d.sleep_hours = parseFloat(m[1]);
+    if (d.pain === undefined && /疼|痛|酸|紧|胀|麻/.test(c)) {
+      const pm = c.match(/(腰|膝盖|膝|肩|背|颈|胸|髋|踝|肘|腕|腿|足|头)[^\d，。]{0,4}/);
+      d.pain_text = pm ? pm[0] : '不适';
+    }
+  }
+  // 疼痛分只认痛感词之后的数字；提到痛但没给分则追问，不默认 3
+  const pn = s.match(/(?:疼痛|疼|痛|酸|紧|胀|麻)[^\d，,。；;睡疲累困]{0,6}(\d+(?:\.\d+)?)/);
+  if (pn && d.pain === undefined) d.pain = parseFloat(pn[1]);
+  if (d.pain === undefined && d.pain_text) d.pain_missing = true;
+  if (/无不适|没有不舒服|没什么不舒服|没有不适|挺好的|还好|没感觉|状态不错/.test(s)) { d.pain = 0; d.pain_text = '无明显不适'; d.pain_missing = false; }
+  if (/胸痛|胸(口|部).{0,4}(疼|痛|闷|紧|压)|胸闷|心慌|晕|昏/.test(s)) d.acute = ['胸痛'];
   return d;
 }
 
 function reply(text, u){
-  const t = text.trim();
+  const t = String(text || '').trim();
   const intent = (u && u.intent) || '';
   if(intent === 'diagnosis' || /(是不是|会不会|严不严重|什么病|怎么回事).{0,12}(病|突出|炎|劳损|撕裂|损伤|骨折)/.test(t)){
     bubble('a','我不能判断病因，也不能诊断。这需要医生结合检查来判断。我可以帮你记录症状，并按流程提交给教练或专业人员复核。');
     return;
   }
+  // 急性信号一票优先：任何会话态下都先于反馈、出计划、预约等分支
+  const acuteNow = (extract(t).acute || []).length > 0;
+  if (acuteNow) { state.stage = 'idle'; }
   if(intent === 'switch' || /切换会员|换个人/.test(t)){
     state.current = (state.current + 1) % state.members.length;
     state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null; save();
@@ -687,10 +873,36 @@ function reply(text, u){
     bubble('a', `好，现在处理的是 ${m.A2_display_name}（${m.A1_member_id}），目标：${(m.A4_goal||[]).join('、')}。说说今天的状态就行。`);
     return;
   }
+
+  // 离店反馈：认意图词，也认“刚刚问过”的上下文，避免断链
+  if(!acuteNow && (state.stage === 'await_feedback' || intent === 'feedback' || /练完|反馈|做完了|练好|结束了/.test(t))){
+    const fb = parseFeedback(t);
+    if(fb.fatigue === undefined){
+      state.stage = 'await_feedback';
+      bubble('a','练完感觉怎么样？说个疲劳分（0–10）和完成度（%）就行，比如“疲劳8，完成度80”。');
+      return;
+    }
+    try{
+      const out = addFeedback(db(), Object.assign({visit_id: db().B_current.B1_visit_id}, fb));
+      save(); state.stage = 'done';
+      const plan = out[1];
+      const rec = out[0];
+      if(plan){
+        const row = bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。\n已经更新到 ${plan.version}，${plan.change_reasons[plan.change_reasons.length-1]}。`, JSON.stringify(plan.diff_from_previous, null, 2));
+        actionChip(row, '看新计划', () => { const el = document.getElementById('p-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+        actionChip(row, '安排下次到店', () => { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+      }else{
+        bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。这条反馈和上次一样，我记下了，计划不用改。`);
+      }
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+    }catch(err){ bubble('a', err.message, null, 'warn'); }
+    return;
+  }
+
   Object.assign(state.draft, extract(t));
   if(u && u.fields) Object.assign(state.draft, u.fields);
 
-  // 上一轮问过"还差哪几项"，用户只回数字也能接住
+  // 上一轮问过“还差哪几项”，用户只回数字也能接住
   if(state.need && state.need.length){
     const nums = (t.match(/\d+(?:\.\d+)?/g) || []).map(Number);
     const hasKeyword = /疲劳|累|困|睡|小时|疼|痛|酸|分/.test(t);
@@ -699,17 +911,20 @@ function reply(text, u){
       for(const v of nums){
         if(!state.need.length) break;
         const k = state.need[0];
-        const isFatigue = k === 'fatigue';
-        if(isFatigue ? (v < 0 || v > 10) : (v < 0 || v > 24)){
-          bubble('a', `${isFatigue ? '疲劳是 0–10' : '睡眠是 0–24 小时'}，${v} 不在这个范围里，再给一个？`);
+        const isTen = k === 'fatigue' || k === 'pain';
+        const name = k === 'pain' ? '疼痛' : k === 'fatigue' ? '疲劳' : '睡眠';
+        if(isTen ? (v < 0 || v > 10) : (v < 0 || v > 24)){
+          bubble('a', `${name}是 0–${isTen ? 10 : '24 小时'}，${v} 不在这个范围里，再给一个？`);
           return;
         }
-        state.draft[k] = v; state.need.shift();
-        filled.push(isFatigue ? `疲劳 ${v}/10` : `睡眠 ${v}h`);
+        state.draft[k] = v;
+        if(k === 'pain') state.draft.pain_missing = false;
+        state.need.shift();
+        filled.push(`${name} ${v}${isTen ? '/10' : 'h'}`);
       }
       if(filled.length) bubble('a', '记下了：' + filled.join('、') + '。');
       if(state.need.length){
-        bubble('a', `还差 ${state.need.length} 项：${state.need.map(k => k === 'fatigue' ? '疲劳（0–10）' : '昨晚睡了几小时').join('、')}。`);
+        bubble('a', `还差 ${state.need.length} 项：${state.need.map(k => k === 'pain' ? '疼痛（0—10）' : k === 'fatigue' ? '疲劳（0–10）' : '昨晚睡了几小时').join('、')}。`);
         return;
       }
     }
@@ -724,38 +939,21 @@ function reply(text, u){
     m.C5_reviews = m.C5_reviews || [];
     const visit = m.B_current.B1_visit_id;
     m.C5_reviews.push({review_id:`PR-${visit}-${String(m.C5_reviews.length+1).padStart(2,'0')}`, visit_id:visit,
-      decision:'approved', note:'仅允许中立位低负荷练习，禁止脊柱屈曲负荷', recorded_by:'合成教练', recorded_at:new Date().toISOString()});
+      decision:'approved', note:'仅允许中立位低负荷练习，禁止脊柱屈曲负荷', recorded_by:'合成教练', source:'专业人员', recorded_at:new Date().toISOString()});
     state.stage = 'reviewed'; save();
     const row = bubble('a','记下了：合成教练已复核通过（仅允许中立位低负荷，禁止脊柱屈曲）。\n注意，复核通过不改动活动限制，那条限制仍然生效。');
     actionChip(row, '出计划', () => say('出计划'));
+    if(typeof window.__onDataChange === 'function') window.__onDataChange();
     return;
   }
 
   if((intent === 'plan' || /出计划|生成计划/.test(t)) && (state.stage === 'assessed' || state.stage === 'reviewed')){
     try{
       const plan = createPlan(db()); save(); state.stage = 'planned';
-      const sets = (plan.training.match(/每项 (\d+) 组/) || [])[1] || '?';
-      const row = bubble('a', `${plan.version} 好了，每项 ${sets} 组。\n训练：${plan.training}\n饮食：${plan.diet}\n睡眠：${plan.sleep}\n限制：${plan.limitations.slice(0,2).join('；')}`);
-      actionChip(row, '练完了，反馈', () => say('练完了'));
-    }catch(err){ bubble('a', err.message, null, 'warn'); }
-    return;
-  }
-
-  if(intent === 'feedback' || /练完|反馈|做完了/.test(t)){
-    const fm = t.match(/疲劳[^\d]{0,4}(\d{1,2})/) || t.match(/(?:累|疲劳)[^\d，,。！？]{0,3}(\d{1,2})\s*分/);
-    if(!fm){ bubble('a','练完感觉怎么样？说个疲劳分（0–10）和完成度（%）就行，比如"疲劳 8，完成度 80"。'); return; }
-    const cm = t.match(/完成度\D{0,4}(\d{1,3})/);
-    try{
-      const [rec, plan] = addFeedback(db(), {visit_id: db().B_current.B1_visit_id,
-        completion_pct: cm ? +cm[1] : 80, rpe: 6, diet_adherence:'三餐规律',
-        sleep_hours: 5.5, fatigue: +fm[1], notes:'对话录入'});
-      save();
-      if(plan){
-        bubble('a', `收到，已经更新到 ${plan.version}。${plan.change_reasons[plan.change_reasons.length-1]}。\n今天辛苦了，下一版训练量已经按你的状态调过。`,
-          JSON.stringify(plan.diff_from_previous, null, 2));
-      }else{
-        bubble('a','这条反馈和上次一样，我记下了，计划不用改。');
-      }
+      const s = plan.schedule || {};
+      const row = bubble('a', `${plan.version} 好了：每周 ${s.days_per_week} 次、每次 ${s.minutes_per_session} 分钟，共 ${(plan.actions||[]).length} 个动作。\n训练：${plan.training}\n饮食：${plan.diet}\n睡眠：${plan.sleep}\n限制：${plan.limitations.slice(0,2).join('；')}`);
+      actionChip(row, '约课', () => { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
     }catch(err){ bubble('a', err.message, null, 'warn'); }
     return;
   }
@@ -765,18 +963,22 @@ function reply(text, u){
   const hasAcute = Array.isArray(d.acute) && d.acute.length > 0;
   const needKeys = [];
   if(!hasAcute){
+    if(d.pain_missing && d.pain === undefined) needKeys.push('pain');
     if(d.fatigue === undefined) needKeys.push('fatigue');
     if(d.sleep_hours === undefined) needKeys.push('sleep_hours');
   }
   if(needKeys.length){
     state.need = needKeys.slice();
-    const labelOf = k => k === 'fatigue' ? '疲劳（0–10）' : '昨晚睡了几小时';
+    const labelOf = k => k === 'pain' ? '疼痛（0—10）' : k === 'fatigue' ? '疲劳（0—10）' : '昨晚睡了几小时';
     const got = [];
     if(d.pain !== undefined) got.push('疼痛 ' + d.pain + '/10');
     if(d.fatigue !== undefined) got.push('疲劳 ' + d.fatigue + '/10');
     if(d.sleep_hours !== undefined) got.push('睡眠 ' + d.sleep_hours + 'h');
-    bubble('a', (got.length ? '记下了：' + got.join('、') + '。\n' : '') +
-      `还差 ${needKeys.length} 项就能判断：${needKeys.map(labelOf).join('、')}。直接回数字也行，按顺序给就好。`);
+    const head = got.length ? '记下了：' + got.join('、') + '。\n' : '';
+    const ask = needKeys[0] === 'pain'
+      ? `${d.pain_text || '疼的地方'}大概几分（0—10）？`
+      : `还差 ${needKeys.length} 项就能判断：${needKeys.map(labelOf).join('、')}。直接回数字也行，按顺序给就好。`;
+    bubble('a', head + ask);
     return;
   }
   state.need = [];
@@ -802,12 +1004,16 @@ function reply(text, u){
   const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
   if(ev.status_code === 'review') actionChip(row, '复核通过', () => say('复核通过'));
   if(ev.status_code === 'continue') actionChip(row, '出计划', () => say('出计划'));
+  if(ev.status_code === 'pause'){
+    actionChip(row, '查看活动限制', () => { const el = document.getElementById('fl-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+  }
+  if(typeof window.__onDataChange === 'function') window.__onDataChange();
 }
 
 /* ---------------- 输入 ---------------- */
 const sendBtn = document.getElementById('send');
 if (sendBtn) sendBtn.onclick = () => { const v = input.value; if(!v.trim()) return; input.value=''; say(v); };
-input.addEventListener('keydown', e => { if(e.key === 'Enter' && !e.shiftKey){ e.preventDefault(); const v = input.value; if(!v.trim()) return; input.value=''; say(v); } });
+/* 回车发送统一由外壳绑定一次（v2.1 修复重复发送） */
 input.addEventListener('input', () => { input.style.height = 'auto'; input.style.height = Math.min(120, input.scrollHeight) + 'px'; });
 
 /* ---------------- 对外接口：由外壳驱动会员与模型 ---------------- */
@@ -825,13 +1031,171 @@ function switchTo(i, silent){
 }
 function addMember(m){ state.members.push(m); save(); return state.members.length - 1; }
 
+/* ---------------- v2.1 新增：动作评估 / 虚拟任务 / 预约 / 随访 ---------------- */
+const EX_TAGS = {
+  '侧身深蹲': { tags: '下肢', conflict: /深蹲|负重|冲击/ },
+  '普拉提百次': { tags: '脊柱屈曲', conflict: /屈曲|卷腹|前屈/ },
+  '单腿站立平衡': { tags: '下肢', conflict: /平衡|单腿/ },
+  '墙面肩胛俯卧撑': { tags: '上肢', conflict: /推举|肩/ },
+  '呼吸模式训练': { tags: '呼吸', conflict: /呼吸/ }
+};
+function pxMean(a){ return a.reduce((x,y)=>x+y,0)/a.length; }
+function pxPstdev(a){ const m = pxMean(a); return Math.sqrt(a.reduce((s,v)=>s+(v-m)*(v-m),0)/a.length); }
+function gateNow(db){ return planGate(db, assess(db)); }
+function evaluateMovement(db, payload, actor){
+  db.C8_movements = db.C8_movements || []; db.C6_assessments = db.C6_assessments || [];
+  const ex = payload.exercise || '侧身深蹲';
+  const conf = EX_TAGS[ex] || { tags: '', conflict: null };
+  const restr = (db.A9_restrictions || []).map(r => String(r.item || ''));
+  const hit = restr.find(item => conf.conflict && conf.conflict.test(item));
+  if(hit) throw new Error('该动作与专业活动限制「' + hit + '」冲突，按“专业限制优先”不予评估，请更换动作');
+  const tempo = (payload.tempo_seconds || []).map(Number);
+  const left = (payload.left_durations_seconds || []).map(Number);
+  const right = (payload.right_durations_seconds || []).map(Number);
+  if(tempo.length < 3 || !left.length || !right.length) throw new Error('至少需要 3 个节奏时长，以及左右各 1 个时长');
+  const all = tempo.concat(left, right);
+  if(all.some(v => !isFinite(v) || v <= 0 || v > 60)) throw new Error('时长需为 0.05—60 秒之间的数字');
+  const meanTempo = pxMean(tempo);
+  const cv = meanTempo ? pxPstdev(tempo) / meanTempo : 1;
+  const stability = Math.round(Math.max(0, 100 - cv * 100) * 10) / 10;
+  const lm = pxMean(left), rm = pxMean(right);
+  const symmetry = Math.round(Math.abs(lm - rm) / Math.max(lm, rm) * 1000) / 10;
+  const suggestions = [];
+  if(stability < 85) suggestions.push('使用固定节拍器，先缩小组内节奏波动');
+  if(symmetry > 10) suggestions.push('在既有活动限制内降低左右差异，并请教练现场观察');
+  if(!suggestions.length) suggestions.push('保持当前节奏，记录下一组数据后再比较');
+  const rank = stability >= 90 && symmetry <= 8 ? '达标' : stability >= 75 ? '需巩固' : '需干预';
+  const at = new Date().toISOString();
+  const vid = (db.B_current || {}).B1_visit_id || 'V-NA';
+  const mv = {
+    movement_id: 'MA-' + vid + '-' + String(db.C8_movements.length + 1).padStart(2, '0'),
+    member_id: db.A1_member_id, visit_id: vid, exercise: ex, source: payload.source || '教练录入（合成）',
+    raw_input: {tempo_seconds: tempo, left_durations_seconds: left, right_durations_seconds: right},
+    tempo_stability_pct: stability, left_right_difference_pct: symmetry, rank,
+    method: '稳定性=100−节奏时长总体变异系数×100；左右差=|左均−右均|/较大均值×100',
+    suggestions, recorded_at: at, recorded_by: actor || '初练系统', source_type: '系统'
+  };
+  db.C8_movements.push(mv);
+  const assessment = {
+    assessment_id: 'AS-' + vid + '-' + String(db.C6_assessments.length + 1).padStart(2, '0'),
+    member_id: db.A1_member_id, visit_id: vid, type: '运动模式评估', exercise: ex,
+    metrics: {tempo_stability_pct: stability, left_right_difference_pct: symmetry},
+    verdict: rank, movement_id: mv.movement_id,
+    basis_field_ids: ['A5', 'A9', 'C8'], suggestions,
+    recorded_at: at, recorded_by: actor || '初练系统'
+  };
+  db.C6_assessments.push(assessment);
+  return { movement: mv, assessment };
+}
+function updateQuest(db, completionPct){
+  db.C9_quests = db.C9_quests || [];
+  if(typeof completionPct !== 'number' || !isFinite(completionPct) || completionPct < 0 || completionPct > 100) throw new Error('完成度应位于 0—100');
+  const ev = assess(db);
+  const vid = ev.visit_id || 'V-NA';
+  const allowed = planGate(db, ev)[0];
+  const plan = (db.C2_plans || []).slice(-1)[0];
+  const rec = {
+    quest_id: 'Q-' + vid, visit_id: vid, plan_version: plan ? plan.version : null,
+    status: allowed ? 'active' : 'frozen',
+    progress_pct: allowed ? Math.round(completionPct * 10) / 10 : 0,
+    score: allowed ? Math.round(completionPct) : 0,
+    badge: allowed ? (completionPct >= 90 ? '稳健之星' : completionPct >= 60 ? '坚持之星' : '继续积累') : '暂不下发',
+    reason: allowed ? '风险状态允许且计划有效' : ('当前为' + ev.status + '，任务冻结'),
+    scene: allowed ? (completionPct >= 90 ? '训练区灯带全亮' : completionPct >= 60 ? '训练区灯带渐亮' : '训练区待解锁') : '训练区锁定',
+    recorded_at: new Date().toISOString()
+  };
+  const exist = db.C9_quests.find(q => q.quest_id === rec.quest_id);
+  if(exist){ Object.assign(exist, rec); return exist; }
+  db.C9_quests.push(rec);
+  return rec;
+}
+function appointment(db, action, opts){
+  db.C3_appointments = db.C3_appointments || [];
+  opts = opts || {};
+  if(action === 'list') return db.C3_appointments;
+  if(action === 'cancel'){
+    const rec = db.C3_appointments.find(a => a.appointment_id === opts.appointment_id);
+    if(!rec) throw new Error('未找到预约记录');
+    if(!String(opts.reason || '').trim()) throw new Error('取消必须记录原因');
+    rec.history = rec.history || [];
+    rec.history.push({before:{start_at:rec.start_at, status:rec.status}, reason:opts.reason, at:new Date().toISOString(), by:opts.actor || '会员本人'});
+    rec.status = 'cancelled'; rec.cancel_reason = opts.reason;
+    const plan = (db.C2_plans || []).slice(-1)[0];
+    if(plan && plan.appointment_id === rec.appointment_id){ plan.appointment_id = null; plan.appointment_at = null; }
+    return rec;
+  }
+  if(action === 'create' || action === 'reschedule'){
+    const ok = gateNow(db);
+    if(!ok[0]) throw new Error('当前风险状态不允许预约或改约：' + ok[1]);
+  }
+  if(action === 'create'){
+    const plan = (db.C2_plans || []).slice(-1)[0];
+    if(!plan) throw new Error('请先生成有效计划再预约');
+    if(!opts.start_at || !opts.service) throw new Error('预约需要时间和项目');
+    if(db.C3_appointments.some(a => a.status === 'booked' && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
+    const equip = ((plan.actions || []).length ? ['普拉提训练床', '弹力带', '普拉提圈'] : ['普拉提训练床']).join('、');
+    const rec = {
+      appointment_id: 'AP-' + String(db.C3_appointments.length + 1).padStart(3, '0'),
+      member_id: db.A1_member_id, plan_version: plan.version,
+      start_at: opts.start_at, service: opts.service, coach: opts.coach || '场馆教练（合成）',
+      equipment: opts.equipment || equip,
+      status: 'booked', history: [], recorded_at: new Date().toISOString(), recorded_by: '会员本人'
+    };
+    db.C3_appointments.push(rec);
+    plan.appointment_id = rec.appointment_id;
+    plan.appointment_at = rec.start_at;
+    return rec;
+  }
+  if(action === 'reschedule'){
+    const rec = db.C3_appointments.find(a => a.appointment_id === opts.appointment_id);
+    if(!rec) throw new Error('未找到预约记录');
+    if(!String(opts.reason || '').trim()) throw new Error('改约必须记录原因');
+    if(!opts.start_at) throw new Error('改约需要新的时间');
+    rec.history = rec.history || [];
+    rec.history.push({before:{start_at:rec.start_at, status:rec.status}, reason:opts.reason, at:new Date().toISOString(), by:opts.actor || '会员本人'});
+    rec.start_at = opts.start_at; rec.status = 'rescheduled'; rec.reschedule_reason = opts.reason;
+    const plan = (db.C2_plans || []).slice(-1)[0];
+    if(plan && plan.appointment_id === rec.appointment_id) plan.appointment_at = rec.start_at;
+    return rec;
+  }
+  throw new Error('未知预约操作');
+}
+function addFollowup(db, payload, actor){
+  db.C4_followups = db.C4_followups || [];
+  if(!payload.content || !payload.professional_advice_ref) throw new Error('随访需要内容和对应的专业意见编号');
+  const proposed = payload.activity_tags || [];
+  const restrictions = (db.A9_restrictions || []).map(r => String(r.item || ''));
+  const conflicts = proposed.filter(t => restrictions.some(item => item.indexOf(t) >= 0 || t.indexOf(item) >= 0));
+  const rec = {
+    followup_id: 'FU-' + String(db.C4_followups.length + 1).padStart(3, '0'),
+    member_id: db.A1_member_id, visit_id: (db.B_current || {}).B1_visit_id,
+    content: payload.content, professional_advice_ref: payload.professional_advice_ref,
+    activity_tags: proposed, restriction_conflicts: conflicts,
+    handling: conflicts.length ? '专业限制优先，不执行冲突活动' : '仅记录执行情况，不生成诊疗建议',
+    next_review: payload.next_review || '',
+    recorded_at: new Date().toISOString(), recorded_by: actor || '专业人员'
+  };
+  db.C4_followups.push(rec);
+  return rec;
+}
 window.Chulian = {
   db, save, say, bubble, switchTo, addMember, llmCfg, CFG_KEY,
   assess: () => assess(db()),
+  createPlan: () => createPlan(db()),
+  addFeedback: (p) => addFeedback(db(), p),
+  evaluateMovement: (p, a) => evaluateMovement(db(), p, a),
+  updateQuest: (v) => updateQuest(db(), v),
+  appointment: (act, o) => appointment(db(), act, o),
+  addFollowup: (p, a) => addFollowup(db(), p, a),
+  gate: () => gateNow(db()),
   get current(){ return state.current; },
   get members(){ return state.members; },
   get plans(){ return db().C2_plans || []; },
-  get visits(){ return db().C1_visits || []; }
+  get visits(){ return db().C1_visits || []; },
+  get appointments(){ return db().C3_appointments || []; },
+  get movements(){ return db().C8_movements || []; },
+  get quests(){ return db().C9_quests || []; },
+  get followups(){ return db().C4_followups || []; }
 };
 
 /* ---------------- 首屏由外壳渲染，消息区留空 ---------------- */
@@ -944,8 +1308,17 @@ window.Chulian = {
     else {
       const p = plans[plans.length - 1];
       $('p-ver').textContent = p.version + (p.status === 'active' ? ' · 生效' : ' · ' + p.status);
-      $('p-body').innerHTML = [['训练', p.training], ['饮食', p.diet], ['睡眠', p.sleep]]
-        .map(([k, v]) => `<div class="plan-row"><div class="k">${k}</div><div>${v}</div></div>`).join('');
+      const s = p.schedule || {};
+      const rows = [];
+      if (s.days_per_week) rows.push(['安排', `每周 ${s.days_per_week} 次 · 每次 ${s.minutes_per_session} 分钟 · ${s.preferred_time || '时段待定'}｜器械：${s.equipment || '普拉提训练床'}`]);
+      rows.push(['训练', p.training], ['饮食', p.diet], ['睡眠', p.sleep]);
+      if (p.limitations && p.limitations.length) rows.push(['限制', p.limitations.join('；')]);
+      let html = rows.map(([k, v]) => `<div class="plan-row"><div class="k">${k}</div><div>${v}</div></div>`).join('');
+      if (p.actions && p.actions.length) {
+        html += `<div class="tagline">${p.actions.map(a => `<span class="chip">${a.name} × ${a.sets} 组</span>`).join('')}</div>`;
+      }
+      if (p.appointment_at) html += `<div class="wrapnote">已关联预约：${String(p.appointment_at).replace('T',' ').slice(5,16)}</div>`;
+      $('p-body').innerHTML = html;
     }
 
     const visits = (api().visits || []).slice(-3).reverse();
@@ -1001,7 +1374,7 @@ window.Chulian = {
 
   function badge() {
     const c = api().llmCfg();
-    $('badge').textContent = '技能 2.0.0 · 55 项测试 · ' + (c.key ? '大模型 ' + (c.model || 'deepseek-chat') : '离线规则');
+    $('badge').textContent = '技能 2.1.0 · 62 项测试 · ' + (c.key ? '大模型 ' + (c.model || 'deepseek-chat') : '离线规则');
   }
   $('cfg-save').onclick = () => {
     localStorage.setItem('chulian-llm-v1', JSON.stringify({
@@ -1035,6 +1408,10 @@ window.Chulian = {
         source: '专业人员', recorded_at: now, recorded_by: '场馆专业人员' },
       A10_diet: Object.assign({ text: '' }, meta),
       A11_sleep_profile: Object.assign({ bedtime: '23:30', average_hours: 7, quality: 3, issue: '无' }, meta),
+      A14_availability: { days_per_week: Math.max(1, Math.min(7, +($('regDays').value || 2))),
+        minutes_per_session: Math.max(15, Math.min(120, +($('regMinutes').value || 50))),
+        preferred_time: $('regWhen').value.trim() || '与场馆确认的时段',
+        equipment: ['普拉提训练床', '弹力带'], source: '会员本人', recorded_at: now, recorded_by: '会员本人' },
       A12_risk_flags: injury ? ['损伤或术后记录（来自 A7）'] : [],
       A13_consent: Object.assign({ voluntary: true, scope: ['训练计划', '风险提示'], synthetic: true, desensitized: true }, meta),
       B_current: {}, C1_visits: [], C2_plans: [], C3_appointments: [], C4_followups: [],
@@ -1044,7 +1421,7 @@ window.Chulian = {
     api().addMember(m); api().switchTo(api().members.length - 1, true);
     refresh(); closeSheets();
     api().bubble('a', `档案建好了：${m.A2_display_name}（${m.A1_member_id}）。说一句今天的状态就能开始记录。`);
-    ['regName','regInjury','regRestrict','regGoal'].forEach(id => $(id).value = '');
+    ['regName','regInjury','regRestrict','regGoal','regWhen'].forEach(id => $(id).value = '');
   };
 
   window.__onMemberChange = refresh;
@@ -1099,7 +1476,14 @@ window.Chulian = {
     ({ RoomEnvironment } = await import('three/addons/environments/RoomEnvironment.js'));
   } catch (e) { return; }   // 离线时留在静态大图
 
-  const renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false });
+  // 先探测 WebGL 支持，避免在无 GPU 环境抛错；不支持时静默留在静态大图
+  const probe = document.createElement('canvas');
+  const hasGL = (() => { try { return !!(probe.getContext('webgl2') || probe.getContext('webgl')); } catch (e) { return false; } })();
+  if (!hasGL) { cv.style.display = 'none'; return; }
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas: cv, antialias: true, alpha: false });
+  } catch (e) { cv.style.display = 'none'; return; }
   renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
   renderer.shadowMap.enabled = true;
   renderer.shadowMap.type = THREE.PCFSoftShadowMap;
@@ -1323,6 +1707,223 @@ window.Chulian = {
   const media = document.getElementById('heroMedia');
   if (media) media.style.display = 'none';
   requestAnimationFrame(frame);
+})();
+</script>
+<script>
+/* ================= v2.1 界面层：预约 / 动作评估 / 虚拟任务 / 随访 ================= */
+(function(){
+  const $ = id => document.getElementById(id);
+  const api = () => window.Chulian;
+  const fmtT = iso => iso ? iso.replace('T', ' ').slice(5, 16) : '—';
+  const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
+  const hint = (id, msg, bad) => { const el = $(id); if(!el) return; el.textContent = msg || ''; el.className = 'hint' + (bad ? ' bad' : ''); };
+
+  function ensureDefaults(){
+    if($('ap-time') && !$('ap-time').value){
+      const d = new Date(Date.now() + 86400000); d.setHours(10, 0, 0, 0);
+      const p = n => String(n).padStart(2, '0');
+      $('ap-time').value = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}`;
+    }
+  }
+
+  function fillSelects(){
+    const m = api().db();
+    const exSel = $('mv-ex');
+    if(exSel && !exSel.options.length){
+      const restr = (m.A9_restrictions || []).map(r => String(r.item || ''));
+      Object.keys(EX_TAGS).forEach(name => {
+        const o = document.createElement('option');
+        o.value = name;
+        const conf = EX_TAGS[name].conflict;
+        const hit = restr.find(item => conf && conf.test(item));
+        o.textContent = name + (hit ? '（与限制冲突）' : '');
+        o.disabled = !!hit;
+        exSel.appendChild(o);
+      });
+    }
+    const refSel = $('fl-ref');
+    if(refSel){
+      const cur = refSel.value;
+      refSel.innerHTML = (m.A8_professional_advice || []).map(a =>
+        `<option value="${esc(a.advice_id)}">${esc(a.advice_id)} · ${esc(String(a.content).slice(0, 22))}</option>`).join('')
+        || '<option value="">无专业意见</option>';
+      if(cur) refSel.value = cur;
+    }
+  }
+
+  function render(){
+    if(!api() || !api().db()) return;
+    ['ap-hint','mv-hint','q-hint','fl-hint'].forEach(id => hint(id, ''));
+    ensureDefaults(); fillSelects();
+    renderAppointment(); renderMovement(); renderQuest(); renderFollowup();
+  }
+
+  function renderAppointment(){
+    const m = api().db();
+    const list = (m.C3_appointments || []);
+    const plan = (api().plans || []).slice(-1)[0];
+    const gate = planGate(m, assess(m));
+    const live = list.filter(a => a.status === 'booked' || a.status === 'rescheduled').slice(-1)[0];
+    $('ap-state').textContent = live ? ('已约 ' + fmtT(live.start_at)) : (list.length ? '无有效预约' : '未预约');
+    const rows = list.slice(-4).reverse().map(a => {
+      const st = a.status === 'booked' ? '已预约' : a.status === 'rescheduled' ? '已改约' : '已取消';
+      return `<div class="arow"><span>${esc(a.appointment_id)} · ${fmtT(a.start_at)} · ${esc(a.service)}</span><span class="st ${a.status}">${st}</span></div>
+        <div class="wrapnote" style="padding:0 0 8px">器械：${esc(a.equipment)}｜教练：${esc(a.coach || '—')}｜关联 ${esc(a.plan_version || '—')}${a.cancel_reason ? '｜原因：' + esc(a.cancel_reason) : ''}${a.reschedule_reason ? '｜改约原因：' + esc(a.reschedule_reason) : ''}</div>`;
+    }).join('');
+    $('ap-body').innerHTML = rows || '<div class="empty">还没有预约。生成计划后，这里可以把计划落到具体时段与器械。</div>';
+    $('ap-create').disabled = !plan || !gate[0];
+    $('ap-cancel').disabled = !live;
+    if(!plan) hint('ap-hint', '先生成计划再预约', true);
+    else if(!gate[0]) hint('ap-hint', '当前判定为「' + assess(m).status + '」，按规则不能预约或改约', true);
+    else hint('ap-hint', '');
+  }
+
+  function renderMovement(){
+    const m = api().db();
+    const list = (m.C8_movements || []);
+    const last = list.slice(-1)[0];
+    $('mv-state').textContent = last ? (last.exercise + ' · ' + last.rank) : '';
+    $('mv-body').innerHTML = last ? `
+      <div class="kpis">
+        <div class="kpi"><b>${last.tempo_stability_pct}%</b><span>节奏稳定性</span></div>
+        <div class="kpi"><b>${last.left_right_difference_pct}%</b><span>左右差异</span></div>
+        <div class="kpi"><b>${esc(last.rank)}</b><span>本次评级</span></div>
+      </div>
+      <div class="wrapnote">${esc(last.method)}</div>
+      <div class="tagline">${(last.suggestions || []).map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>
+      <div class="wrapnote">${esc(last.movement_id)} · ${esc(last.source)} · 已写入评估记录 ${esc(((m.C6_assessments||[]).slice(-1)[0]||{}).assessment_id || '')}</div>`
+      : '<div class="empty">录一次动作节奏，得到可核查的稳定性与左右对称结果。冲突动作会被专业限制拦截。</div>';
+  }
+
+  function renderQuest(){
+    const m = api().db();
+    const q = (m.C9_quests || []).slice(-1)[0];
+    $('q-state').textContent = q ? (q.status === 'frozen' ? '已冻结' : q.badge) : '';
+    $('q-body').innerHTML = q ? `
+      <div class="arow" style="border-top:0;padding-top:0"><span>${q.status === 'frozen' ? '任务冻结 · ' + esc(q.reason) : '任务进行中 · 关联 ' + esc(q.plan_version || '—')}</span>
+        <span class="st ${q.status === 'frozen' ? 'cancelled' : 'booked'}">${q.status === 'frozen' ? '冻结' : '进行中'}</span></div>
+      <div class="bigbar"><i style="width:${q.progress_pct}%"></i></div>
+      <div class="wrapnote">进度 ${q.progress_pct}% · 场景状态：${esc(q.scene)}</div>
+      <div class="kpis">
+        <div class="kpi"><b>${q.score}</b><span>本次得分</span></div>
+        <div class="kpi"><b>${esc(q.badge)}</b><span>徽章</span></div>
+        <div class="kpi"><b>${esc(q.quest_id)}</b><span>任务编号</span></div>
+      </div>`
+      : '<div class="empty">完成训练后回填完成度，映射为场景进度与得分；风险升级时任务自动冻结。</div>';
+  }
+
+  function renderFollowup(){
+    const m = api().db();
+    const list = (m.C4_followups || []);
+    const last = list.slice(-1)[0];
+    $('fl-state').textContent = last && last.next_review ? ('下次复核 ' + last.next_review) : (list.length ? '已随访 ' + list.length + ' 次' : '');
+    const restr = (m.A9_restrictions || []).map(r => String(r.item || ''));
+    $('fl-body').innerHTML = (list.length ? list.slice(-3).reverse().map(f => `
+      <div class="arow"><span>${esc(f.followup_id)} · ${esc(String(f.content).slice(0, 40))}</span>
+        <span class="st ${f.restriction_conflicts.length ? 'cancelled' : 'booked'}">${f.restriction_conflicts.length ? '限制优先' : '已记录'}</span></div>
+      <div class="wrapnote" style="padding:0 0 8px">依据 ${esc(f.professional_advice_ref)}｜${esc(f.handling)}${f.restriction_conflicts.length ? '（' + f.restriction_conflicts.map(esc).join('、') + '）' : ''}</div>`).join('')
+      : '<div class="empty">康复与慢病相关记录只做随访，不生成诊疗建议。</div>') +
+      (restr.length ? `<div class="wrapnote">当前生效的专业限制：${restr.map(esc).join('；')}（优先于一切计划与互动）</div>` : '');
+  }
+
+  /* ---------- 事件 ---------- */
+  $('ap-create').onclick = () => {
+    const m = api().db();
+    const t = $('ap-time').value, svc = $('ap-svc').value, coach = $('ap-coach').value.trim() || '场馆教练（合成）';
+    const reason = $('ap-reason').value.trim();
+    if(!t){ hint('ap-hint', '请选择到店时间', true); return; }
+    const start_at = t.length === 16 ? t + ':00' : t;
+    try{
+      const list = m.C3_appointments || [];
+      const live = list.filter(a => a.status === 'booked' || a.status === 'rescheduled').slice(-1)[0];
+      let msg = '';
+      if(live){
+        let next_at = start_at;
+        let bumped = false;
+        if(next_at === live.start_at){
+          const d = new Date(next_at); d.setDate(d.getDate() + 1);
+          const p = n => String(n).padStart(2, '0');
+          next_at = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
+          bumped = true;
+        }
+        appointment(m, 'reschedule', {appointment_id: live.appointment_id, start_at: next_at, reason: reason || '会员调整时间', actor: '会员本人'});
+        msg = (bumped ? '所选时段与原预约相同，已顺延一天至 ' : '已改约到 ') + fmtT(next_at) + '，器械按新计划重新准备';
+        $('ap-time').value = next_at.slice(0, 16);
+      }else{
+        const rec = appointment(m, 'create', {start_at, service: svc, coach, actor: '会员本人'});
+        msg = rec.appointment_id + ' 已预约，器械：' + rec.equipment;
+      }
+      api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
+      hint('ap-hint', msg);
+    }catch(err){ hint('ap-hint', err.message, true); }
+  };
+  $('ap-cancel').onclick = () => {
+    const m = api().db();
+    const reason = $('ap-reason').value.trim();
+    const live = (m.C3_appointments || []).filter(a => a.status === 'booked' || a.status === 'rescheduled').slice(-1)[0];
+    if(!live){ hint('ap-hint', '没有可取消的预约', true); return; }
+    try{
+      appointment(m, 'cancel', {appointment_id: live.appointment_id, reason: reason || '会员临时调整', actor: '会员本人'});
+      api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
+      hint('ap-hint', live.appointment_id + ' 已取消，器械已释放');
+    }catch(err){ hint('ap-hint', err.message, true); }
+  };
+
+  $('mv-run').onclick = () => {
+    const m = api().db();
+    const nums = s => String(s || '').split(/[，,、\s]+/).filter(Boolean).map(Number);
+    const lr = nums($('mv-lr').value);
+    try{
+      const out = evaluateMovement(m, {
+        exercise: $('mv-ex').value,
+        tempo_seconds: nums($('mv-tempo').value),
+        left_durations_seconds: lr.length ? [lr[0]] : [],
+        right_durations_seconds: lr.length > 1 ? [lr[1]] : [],
+        source: $('mv-src').value.trim() || '教练现场记录（合成）'
+      }, '合成教练');
+      api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
+      hint('mv-hint', '已生成 ' + out.assessment.assessment_id + '：' + out.movement.rank);
+    }catch(err){ hint('mv-hint', err.message, true); }
+  };
+  $('mv-demo').onclick = () => {
+    $('mv-tempo').value = '2.1,2.0,2.4'; $('mv-lr').value = '2.2,1.9';
+    const sel = $('mv-ex'); const first = [...sel.options].find(o => !o.disabled); if(first) sel.value = first.value;
+    $('mv-run').click();
+  };
+
+  document.querySelectorAll('[data-q]').forEach(b => {
+    b.onclick = () => {
+      const m = api().db();
+      try{
+        const q = updateQuest(m, +b.dataset.q);
+        api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
+        hint('q-hint', q.status === 'frozen' ? '风险状态下任务已冻结' : '进度已更新为 ' + q.progress_pct + '%');
+      }catch(err){ hint('q-hint', err.message, true); }
+    };
+  });
+
+  $('fl-add').onclick = () => {
+    const m = api().db();
+    const content = $('fl-content').value.trim();
+    const mono = $('fl-mono').value.trim();
+    if(!content){ hint('fl-hint', '请填写随访内容', true); return; }
+    try{
+      const rec = addFollowup(m, {
+        content: content + (mono ? '；监测：' + mono : ''),
+        professional_advice_ref: $('fl-ref').value,
+        activity_tags: [$('fl-tags').value],
+        next_review: $('fl-next').value
+      }, '合成教练');
+      api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
+      $('fl-content').value = ''; $('fl-mono').value = '';
+      hint('fl-hint', rec.followup_id + ' 已记录' + (rec.restriction_conflicts.length ? '：命中专业限制，按限制执行' : ''));
+    }catch(err){ hint('fl-hint', err.message, true); }
+  };
+
+  const prevHook = window.__onMemberChange;
+  window.__onMemberChange = function(){ if(typeof prevHook === 'function') prevHook(); render(); };
+  window.__onDataChange = function(){ render(); };
+  setTimeout(render, 60);
 })();
 </script>
 </body>
