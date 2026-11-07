@@ -184,7 +184,7 @@
   .plan-panel .tagline{margin-top:10px}
   .sidewrap{display:contents}
   .ptabs{display:none}
-  @media (min-width:1200px){
+  @media (min-width:9999px){
     html,body{overflow:hidden}
     .hero{display:flex !important;position:fixed;left:0;right:0;top:76px;bottom:0;z-index:3;min-height:0;
       flex-direction:column;justify-content:flex-start;padding:0 478px 24px 24px !important;pointer-events:none}
@@ -251,20 +251,10 @@
   body[data-tab="venue"] .vgrid{display:grid}
   .tile{padding:18px;border-radius:22px;border:1px solid var(--glass-line);background:var(--glass);
     text-align:left;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:118px;
-    box-shadow:0 12px 40px rgba(0,0,0,.28);
-    backdrop-filter:saturate(150%) blur(26px);-webkit-backdrop-filter:saturate(150%) blur(26px)}
+    box-shadow:0 12px 40px rgba(0,0,0,.28)}
   .tile .tt{font-size:12px;color:var(--muted)}
   .tile b{font-size:20px;font-weight:650;letter-spacing:-.01em;line-height:1.3}
   .tile small{font-size:11.5px;color:var(--muted);margin-top:auto}
-  .tile .tm{display:flex;flex-direction:column;gap:7px;margin-top:12px;
-    font-size:12.5px;line-height:1.5;color:var(--ink2);font-weight:400}
-  .tile .tm .ln{display:flex;gap:10px}
-  .tile .tm .ln i{flex:0 0 58px;font-style:normal;color:var(--muted)}
-  .tile .tm .ln span{flex:1;min-width:0}
-  .tile.info{grid-column:1 / -1;cursor:default;gap:8px}
-  .tile.info .tm{flex-direction:row;flex-wrap:wrap;gap:6px 22px;margin-top:6px}
-  .tile.info .tm .ln{flex:0 0 auto}
-  .tile.info .tm .ln i{flex:none;margin-right:8px}
   .vmask{position:fixed;inset:0;z-index:200;background:rgba(7,8,11,.55);opacity:0;pointer-events:none;transition:.25s}
   .vmask.on{opacity:1;pointer-events:auto}
   .vdrawer{position:fixed;top:0;right:0;bottom:0;z-index:201;width:min(460px,100vw);background:rgba(12,15,20,.97);
@@ -292,7 +282,7 @@
   body[data-tab="venue"] .card[data-tab="venue"]{display:block}
   body[data-tab="plan"] .dock,body[data-tab="venue"] .dock{display:none}
   .railnav{display:none}
-  @media (min-width:1200px){
+  @media (min-width:9999px){
     .railnav{display:flex;position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:65;
       flex-direction:column;gap:6px;padding:8px;border-radius:18px;border:1px solid var(--glass-line);
       background:rgba(16,20,27,.66);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
@@ -546,19 +536,10 @@
     <div id="v-body"><div class="empty">还没有记录。</div></div>
   </section>
   <div class="vgrid" id="vgrid" data-tab="venue">
-    <button class="tile" data-open="ap"><span class="tt">预约</span><b id="tile-ap">—</b><span class="tm" id="tile-ap-meta"></span><small>查看、改约与取消</small></button>
-    <button class="tile" data-open="mv"><span class="tt">动作评估</span><b id="tile-mv">—</b><span class="tm" id="tile-mv-meta"></span><small>稳定性与左右差异</small></button>
-    <button class="tile" data-open="q"><span class="tt">虚拟任务</span><b id="tile-q">—</b><span class="tm" id="tile-q-meta"></span><small>进度与得分</small></button>
-    <button class="tile" data-open="fl"><span class="tt">随访</span><b id="tile-fl">—</b><span class="tm" id="tile-fl-meta"></span><small>限制优先与复核日期</small></button>
-    <div class="tile info">
-      <span class="tt">场馆服务</span>
-      <b>工作日 7:00–22:00 · 周末 8:00–21:00</b>
-      <span class="tm">
-        <span class="ln"><i>停车</i><span>地库 B2 会员车位，前台登记车牌</span></span>
-        <span class="ln"><i>更衣淋浴</i><span>7:00–22:30，毛巾前台领取</span></span>
-        <span class="ln"><i>器械</i><span>普拉提床、弹力带、普拉提圈、哑铃</span></span>
-      </span>
-    </div>
+    <button class="tile" data-open="ap"><span class="tt">预约</span><b id="tile-ap">—</b><small>查看、改约与取消</small></button>
+    <button class="tile" data-open="mv"><span class="tt">动作评估</span><b id="tile-mv">—</b><small>稳定性与左右差异</small></button>
+    <button class="tile" data-open="q"><span class="tt">虚拟任务</span><b id="tile-q">—</b><small>进度与得分</small></button>
+    <button class="tile" data-open="fl"><span class="tt">随访</span><b id="tile-fl">—</b><small>限制优先与复核日期</small></button>
   </div>
 
   <div id="venueStore" hidden>
@@ -1845,7 +1826,7 @@ setTimeout(initCloud, 0);
   showPanel('state');
 
   function showTab(tab, scroll) {
-    if (window.matchMedia('(min-width:1200px)').matches) {
+    if (window.matchMedia('(min-width:9999px)').matches) {
       showPanel(tab === 'home' ? 'state' : tab);
       return;
     }
@@ -1905,60 +1886,6 @@ setTimeout(initCloud, 0);
       const te = $(t), se = $(s);
       if (te) te.textContent = (se && se.textContent.trim()) || d;
     });
-    const m = api().db();
-    const fmt = iso => iso ? String(iso).replace('T', ' ').slice(5, 16) : '—';
-    const setMeta = (id, rows) => {
-      const el = $(id);
-      if (el) el.innerHTML = rows.map(([k, v]) => `<span class="ln"><i>${k}</i><span>${v}</span></span>`).join('');
-    };
-    const live = (m.C3_appointments || [])
-      .filter(a => (a.status === 'booked' || a.status === 'rescheduled') && Date.parse(a.start_at) > Date.now())
-      .sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at))[0];
-    setMeta('tile-ap-meta', live ? [
-      ['下次', fmt(live.start_at) + ' · ' + esc(live.service)],
-      ['教练', esc(live.coach || '场馆教练')],
-      ['规则', '开课前 24 小时可免费改约']
-    ] : [
-      ['时间', '选个时间，把计划落到具体时段'],
-      ['规则', '开课前 24 小时可免费改约'],
-      ['提醒', '预约成功会提前一天提醒']
-    ]);
-
-    const mv = (m.C8_movements || []).slice(-1)[0];
-    setMeta('tile-mv-meta', mv ? [
-      ['最近', fmt(mv.recorded_at) + ' · ' + esc(mv.exercise)],
-      ['指标', '稳定性 ' + mv.tempo_stability_pct + '% · 左右差 ' + mv.left_right_difference_pct + '%'],
-      ['口径', '教练现场标注时长']
-    ] : [
-      ['指标', '节奏稳定性、左右差异'],
-      ['口径', '教练现场标注时长，非视觉识别'],
-      ['拦截', '与专业限制冲突的动作会被拒绝']
-    ]);
-
-    const q = (m.C9_quests || []).slice(-1)[0];
-    setMeta('tile-q-meta', q ? [
-      ['进度', q.progress_pct + '% · 得分 ' + q.score],
-      ['场景', esc(q.scene)],
-      ['状态', q.status === 'frozen' ? '已冻结：' + esc(q.reason || '') : '进行中']
-    ] : [
-      ['映射', '完成度映射为进度与得分'],
-      ['场景', '灯带随进度变化'],
-      ['冻结', '风险升级时自动冻结']
-    ]);
-
-    const flList = m.C4_followups || [];
-    const fl = flList.slice(-1)[0];
-    const restr = (m.A9_restrictions || []).length;
-    const lastReview = (m.C5_reviews || []).slice(-1)[0];
-    setMeta('tile-fl-meta', fl ? [
-      ['下次复核', fl.next_review || '—'],
-      ['记录', '已随访 ' + flList.length + ' 次'],
-      ['限制', restr ? restr + ' 项，优先于计划' : '无活动限制']
-    ] : [
-      ['最近复核', lastReview ? fmt(lastReview.recorded_at) + (lastReview.decision === 'approved' ? ' · 通过' : ' · 未通过') : '—'],
-      ['限制', restr ? '当前 ' + restr + ' 项活动限制' : '无活动限制'],
-      ['规则', '记录只做随访，不生成诊疗建议']
-    ]);
   }
   window.__syncTiles = syncTiles;
   syncTiles();
@@ -2215,7 +2142,7 @@ setTimeout(initCloud, 0);
 
   // 开场先读档案与上次到店，避免空白页
   function greetMember() {
-    if (innerWidth >= 1200) return;
+    if (innerWidth >= 9999) return;
     if (!api() || document.querySelectorAll('#wrap .row').length) return;
     const m = api().db();
     const name = (m.A2_display_name || '').replace(/（合成）/, '');
@@ -2439,7 +2366,7 @@ setTimeout(initCloud, 0);
   let scrollP = 0, targetP = 0, lastNow = 0, msgBoost = 0;
   const heroEl = document.getElementById('hero');
   const chatLogEl = document.querySelector('.chatcard .log');
-  const isDesk = () => window.matchMedia('(min-width:1200px)').matches;
+  const isDesk = () => window.matchMedia('(min-width:9999px)').matches;
   const withBoost = base => Math.min(1, Math.max(0, base) + msgBoost);
   if (chatLogEl && heroEl) {
     heroEl.addEventListener('wheel', e => {
