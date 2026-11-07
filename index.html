@@ -2168,7 +2168,7 @@ setTimeout(initCloud, 0);
         <div class="wrapnote" style="padding:0 0 8px">器械：${esc(a.equipment)}｜教练：${esc(a.coach || '—')}｜关联 ${esc(a.plan_version || '—')}${a.cancel_reason ? '｜原因：' + esc(a.cancel_reason) : ''}${a.reschedule_reason ? '｜改约原因：' + esc(a.reschedule_reason) : ''}</div>`;
     }).join('');
     $('ap-body').innerHTML = rows || '<div class="empty">还没有预约。生成计划后，这里可以把计划落到具体时段与器械。</div>';
-    $('ap-create').disabled = !plan || !gate[0];
+    $('ap-create').disabled = false;
     $('ap-cancel').disabled = !live;
     if(!plan) hint('ap-hint', '先生成计划再预约', true);
     else if(!gate[0]) hint('ap-hint', '当前判定为「' + assess(m).status + '」，按规则不能预约或改约', true);
@@ -2228,6 +2228,9 @@ setTimeout(initCloud, 0);
     const m = api().db();
     const t = $('ap-time').value, svc = $('ap-svc').value, coach = $('ap-coach').value.trim() || '场馆教练（合成）';
     const reason = $('ap-reason').value.trim();
+    const gate = planGate(m, assess(m));
+    if(!(api().plans || []).length){ hint('ap-hint', '先生成计划再预约', true); return; }
+    if(!gate[0]){ hint('ap-hint', '当前判定为「' + assess(m).status + '」，按规则不能预约或改约', true); return; }
     if(!t){ hint('ap-hint', '请选择到店时间', true); return; }
     const start_at = t.length === 16 ? t + ':00' : t;
     try{
