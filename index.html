@@ -48,7 +48,6 @@
   .coachchip{font-size:11.5px;color:var(--muted);padding:4px 9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;white-space:nowrap}
   .coachchip:empty{display:none}
   .coachline{margin-top:12px;padding-top:10px;border-top:1px solid rgba(255,255,255,.08);font-size:12px;color:var(--muted)}
-  .stage-title{display:none}
   .coachline b{color:var(--ink2);font-weight:500}
   .coachline:empty{display:none}
   #offline{position:fixed;top:66px;right:14px;z-index:90;display:none;padding:5px 10px;border-radius:999px;
@@ -132,7 +131,6 @@
 
   /* 对话 */
   .chatcard{padding:8px 0 0;scroll-margin-top:76px}
-  .chat-hero{display:none}
   .chat-head{display:flex;align-items:center;gap:8px;padding:6px 22px 14px}
   .chat-head b{font-size:13.5px;font-weight:600}
   .chat-head span{font-size:11.5px;color:var(--muted)}
@@ -153,164 +151,13 @@
   .verdict-block{margin-top:8px;padding-left:11px;border-left:3px solid var(--line)}
   .verdict-block.ok{border-color:var(--ok)} .verdict-block.warn{border-color:var(--warn)}
   .verdict-block.stop{border-color:var(--stop)} .verdict-block.info{border-color:var(--info)}
-  .summary{grid-template-columns:104px 1fr;gap:12px 18px;padding:16px 18px}
-  .summary .ringwrap{width:104px;height:104px;margin:0}
-  .summary .ringwrap svg{width:100%;height:100%}
-  .summary .ringwrap .mid b{font-size:27px}
-  .summary .ringwrap .mid span{font-size:10px;margin-top:2px}
-  .summary .coachline{grid-column:1 / -1;margin-top:4px;padding-top:8px}
-  .card-primary{background:rgba(255,255,255,.09);border-color:rgba(255,255,255,.2);box-shadow:0 20px 55px rgba(0,0,0,.38)}
-  .card-primary.tone-warn{border-left:3px solid var(--warn)}
-  .card-primary.tone-stop{border-left:3px solid var(--stop)}
-  .card-primary.tone-ok{border-left:3px solid var(--ok)}
-  .card-primary.tone-info{border-left:3px solid rgba(255,255,255,.25)}
-  .card-primary .card-h h3{font-size:11px;letter-spacing:.12em;color:var(--muted);font-weight:500}
-  .card-primary .verdict-head .pill{font-size:15.5px;padding:6px 15px}
-  .card-primary #d-reason{font-size:15px;color:var(--ink)}
-  .chatcard{background:rgba(255,255,255,.045);box-shadow:none}
-  .plan-hero{padding:2px 0 14px;margin-bottom:4px;border-bottom:1px solid rgba(255,255,255,.08)}
-  .plan-hero b{font-size:28px;font-weight:650;letter-spacing:-.01em}
-  .plan-hero span{font-size:14px;color:var(--ink2);margin-left:10px}
-  .plan-hero small{display:block;font-size:12px;color:var(--muted);margin-top:6px}
-  .ap-hero{padding:2px 0 14px;margin-bottom:8px;border-bottom:1px solid rgba(255,255,255,.08)}
-  .ap-hero b{font-size:26px;font-weight:650;letter-spacing:-.01em}
-  .ap-hero span{font-size:15px;color:var(--ink2);margin-left:10px}
-  .ap-hero small{display:block;font-size:12px;color:var(--muted);margin-top:6px}
-  .seg{display:flex;gap:6px;margin:10px 0 12px;flex-wrap:wrap}
-  .seg button{padding:6px 15px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
-    background:rgba(255,255,255,.05);color:var(--muted);font-size:12.5px;cursor:pointer}
-  .seg button.on{color:#fff;background:rgba(120,160,220,.22);border-color:rgba(150,190,240,.38)}
-  .plan-text{font-size:13.5px;line-height:1.8;color:var(--ink2)}
-  .plan-panel .tagline{margin-top:10px}
-  .sidewrap{display:contents}
-  .ptabs{display:none}
-  @media (min-width:9999px){
-    html,body{overflow:hidden}
-    .hero{display:flex !important;position:fixed;left:0;right:0;top:76px;bottom:0;z-index:3;min-height:0;
-      flex-direction:column;justify-content:flex-start;padding:0 478px 24px 24px !important;pointer-events:none}
-    .hero .inner{pointer-events:auto;width:100%;max-width:760px;margin:0 auto;height:100%;
-      display:flex;flex-direction:column;opacity:1 !important}
-    .hero .hero-copy{display:none}
-    .hero .glass{margin-top:auto}
-    .chat-hero{display:block;padding:4px 0 18px}
-    .chat-hero .eyebrow{font-size:11px;letter-spacing:.22em;color:var(--muted);margin-bottom:12px}
-    .chat-hero h1{margin:0 0 10px;font-size:42px;line-height:1.14;font-weight:700;letter-spacing:-.02em;
-      text-shadow:0 4px 24px rgba(0,0,0,.55)}
-    .chat-hero .sub{margin:0;font-size:13.5px;color:var(--ink2);text-shadow:0 2px 12px rgba(0,0,0,.6)}
-    .hero .eyebrow{font-size:11px;letter-spacing:.22em;margin-bottom:12px}
-    .hero h1{font-size:42px;line-height:1.14;margin-bottom:10px;text-shadow:0 4px 24px rgba(0,0,0,.55)}
-    .hero .sub{font-size:13.5px;margin-bottom:18px;text-shadow:0 2px 12px rgba(0,0,0,.6)}
-    .hero .chips button{background:rgba(10,12,16,.45);backdrop-filter:blur(10px)}
-    .content{position:fixed;left:0;right:0;top:76px;bottom:0;max-width:none;margin:0;padding:0 24px;
-      display:grid;grid-template-columns:minmax(0,1fr) 430px;grid-template-rows:minmax(0,1fr);
-      column-gap:24px;align-items:stretch;pointer-events:none}
-    .chatcard{position:fixed;left:24px;right:478px;top:76px;bottom:152px;z-index:4;margin:0;padding:0;
-      display:block !important;pointer-events:auto;
-      background:transparent !important;border:0 !important;box-shadow:none !important;
-      backdrop-filter:none !important;-webkit-backdrop-filter:none !important;border-radius:0 !important}
-    .chatcard .chat-head{display:none}
-    .chatcard .quick{display:none}
-    .chatcard .log{position:absolute;inset:0;overflow-y:auto;padding:18px 0 0;
-      scrollbar-width:thin;scrollbar-color:rgba(255,255,255,.35) transparent;
-      -webkit-mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.35) 14px,#000 42px);
-      mask-image:linear-gradient(to bottom,transparent 0,rgba(0,0,0,.35) 14px,#000 42px)}
-    .chatcard .log::-webkit-scrollbar{width:6px}
-    .chatcard .log::-webkit-scrollbar-thumb{background:rgba(255,255,255,.3);border-radius:99px}
-    .chatcard .wrap{min-height:100%;display:flex;flex-direction:column;justify-content:flex-end;
-      width:100%;box-sizing:border-box;padding-bottom:8px}
-    .chatcard .row.a .bubble{background:rgba(8,10,14,.86);border:1px solid rgba(255,255,255,.12);
-      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-shadow:0 1px 6px rgba(0,0,0,.5)}
-    .chatcard .row.me .bubble{background:rgba(52,96,180,.55);border:1px solid rgba(140,180,255,.4);
-      backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);text-shadow:0 1px 6px rgba(0,0,0,.45)}
-    .chatcard .chat-head b,.chatcard .chat-head span{text-shadow:0 1px 8px rgba(0,0,0,.65)}
-    .quick{display:flex;padding:0 0 14px;flex-wrap:wrap;gap:6px}
-    .quick button{background:rgba(10,12,16,.55);backdrop-filter:blur(10px)}
-    .quick button{padding:6px 12px;border-radius:999px;background:rgba(255,255,255,.08);
-      border:1px solid rgba(255,255,255,.14);color:var(--ink2);font-size:12px;cursor:pointer}
-    .sidewrap{display:flex;flex-direction:column;position:fixed;top:76px;right:24px;bottom:24px;width:430px;
-      height:auto;max-height:none;overflow-y:auto;padding-right:4px;pointer-events:auto}
-    .ptabs{display:flex;gap:6px;margin:0 0 12px}
-    .ptabs .pt{padding:7px 16px;border-radius:999px;border:1px solid rgba(255,255,255,.12);
-      background:rgba(255,255,255,.06);color:var(--muted);font-size:12.5px;cursor:pointer}
-    .ptabs .pt.on{color:#fff;background:rgba(120,160,220,.22);border-color:rgba(150,190,240,.38)}
-    .sidewrap .card[data-tab]{display:none !important}
-    .sidewrap .vgrid[data-tab]{display:none !important}
-    .sidewrap[data-panel="state"] .card[data-tab="home"]{display:block !important}
-    .sidewrap[data-panel="plan"] .card[data-tab="plan"]{display:block !important}
-    .sidewrap[data-panel="venue"] .vgrid[data-tab="venue"]{display:grid !important}
-    .sidewrap[data-panel="state"] .summary{display:grid !important;flex:0 0 44%;align-content:space-between;min-height:0}
-    .sidewrap[data-panel="state"] #d-card{display:flex !important;flex-direction:column;flex:1 1 auto;min-height:0}
-    .sidewrap[data-panel="state"] #d-card #d-reason{flex:1 1 auto}
-    .sidewrap[data-panel="state"] #d-card #d-basis{margin-top:auto}
-    .sidewrap[data-panel="plan"] #p-card{display:flex !important;flex-direction:column;flex:1 1 auto;min-height:0}
-    .sidewrap[data-panel="plan"] #p-card #p-body{flex:1 1 auto;overflow-y:auto;min-height:0}
-    .sidewrap[data-panel="venue"] .vgrid{flex:1 1 auto;min-height:0;grid-template-rows:1fr 1fr auto}
-    .tabbar,.railnav,.dock{display:none !important}
-  }
-  .vgrid{display:none;grid-template-columns:1fr 1fr;gap:14px}
-  body[data-tab="venue"] .vgrid{display:grid}
-  .tile{padding:18px;border-radius:22px;border:1px solid var(--glass-line);background:var(--glass);
-    text-align:left;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;gap:6px;min-height:118px;
-    box-shadow:0 12px 40px rgba(0,0,0,.28)}
-  .tile .tt{font-size:12px;color:var(--muted)}
-  .tile b{font-size:20px;font-weight:650;letter-spacing:-.01em;line-height:1.3}
-  .tile small{font-size:11.5px;color:var(--muted);margin-top:auto}
-  .vmask{position:fixed;inset:0;z-index:200;background:rgba(7,8,11,.55);opacity:0;pointer-events:none;transition:.25s}
-  .vmask.on{opacity:1;pointer-events:auto}
-  .vdrawer{position:fixed;top:0;right:0;bottom:0;z-index:201;width:min(460px,100vw);background:rgba(12,15,20,.97);
-    border-left:1px solid var(--glass-line);transform:translateX(100%);transition:transform .3s cubic-bezier(.22,.8,.24,1);
-    display:flex;flex-direction:column}
-  .vdrawer.on{transform:none}
-  .vdrawer-h{display:flex;align-items:center;justify-content:space-between;padding:16px 18px;border-bottom:1px solid var(--glass-line)}
-  .vdrawer-h b{font-size:15px}
-  .vdrawer-h button{width:32px;height:32px;border-radius:10px;border:1px solid var(--glass-line);
-    background:rgba(255,255,255,.06);color:var(--ink);font-size:18px;cursor:pointer}
-  .vdrawer-b{flex:1;overflow-y:auto;padding:16px}
-  .vdrawer-b .card{margin-bottom:0;background:transparent;border:0;box-shadow:none;padding:0}
-  body.drawer-open{overflow:hidden}
-  @media (max-width:720px){ .vgrid{grid-template-columns:1fr} }
   .typing{display:inline-flex;gap:4px;align-items:center;height:14px}
   .typing i{width:5px;height:5px;border-radius:50%;background:#B8C0CC;animation:pulse 1.2s infinite}
   .typing i:nth-child(2){animation-delay:.15s} .typing i:nth-child(3){animation-delay:.3s}
   @keyframes pulse{0%,60%,100%{opacity:.3}30%{opacity:1}}
 
   /* 底部输入（滚动后出现） */
-  .dock{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:12px 20px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to top,rgba(8,10,14,.72) 55%,rgba(8,10,14,0));transform:translateY(calc(100% + 70px));transition:transform .35s cubic-bezier(.22,.8,.24,1)}
-  .card[data-tab]{display:none}
-  body[data-tab="home"] .card[data-tab="home"],
-  body[data-tab="plan"] .card[data-tab="plan"],
-  body[data-tab="venue"] .card[data-tab="venue"]{display:block}
-  body[data-tab="plan"] .dock,body[data-tab="venue"] .dock{display:none}
-  .railnav{display:none}
-  @media (min-width:9999px){
-    .railnav{display:flex;position:fixed;left:18px;top:50%;transform:translateY(-50%);z-index:65;
-      flex-direction:column;gap:6px;padding:8px;border-radius:18px;border:1px solid var(--glass-line);
-      background:rgba(16,20,27,.66);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px)}
-    .railnav .r{width:62px;height:56px;border-radius:12px;border:0;background:none;color:var(--muted);
-      cursor:pointer;display:grid;place-items:center;gap:2px}
-    .railnav .r span{font-size:15px;font-weight:600}
-    .railnav .r small{font-size:10.5px}
-    .railnav .r.on{background:rgba(120,160,220,.2);color:#fff}
-    .tabbar{display:none}
-    body[data-tab="home"] .dock{bottom:0}
-  }
-  body[data-tab="plan"] .hero .glass,body[data-tab="plan"] .hero .chips,
-  body[data-tab="venue"] .hero .glass,body[data-tab="venue"] .hero .chips{display:none}
-  .tabbar{position:fixed;left:0;right:0;bottom:0;z-index:70;display:flex;align-items:center;
-    height:calc(60px + env(safe-area-inset-bottom));padding:0 8px env(safe-area-inset-bottom);
-    border-top:1px solid rgba(255,255,255,.08);
-    background:rgba(10,13,18,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);
-    transform:none}
-  .tabbar.on{transform:none}
-  .tabbar .thumb{position:absolute;top:7px;left:8px;width:calc((100% - 16px)/3);height:46px;border-radius:12px;
-    background:rgba(255,255,255,.12);
-    transition:transform .32s cubic-bezier(.22,.8,.24,1)}
-  .tabbar .t{position:relative;z-index:1;flex:1;height:60px;background:none;border:0;
-    color:var(--muted);font-size:13.5px;cursor:pointer;letter-spacing:.02em}
-  .tabbar .t.on{color:#fff;font-weight:600}
-  body[data-tab="home"] .dock{bottom:60px}
-  body[data-tab="home"] .content{padding-bottom:230px}
-  body:not([data-tab="home"]) .content{padding-bottom:100px}
+  .dock{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:12px 20px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to top,rgba(8,10,14,.72) 55%,rgba(8,10,14,0));transform:translateY(110%);transition:transform .35s cubic-bezier(.22,.8,.24,1)}
   .dock.on{transform:none}
   .dock .inner{max-width:760px;margin:0 auto;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.10);border:1px solid var(--glass-line);border-radius:16px;padding:7px 7px 7px 15px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
   .dock textarea{flex:1;border:0;background:transparent;resize:none;font:inherit;font-size:15px;line-height:1.5;padding:6px 0;max-height:100px;min-height:24px;outline:none;overflow:hidden}
@@ -406,11 +253,9 @@
     .bubble{max-width:88%}
   }
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}}
-  .hero{padding-bottom:122px}
-  @media (max-width:720px){ .hero{padding-bottom:100px} }
 </style>
 </head>
-<body data-tab="home">
+<body>
 
 <div id="intro">
   <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
@@ -442,23 +287,15 @@
   </div>
 </div>
 
-<nav class="railnav" id="railnav">
-  <button class="r on" data-tab="home"><span>首</span><small>首页</small></button>
-  <button class="r" data-tab="plan"><span>计</span><small>计划</small></button>
-  <button class="r" data-tab="venue"><span>场</span><small>场馆</small></button>
-</nav>
-
 <canvas id="stage"></canvas>
 <div id="offline">未连接服务 · 本地模式</div>
 
 <header class="hero" id="hero">
   <div class="media" id="heroMedia"></div>
   <div class="inner">
-    <div class="hero-copy">
-      <div class="eyebrow">Member Health Record</div>
-      <h1>今天的训练，<br>取决于今天的状态。</h1>
-      <p class="sub" id="heroSub">说一句就能开始。判断交给规则，解释留给人。</p>
-    </div>
+    <div class="eyebrow">Member Health Record</div>
+    <h1>今天的训练，<br>取决于今天的状态。</h1>
+    <p class="sub" id="heroSub">说一句就能开始。判断交给规则，解释留给人。</p>
     <div class="glass">
       <textarea id="input" rows="1" placeholder="说说今天的状态，比如：有点累、腰酸 4 分"></textarea>
       <button class="go" id="send" aria-label="发送">
@@ -474,29 +311,12 @@
 </header>
 
 <main class="content">
-  <section class="card chatcard" data-tab="home">
+  <section class="card chatcard">
     <div class="chat-head"><b>初练</b><span>会员健康档案助手</span></div>
-    <div class="chips quick" id="quick">
-      <button data-fill="今天有点累，腰酸4分，昨晚只睡了5小时">有点累，腰酸 4 分</button>
-      <button data-fill="今天状态不错，没有不舒服，睡了7个半小时">状态不错</button>
-      <button data-fill="今天胸口有点闷，还有点头晕">胸口发闷</button>
-    </div>
-    <div class="log"><div class="wrap" id="wrap">
-      <div class="chat-hero" id="chatHero">
-        <div class="eyebrow">MEMBER HEALTH RECORD</div>
-        <h1>今天的训练，<br>取决于今天的状态。</h1>
-        <p class="sub" id="chatHeroSub">说一句就能开始。判断交给规则，解释留给人。</p>
-      </div>
-    </div></div>
+    <div class="log"><div class="wrap" id="wrap"></div></div>
   </section>
 
-  <div class="sidewrap" id="sidewrap" data-panel="state">
-    <div class="ptabs" id="ptabs">
-      <button class="pt on" data-panel="state">状态</button>
-      <button class="pt" data-panel="plan">计划</button>
-      <button class="pt" data-panel="venue">场馆</button>
-    </div>
-  <section class="card summary" data-tab="home">
+  <section class="card summary">
     <div class="ringwrap">
       <svg width="150" height="150" viewBox="0 0 150 150">
         <defs>
@@ -519,31 +339,23 @@
     <div class="coachline" id="coachLine"></div>
   </section>
 
-  <section class="card card-primary" id="d-card" data-tab="home">
+  <section class="card">
     <div class="card-h"><h3 id="d-title">今日判定</h3><span class="code" id="d-rule"></span><span class="right"><button class="tbtn" id="d-more" style="height:28px;padding:0 12px;font-size:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);color:#fff">依据</button></span></div>
     <div class="verdict-head"><span class="pill idle" id="d-tag">等待今日状态</span></div>
     <p id="d-reason" style="margin:0 0 12px;color:var(--ink2);font-size:14px;line-height:1.7">会员说一句今天的状态，这里会出现判定。</p>
     <div class="chips" id="d-basis"></div>
   </section>
 
-  <section class="card card-primary" id="p-card" data-tab="plan">
+  <section class="card">
     <div class="card-h"><h3>训练计划</h3><span class="right" id="p-ver"></span></div>
     <div id="p-body"><div class="empty">复核通过后生成第一版计划。</div></div>
   </section>
 
-  <section class="card" data-tab="plan">
+  <section class="card">
     <div class="card-h"><h3>到店记录</h3><span class="right" id="v-count"></span></div>
     <div id="v-body"><div class="empty">还没有记录。</div></div>
   </section>
-  <div class="vgrid" id="vgrid" data-tab="venue">
-    <button class="tile" data-open="ap"><span class="tt">预约</span><b id="tile-ap">—</b><small>查看、改约与取消</small></button>
-    <button class="tile" data-open="mv"><span class="tt">动作评估</span><b id="tile-mv">—</b><small>稳定性与左右差异</small></button>
-    <button class="tile" data-open="q"><span class="tt">虚拟任务</span><b id="tile-q">—</b><small>进度与得分</small></button>
-    <button class="tile" data-open="fl"><span class="tt">随访</span><b id="tile-fl">—</b><small>限制优先与复核日期</small></button>
-  </div>
-
-  <div id="venueStore" hidden>
-  <section class="card card-primary" data-tab="venue">
+  <section class="card">
     <div class="card-h"><h3>预约与场馆服务</h3><span class="right" id="ap-state"></span></div>
     <div id="ap-body"><div class="empty">生成计划后可预约；改约与取消都会留下记录。</div></div>
     <div class="fgrid">
@@ -559,7 +371,7 @@
     </div>
   </section>
 
-  <section class="card" data-tab="venue">
+  <section class="card">
     <div class="card-h"><h3>动作评估 · 运动模式</h3><span class="right" id="mv-state"></span></div>
     <div id="mv-body"><div class="empty">录一次动作节奏，得到可核查的稳定性与左右对称结果。</div></div>
     <div class="fgrid">
@@ -575,7 +387,7 @@
     </div>
   </section>
 
-  <section class="card" data-tab="venue">
+  <section class="card">
     <div class="card-h"><h3>虚拟任务 · 场景联动</h3><span class="right" id="q-state"></span></div>
     <div id="q-body"><div class="empty">完成训练后回填完成度，映射为场景进度与得分。</div></div>
     <div class="acts">
@@ -586,7 +398,7 @@
     </div>
   </section>
 
-  <section class="card" data-tab="venue">
+  <section class="card">
     <div class="card-h"><h3>随访与慢病管理</h3><span class="right" id="fl-state"></span></div>
     <div id="fl-body"><div class="empty">康复与慢病相关记录只做随访，不生成诊疗建议。</div></div>
     <div class="fgrid">
@@ -601,22 +413,7 @@
       <span class="hint" id="fl-hint"></span>
     </div>
   </section>
-  </div>
-  </div>
 </main>
-
-<div class="vmask" id="vMask"></div>
-<aside class="vdrawer" id="vDrawer">
-  <div class="vdrawer-h"><b id="vTitle">预约</b><button id="vClose" aria-label="关闭">×</button></div>
-  <div class="vdrawer-b" id="vBody"></div>
-</aside>
-
-<nav class="tabbar" id="tabbar">
-  <span class="thumb" id="tabThumb"></span>
-  <button class="t on" data-tab="home">首页</button>
-  <button class="t" data-tab="plan">计划</button>
-  <button class="t" data-tab="venue">场馆</button>
-</nav>
 
 <div class="dock" id="dock">
   <div class="inner">
@@ -1238,7 +1035,6 @@ function bubble(who, text, details, tone){
     meta.appendChild(btn); body.appendChild(meta); body.appendChild(d);
   }
   row.appendChild(av); row.appendChild(body); wrap.appendChild(row);
-  document.body.classList.add('chatting');
   if (log) log.scrollTop = log.scrollHeight;
   return row;
 }
@@ -1248,7 +1044,6 @@ function actionChip(row, label, fn){
   meta.appendChild(b); row.querySelector('.bubble').appendChild(meta);
 }
 async function say(text){
-  if (typeof window.__cameraBump === 'function') window.__cameraBump();
   bubble('me', text);
   const m = db();
   const u = await llmUnderstand(text, `${m.A2_display_name}（${m.A1_member_id}）`);
@@ -1417,8 +1212,8 @@ function reply(text, u){
       const rec = out[0];
       if(plan){
         const row = bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。\n已经更新到 ${plan.version}，${plan.change_reasons[plan.change_reasons.length-1]}。`, JSON.stringify(plan.diff_from_previous, null, 2));
-        actionChip(row, '看新计划', () => { if(window.__showTab) window.__showTab('plan'); const el = document.getElementById('p-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
-        actionChip(row, '安排下次到店', () => { if(window.__showTab) window.__showTab('venue'); if(window.__openVenueCard) window.__openVenueCard('ap-body'); const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+        actionChip(row, '看新计划', () => { const el = document.getElementById('p-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+        actionChip(row, '安排下次到店', () => { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
       }else{
         bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。这条反馈和上次一样，我记下了，计划不用改。`);
       }
@@ -1469,7 +1264,7 @@ function reply(text, u){
       const plan = createPlan(db()); save(); state.stage = 'planned';
       const s = plan.schedule || {};
       const row = bubble('a', `${plan.version} 好了：每周 ${s.days_per_week} 次、每次 ${s.minutes_per_session} 分钟，共 ${(plan.actions||[]).length} 个动作。\n训练：${plan.training}\n饮食：${plan.diet}\n睡眠：${plan.sleep}\n限制：${plan.limitations.slice(0,2).join('；')}`);
-      actionChip(row, '约课', () => { if(window.__showTab) window.__showTab('venue'); if(window.__openVenueCard) window.__openVenueCard('ap-body'); const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+      actionChip(row, '约课', () => { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
       if(typeof window.__onDataChange === 'function') window.__onDataChange();
     }catch(err){ bubble('a', err.message, null, 'warn'); }
     return;
@@ -1532,7 +1327,7 @@ function reply(text, u){
   }
   if(ev.status_code === 'continue') actionChip(row, '出计划', () => say('出计划'));
   if(ev.status_code === 'pause'){
-    actionChip(row, '查看活动限制', () => { if(window.__showTab) window.__showTab('venue'); if(window.__openVenueCard) window.__openVenueCard('fl-body'); const el = document.getElementById('fl-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+    actionChip(row, '查看活动限制', () => { const el = document.getElementById('fl-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
   }
   if(typeof window.__onDataChange === 'function') window.__onDataChange();
 }
@@ -1802,107 +1597,19 @@ setTimeout(initCloud, 0);
   setTimeout(() => { $('intro').classList.add('done'); }, 2100);
   setTimeout(() => { $('intro').style.display = 'none'; }, 2900);
 
-  // 滚动：顶栏变实、底部输入与标签栏浮出
-  const tabbar = $('tabbar');
+  // 滚动：顶栏变实、底部输入浮出
   const onScroll = () => {
     const y = scrollY;
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
     dock.classList.toggle('on', y > hero.offsetHeight - 120);
-    if (tabbar) tabbar.classList.add('on');
   };
   addEventListener('scroll', onScroll, { passive: true });
   onScroll();
 
-  function showPanel(name) {
-    const wrap = $('sidewrap');
-    if (!wrap) return;
-    wrap.dataset.panel = name;
-    document.querySelectorAll('#ptabs .pt').forEach(b => b.classList.toggle('on', b.dataset.panel === name));
-  }
-  window.__showPanel = showPanel;
-  [...document.querySelectorAll('#ptabs .pt')].forEach(b => { b.onclick = () => showPanel(b.dataset.panel); });
-  showPanel('state');
-
-  function showTab(tab, scroll) {
-    if (window.matchMedia('(min-width:9999px)').matches) {
-      showPanel(tab === 'home' ? 'state' : tab);
-      return;
-    }
-    document.body.dataset.tab = tab;
-    if (tabbar) {
-      const items = [...tabbar.querySelectorAll('.t')];
-      let idx = items.findIndex(b => b.dataset.tab === tab);
-      if (idx < 0) idx = 0;
-      items.forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-      const thumb = $('tabThumb');
-      if (thumb) thumb.style.transform = 'translateX(' + (idx * 100) + '%)';
-    }
-    const rail = $('railnav');
-    if (rail) [...rail.querySelectorAll('.r')].forEach(b => b.classList.toggle('on', b.dataset.tab === tab));
-    if (scroll) {
-      const c = document.querySelector('.content');
-      if (c) window.scrollTo({ top: c.offsetTop - 70, behavior: 'smooth' });
-    }
-  }
-  if (tabbar) {
-    [...tabbar.querySelectorAll('.t')].forEach(b => { b.onclick = () => showTab(b.dataset.tab, true); });
-    window.__showTab = showTab;
-    showTab(document.body.dataset.tab || 'home', false);
-  }
-  const rail = $('railnav');
-  if (rail) [...rail.querySelectorAll('.r')].forEach(b => { b.onclick = () => showTab(b.dataset.tab, true); });
-
-  // 场馆四宫格与抽屉
-  const vDrawer = $('vDrawer'), vMask = $('vMask'), vBody = $('vBody'), vStore = $('venueStore');
-  const VENUE = { ap: '预约与场馆服务', mv: '动作评估 · 运动模式', q: '虚拟任务 · 场景联动', fl: '随访与慢病管理' };
-  const VENUE_BODY = { ap: 'ap-body', mv: 'mv-body', q: 'q-body', fl: 'fl-body' };
-  function openVenue(kind) {
-    const el = document.getElementById(VENUE_BODY[kind]);
-    if (!el || !vBody) return;
-    const section = el.closest('.card');
-    if (!section) return;
-    $('vTitle').textContent = VENUE[kind] || '';
-    vBody.innerHTML = '';
-    vBody.appendChild(section);
-    vDrawer.classList.add('on'); vMask.classList.add('on');
-    document.body.classList.add('drawer-open');
-  }
-  function closeVenue() {
-    while (vBody && vBody.firstChild) vStore.appendChild(vBody.firstChild);
-    vDrawer.classList.remove('on'); vMask.classList.remove('on');
-    document.body.classList.remove('drawer-open');
-  }
-  if (vDrawer) {
-    $('vClose').onclick = closeVenue;
-    vMask.onclick = closeVenue;
-    [...document.querySelectorAll('.vgrid .tile')].forEach(t => { t.onclick = () => openVenue(t.dataset.open); });
-    window.__openVenueCard = (id) => { const kind = String(id || '').slice(0, 2); if (VENUE[kind]) openVenue(kind); };
-  }
-  function syncTiles() {
-    const pairs = [['tile-ap','ap-state','未预约'],['tile-mv','mv-state','未评估'],['tile-q','q-state','未开始'],['tile-fl','fl-state','无随访']];
-    pairs.forEach(([t, s, d]) => {
-      const te = $(t), se = $(s);
-      if (te) te.textContent = (se && se.textContent.trim()) || d;
-    });
-  }
-  window.__syncTiles = syncTiles;
-  syncTiles();
-
   const TONE = { '暂停活动':'stop', '提交专业复核':'warn', '补充资料':'info', '继续训练':'ok' };
   const RING = 390;
-  let planSeg = 'train';
-  function planPanelHtml(p, key) {
-    if (key === 'diet') return `<div class="plan-text">${p.diet || '—'}</div>`;
-    if (key === 'sleep') return `<div class="plan-text">${p.sleep || '—'}</div>`;
-    if (key === 'limit') return `<div class="plan-text">${(p.limitations || []).join('；') || '无'}</div>`;
-    let h = `<div class="plan-text">${p.training || '—'}</div>`;
-    if (p.actions && p.actions.length) {
-      h += `<div class="tagline">${p.actions.map(a => `<span class="chip">${a.name} × ${a.sets} 组</span>`).join('')}</div>`;
-    }
-    return h;
-  }
 
   function refresh() {
     if (!api()) return;
@@ -1955,15 +1662,12 @@ setTimeout(initCloud, 0);
     const tag = $('d-tag'), rule = $('d-rule'), reason = $('d-reason'), basis = $('d-basis');
     if (!hasVisit) {
       tag.className = 'pill idle'; tag.textContent = '等待今日状态'; rule.textContent = '';
-      const dcard0 = $('d-card'); if (dcard0) dcard0.className = 'card card-primary tone-info';
       reason.textContent = '会员说一句今天的状态，这里会出现判定。'; basis.innerHTML = '';
       $('d-title').textContent = '今日判定';
       $('ringLabel').textContent = '状态指数';
       $('heroSub').textContent = '说一句就能开始。判断交给规则，解释留给人。';
     } else {
       tag.className = 'pill ' + (TONE[ev.status] || 'info'); tag.textContent = ev.status;
-      const dcard = $('d-card');
-      if (dcard) dcard.className = 'card card-primary tone-' + (TONE[ev.status] || 'info');
       rule.textContent = ev.rule || '';
       reason.textContent = (ev.next_step || '') + (ev.reasons && ev.reasons[0] ? '　·　' + ev.reasons[0] : '');
       basis.innerHTML = (ev.basis_field_ids || []).slice(0, 8).map(f => `<span class="chip">${f}</span>`).join('');
@@ -1971,8 +1675,6 @@ setTimeout(initCloud, 0);
       $('ringLabel').textContent = isToday ? '状态指数' : '上次状态指数';
       $('heroSub').textContent = score === null ? '' : `${isToday ? '' : '上次'}状态指数 ${score}，${ev.status}（${ev.rule}）。`;
     }
-    const chatSub = $('chatHeroSub');
-    if (chatSub) chatSub.textContent = $('heroSub').textContent || '说一句就能开始。';
 
     const plans = api().plans || [];
     if (!plans.length) { $('p-ver').textContent = ''; $('p-body').innerHTML = '<div class="empty">复核通过后生成第一版计划。</div>'; }
@@ -1980,20 +1682,16 @@ setTimeout(initCloud, 0);
       const p = plans[plans.length - 1];
       $('p-ver').textContent = p.version + (p.status === 'active' ? ' · 生效' : ' · ' + p.status);
       const s = p.schedule || {};
-      let hero = '';
-      if (s.days_per_week) {
-        hero = '<div class="plan-hero"><b>每周 ' + s.days_per_week + ' 次</b><span>每次 ' + s.minutes_per_session + ' 分钟</span>' +
-               '<small>' + (s.preferred_time || '时段待定') + '｜器械 ' + (s.equipment || '普拉提训练床') + '</small></div>';
+      const rows = [];
+      if (s.days_per_week) rows.push(['安排', `每周 ${s.days_per_week} 次 · 每次 ${s.minutes_per_session} 分钟 · ${s.preferred_time || '时段待定'}｜器械：${s.equipment || '普拉提训练床'}`]);
+      rows.push(['训练', p.training], ['饮食', p.diet], ['睡眠', p.sleep]);
+      if (p.limitations && p.limitations.length) rows.push(['限制', p.limitations.join('；')]);
+      let html = rows.map(([k, v]) => `<div class="plan-row"><div class="k">${k}</div><div>${v}</div></div>`).join('');
+      if (p.actions && p.actions.length) {
+        html += `<div class="tagline">${p.actions.map(a => `<span class="chip">${a.name} × ${a.sets} 组</span>`).join('')}</div>`;
       }
-      const segs = [['train','训练'],['diet','饮食'],['sleep','睡眠'],['limit','限制']];
-      const seg = '<div class="seg" id="planSeg">' + segs.map(([k, t]) =>
-        `<button data-seg="${k}" class="${planSeg === k ? 'on' : ''}">${t}</button>`).join('') + '</div>';
-      let html = hero + seg + '<div class="plan-panel">' + planPanelHtml(p, planSeg) + '</div>';
       if (p.appointment_at) html += `<div class="wrapnote">已关联预约：${String(p.appointment_at).replace('T',' ').slice(5,16)}</div>`;
       $('p-body').innerHTML = html;
-      [...document.querySelectorAll('#planSeg button')].forEach(b => {
-        b.onclick = () => { planSeg = b.dataset.seg; refresh(); };
-      });
     }
 
     const visits = (api().visits || []).slice(-3).reverse();
@@ -2142,7 +1840,6 @@ setTimeout(initCloud, 0);
 
   // 开场先读档案与上次到店，避免空白页
   function greetMember() {
-    if (innerWidth >= 9999) return;
     if (!api() || document.querySelectorAll('#wrap .row').length) return;
     const m = api().db();
     const name = (m.A2_display_name || '').replace(/（合成）/, '');
@@ -2363,37 +2060,13 @@ setTimeout(initCloud, 0);
   document.addEventListener('visibilitychange', () => { if (!document.hidden) resize(); });
   if (window.ResizeObserver) new ResizeObserver(resize).observe(cv);
 
-  let scrollP = 0, targetP = 0, lastNow = 0, msgBoost = 0;
+  let scrollP = 0, targetP = 0, lastNow = 0;
   const heroEl = document.getElementById('hero');
-  const chatLogEl = document.querySelector('.chatcard .log');
-  const isDesk = () => window.matchMedia('(min-width:9999px)').matches;
-  const withBoost = base => Math.min(1, Math.max(0, base) + msgBoost);
-  if (chatLogEl && heroEl) {
-    heroEl.addEventListener('wheel', e => {
-      if (!isDesk() || !document.body.classList.contains('chatting')) return;
-      if (e.target.closest('textarea, .glass, .chips')) return;
-      chatLogEl.scrollBy({ top: e.deltaY });
-    }, { passive: true });
-  }
   const onScroll = () => {
-    if (isDesk() && chatLogEl) return;
     const h = heroEl ? heroEl.offsetHeight : innerHeight;
-    targetP = withBoost(scrollY / Math.max(1, h));
+    targetP = Math.max(0, Math.min(1, scrollY / Math.max(1, h)));
   };
   addEventListener('scroll', onScroll, { passive: true });
-  if (chatLogEl) {
-    chatLogEl.addEventListener('scroll', () => {
-      if (!isDesk()) return;
-      const max = chatLogEl.scrollHeight - chatLogEl.clientHeight;
-      const up = max > 20 ? Math.min(1, (max - chatLogEl.scrollTop) / 600) : 0;
-      targetP = withBoost(up * 0.5);
-    }, { passive: true });
-  }
-  // 每发一条消息，镜头缓慢往前推一点；滑动从底部往上再叠加
-  window.__cameraBump = () => {
-    msgBoost = Math.min(0.22, msgBoost + 0.02);
-    targetP = withBoost(0);
-  };
   onScroll();
 
   const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3();
@@ -2403,8 +2076,8 @@ setTimeout(initCloud, 0);
     lastNow = now;
     const t = now / 1000;
     // 与帧率无关的缓动，高刷屏不会冲得太快
-    scrollP += (targetP - scrollP) * (1 - Math.pow(0.965, dt * 60));
-    if (Math.abs(targetP - scrollP) < 0.0002) scrollP = targetP;
+    scrollP += (targetP - scrollP) * (1 - Math.pow(0.92, dt * 60));
+    if (Math.abs(targetP - scrollP) < 0.0004) scrollP = targetP;
     const k = ease(scrollP);
     // 竖屏时把相机拉远，避免器械被裁
     const aspect = renderer.domElement.width / Math.max(1, renderer.domElement.height);
@@ -2419,10 +2092,10 @@ setTimeout(initCloud, 0);
     camera.fov = A.fov + (B.fov - A.fov) * k;
     camera.updateProjectionMatrix();
     camera.lookAt(camTgt);
-    // 背景保持清晰，只让镜头随滚动推进
-    cv.style.filter = 'none';
+    // 滚动时背景渐糊、渐暗，卡片像浮在玻璃上
+    cv.style.filter = 'blur(' + (scrollP * 7).toFixed(2) + 'px) saturate(' + (1 - 0.18 * scrollP).toFixed(2) + ') brightness(' + (1 - 0.34 * scrollP).toFixed(2) + ')';
     const hi = document.querySelector('.hero .inner');
-    if (hi && innerWidth < 1200) hi.style.opacity = Math.max(0, 1 - scrollP * 1.5).toFixed(2);
+    if (hi) hi.style.opacity = Math.max(0, 1 - scrollP * 1.5).toFixed(2);
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
@@ -2480,7 +2153,6 @@ setTimeout(initCloud, 0);
     ['ap-hint','mv-hint','q-hint','fl-hint'].forEach(id => hint(id, ''));
     ensureDefaults(); fillSelects();
     renderAppointment(); renderMovement(); renderQuest(); renderFollowup();
-    if (typeof window.__syncTiles === 'function') window.__syncTiles();
   }
 
   function renderAppointment(){
@@ -2495,12 +2167,8 @@ setTimeout(initCloud, 0);
       return `<div class="arow"><span>${esc(a.appointment_id)} · ${fmtT(a.start_at)} · ${esc(a.service)}</span><span class="st ${a.status}">${st}</span></div>
         <div class="wrapnote" style="padding:0 0 8px">器械：${esc(a.equipment)}｜教练：${esc(a.coach || '—')}｜关联 ${esc(a.plan_version || '—')}${a.cancel_reason ? '｜原因：' + esc(a.cancel_reason) : ''}${a.reschedule_reason ? '｜改约原因：' + esc(a.reschedule_reason) : ''}</div>`;
     }).join('');
-    const apHero = live
-      ? `<div class="ap-hero"><b>${fmtT(live.start_at)}</b><span>${esc(live.service)}</span><small>器械 ${esc(live.equipment)}｜关联 ${esc(live.plan_version || '—')}</small></div>`
-      : (plan ? '<div class="ap-hero"><b>还没约课</b><small>选个时间，把计划落到具体时段与器械</small></div>' : '');
-    $('ap-body').innerHTML = apHero + (rows ? '<div class="ap-history">' + rows + '</div>'
-      : (plan ? '' : '<div class="empty">还没有预约。生成计划后，这里可以把计划落到具体时段与器械。</div>'));
-    $('ap-create').disabled = false;
+    $('ap-body').innerHTML = rows || '<div class="empty">还没有预约。生成计划后，这里可以把计划落到具体时段与器械。</div>';
+    $('ap-create').disabled = !plan || !gate[0];
     $('ap-cancel').disabled = !live;
     if(!plan) hint('ap-hint', '先生成计划再预约', true);
     else if(!gate[0]) hint('ap-hint', '当前判定为「' + assess(m).status + '」，按规则不能预约或改约', true);
@@ -2560,9 +2228,6 @@ setTimeout(initCloud, 0);
     const m = api().db();
     const t = $('ap-time').value, svc = $('ap-svc').value, coach = $('ap-coach').value.trim() || '场馆教练（合成）';
     const reason = $('ap-reason').value.trim();
-    const gate = planGate(m, assess(m));
-    if(!(api().plans || []).length){ hint('ap-hint', '先生成计划再预约', true); return; }
-    if(!gate[0]){ hint('ap-hint', '当前判定为「' + assess(m).status + '」，按规则不能预约或改约', true); return; }
     if(!t){ hint('ap-hint', '请选择到店时间', true); return; }
     const start_at = t.length === 16 ? t + ':00' : t;
     try{
