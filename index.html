@@ -74,11 +74,14 @@
   .ad-item.on .ad-ic,.ad-home.on .ad-ic{color:#7cf6df}
   .ad-foot{margin-top:auto;padding:16px 10px 4px;color:var(--muted);font-size:11px;line-height:1.6}
   .screenhead{display:none;position:relative;flex-direction:column;justify-content:flex-end;
-    min-height:calc(100svh - 92px);margin:0 0 24px;padding:0 4px 26px;gap:8px}
+    min-height:calc(100svh - 92px);margin:0 0 24px;padding:0 4px 26px;gap:8px;
+    animation:scrIn .55s cubic-bezier(.22,.8,.24,1) both}
   body:not([data-screen="home"]) .screenhead{display:flex}
-  .screenhead .sh-back{position:absolute;top:0;left:0;width:36px;height:36px;border-radius:11px;
-    border:1px solid rgba(255,255,255,.16);background:rgba(10,14,20,.45);color:#fff;cursor:pointer;
-    font-size:16px;backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px)}
+  .screenhead .sh-back{align-self:flex-start;width:auto;height:auto;padding:6px 0;border:0;background:none;
+    color:rgba(255,255,255,.58);cursor:pointer;font-size:12px;letter-spacing:.02em}
+  .screenhead .sh-back:hover{color:#fff}
+  @keyframes scrIn{from{opacity:0;transform:translateY(16px)}to{opacity:1;transform:none}}
+  body[data-screen="home"] .hero .inner{animation:scrIn .5s cubic-bezier(.22,.8,.24,1) both}
   .screenhead .sh-eyebrow{font-size:11px;letter-spacing:.22em;color:rgba(255,255,255,.55)}
   .screenhead .sh-title{font-size:clamp(32px,4.4vw,46px);line-height:1.1;font-weight:650;color:#fff;
     letter-spacing:-.02em;text-shadow:0 4px 24px rgba(0,0,0,.55)}
@@ -97,6 +100,7 @@
   body[data-screen="movement"] .content [data-screen]:not([data-screen="movement"]){display:none !important}
   body[data-screen="quest"] .content [data-screen]:not([data-screen="quest"]){display:none !important}
   body[data-screen="followup"] .content [data-screen]:not([data-screen="followup"]){display:none !important}
+  body:not([data-screen="home"]) .content [data-screen]{animation:scrIn .5s cubic-bezier(.22,.8,.24,1) both}
   body:not([data-screen="home"]) .content [data-screen] > .card-h h3{display:none}
   .member{display:flex;align-items:center;gap:8px;height:32px;padding:0 11px 0 7px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);color:#fff;backdrop-filter:blur(10px);transition:all .3s;max-width:260px}
   .topbar.solid .member{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#fff}
@@ -453,7 +457,7 @@
 
 <main class="content">
   <div class="screenhead" id="screenhead">
-    <button id="screenBack" class="sh-back" type="button" aria-label="返回首页">←</button>
+    <button id="screenBack" class="sh-back" type="button" aria-label="返回首页">← 返回首页</button>
     <div class="sh-eyebrow" id="screenEyebrow">TODAY'S STATUS</div>
     <div class="sh-title" id="screenTitle">今日状态</div>
     <p class="sh-sub" id="screenSub">状态指数、今日判定与教练复核。</p>
@@ -2685,8 +2689,11 @@ setTimeout(consumeReviewReceipt, 900);
 
   let scrollP = 0, targetP = 0, lastNow = 0;
   const heroEl = document.getElementById('hero');
+  const screenHeadEl = document.getElementById('screenhead');
   const onScroll = () => {
-    const h = heroEl ? heroEl.offsetHeight : innerHeight;
+    const isHome = (document.body.dataset.screen || 'home') === 'home';
+    const el = isHome ? heroEl : screenHeadEl;
+    const h = el && el.offsetHeight ? el.offsetHeight : innerHeight;
     targetP = Math.max(0, Math.min(1, scrollY / Math.max(1, h)));
   };
   addEventListener('scroll', onScroll, { passive: true });
@@ -2712,7 +2719,7 @@ setTimeout(consumeReviewReceipt, 900);
     let fv = A.fov + (B.fov - A.fov) * k;
     const screen = document.body.dataset.screen || 'home';
     const pose = SCREEN_CAM[screen];
-    const wantMix = pose ? 1 : 0;
+    const wantMix = pose ? (1 - ease(scrollP)) : 0;
     screenMix += (wantMix - screenMix) * (1 - Math.pow(0.975, dt * 60));
     if(Math.abs(wantMix - screenMix) < 0.0005) screenMix = wantMix;
     if(pose && screenMix > 0.001){
@@ -3475,6 +3482,10 @@ setTimeout(consumeReviewReceipt, 900);
     const heroCopy = SCREEN_HERO[name] || {eyebrow: '', sub: ''};
     const ey = $('screenEyebrow'); if(ey) ey.textContent = heroCopy.eyebrow;
     const sb = $('screenSub'); if(sb) sb.textContent = heroCopy.sub;
+    if(name !== 'home'){
+      const sh = $('screenhead');
+      if(sh){ sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
+    }
     document.querySelectorAll('.ad-item,.ad-home').forEach(b => b.classList.toggle('on', b.dataset.screen === name));
     closeDrawer();
     window.scrollTo({ top: 0, behavior: 'auto' });
