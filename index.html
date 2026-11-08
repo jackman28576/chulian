@@ -2179,9 +2179,10 @@ setTimeout(consumeReviewReceipt, 900);
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
-    dock.classList.toggle('on', y > hero.offsetHeight - 120);
+    dock.classList.toggle('on', document.body.dataset.screen === 'home' && y > hero.offsetHeight - 120);
   };
   addEventListener('scroll', onScroll, { passive: true });
+  window.__shellScroll = onScroll;
   onScroll();
 
   const TONE = { '暂停活动':'stop', '提交专业复核':'warn', '补充资料':'info', '继续训练':'ok' };
@@ -3547,6 +3548,7 @@ setTimeout(consumeReviewReceipt, 900);
     document.querySelectorAll('.ad-item,.ad-home').forEach(b => b.classList.toggle('on', b.dataset.screen === name));
     closeDrawer();
     window.scrollTo({ top: 0, behavior: 'auto' });
+    if(typeof window.__shellScroll === 'function') window.__shellScroll();
   }
   const burger = $('burger');
   if(burger) burger.onclick = () => { $('appdrawer').classList.contains('on') ? closeDrawer() : openDrawer(); };
