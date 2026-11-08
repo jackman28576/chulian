@@ -2287,10 +2287,6 @@ setTimeout(consumeReviewReceipt, 900);
   new MutationObserver(ms => {
     for (const m of ms) if (m.addedNodes.length) {
       refresh();
-      if (document.body.dataset.screen === 'home' && scrollY < 240) {
-        const c = document.querySelector('.chatcard');
-        if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
-      }
       break;
     }
   }).observe(wrap, { childList: true });
