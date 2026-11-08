@@ -83,6 +83,10 @@
   .glass textarea::placeholder{color:rgba(255,255,255,.62)}
   .glass .go{width:38px;height:38px;border-radius:12px;background:#fff;color:#0B0E13;display:grid;place-items:center;flex:0 0 38px;transition:transform .2s}
   .glass .go:hover{transform:translateY(-1px)}
+  .glass .clip,.dock .clip{height:34px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);
+    background:rgba(255,255,255,.08);color:rgba(255,255,255,.86);font-size:12px;cursor:pointer;flex:0 0 auto}
+  .dock .clip{height:32px;color:var(--ink);border-color:var(--glass-line);background:rgba(255,255,255,.06)}
+  .chat-video{display:block;max-width:240px;max-height:160px;border-radius:10px;margin-top:8px;background:#000}
   .glass .go svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .hero .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
   .hero .chips button{padding:7px 13px;border-radius:999px;font-size:12.5px;color:rgba(255,255,255,.86);background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.2);backdrop-filter:blur(8px)}
@@ -308,6 +312,7 @@
     <p class="sub" id="heroSub">说一句就能开始。判断交给规则，解释留给人。</p>
     <div class="glass">
       <textarea id="input" rows="1" placeholder="说说今天的状态，比如：有点累、腰酸 4 分"></textarea>
+      <button class="clip" id="chat-video-btn" type="button">视频</button>
       <button class="go" id="send" aria-label="发送">
         <svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"></path></svg>
       </button>
@@ -445,12 +450,14 @@
 <div class="dock" id="dock">
   <div class="inner">
     <textarea id="input2" rows="1" placeholder="说说今天的状态…"></textarea>
+    <button class="clip" id="chat-video-btn2" type="button">视频</button>
     <button class="go" id="send2" aria-label="发送">
       <svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"></path></svg>
     </button>
   </div>
   <div class="foot">判定由确定性规则引擎给出 · 不构成医疗建议 · 请勿输入真实健康信息</div>
 </div>
+<input type="file" id="chat-video-input" accept="video/*" hidden>
 
 <div class="sheet-mask" id="mask1"></div>
 <div class="sheet" id="memberSheet" role="dialog" aria-label="会员">
@@ -2718,6 +2725,103 @@ setTimeout(consumeReviewReceipt, 900);
     }
   }
 
+  let chatVideoEl = null;
+  function ensureChatVideoEl(){
+    if(!chatVideoEl){
+      chatVideoEl = document.createElement('video');
+      chatVideoEl.muted = true;
+      chatVideoEl.playsInline = true;
+      chatVideoEl.style.cssText = 'position:fixed;left:-9999px;top:0;width:2px;height:2px;opacity:0';
+      document.body.appendChild(chatVideoEl);
+    }
+    return chatVideoEl;
+  }
+  function pickExerciseFromText(text){
+    const names = (typeof EX_TAGS !== 'undefined') ? Object.keys(EX_TAGS) : [];
+    const hit = names.find(n => String(text || '').includes(n));
+    if(hit) return hit;
+    if(/深蹲/.test(text)) return names.find(n => n.includes('深蹲')) || null;
+    if(/百次/.test(text)) return names.find(n => n.includes('百次')) || null;
+    return null;
+  }
+  async function chatAnalyzeFile(file, kit, view, onProgress){
+    const v = ensureChatVideoEl();
+    if(v.src && v.src.indexOf('blob:') === 0) URL.revokeObjectURL(v.src);
+    v.src = URL.createObjectURL(file);
+    v.load();
+    await new Promise(res => { if(v.readyState >= 1) res(); else { v.onloadedmetadata = res; setTimeout(res, 8000); } });
+    const duration = Math.min(Number(v.duration) || 0, 60);
+    if(!duration) throw new Error('无法读取视频时长');
+    const w = v.videoWidth || 640, h = v.videoHeight || 360;
+    const grab = document.createElement('canvas'); grab.width = w; grab.height = h;
+    const gctx = grab.getContext('2d');
+    const frames = []; const step = 1 / 12;
+    v.muted = true; v.currentTime = 0.001;
+    for(let t = 0; t < duration; t += step){
+      v.currentTime = Math.min(t, Math.max(0, duration - 0.05));
+      await new Promise(res => {
+        let done = false;
+        const fin = () => { if(done) return; done = true; v.removeEventListener('seeked', fin); res(); };
+        v.addEventListener('seeked', fin);
+        setTimeout(fin, 400);
+      });
+      try {
+        gctx.drawImage(v, 0, 0, w, h);
+        const r = kit.landmarker.detect(grab);
+        if(r && r.landmarks && r.landmarks[0]){
+          const lm = r.landmarks[0];
+          const P = i => lm[i] ? {x: lm[i].x * w, y: lm[i].y * h} : null;
+          const lh = P(23), rh = P(24), lk = P(25), rk = P(26), la = P(27), ra = P(28), ls = P(11), rs = P(12);
+          if(lh && rh && lk && rk && la && ra){
+            const vis = Math.min(lm[23].visibility || 0, lm[24].visibility || 0, lm[25].visibility || 0, lm[26].visibility || 0, lm[27].visibility || 0, lm[28].visibility || 0);
+            frames.push({t: v.currentTime, lk: vaAngle(lh, lk, la), rk: vaAngle(rh, rk, ra), lh: vaAngle(ls, lh, lk), rh: vaAngle(rs, rh, rk), trunk: vaTrunk(ls, rs, lh, rh), vis: vis});
+          }
+        }
+      } catch (e) {}
+      if(onProgress && Math.floor(t) !== Math.floor(t - step)) onProgress(Math.min(100, Math.round(t / duration * 100)));
+    }
+    v.pause();
+    return computeVideoMetrics(frames, view);
+  }
+  async function runChatVideoAnalysis(file, text, viewOverride){
+    const textStr = String(text || '');
+    const exercise = pickExerciseFromText(textStr) || ($('mv-ex').value || '侧身深蹲');
+    const view = viewOverride || (/侧面|侧向|侧视/.test(textStr) ? 'side' : 'front');
+    const statusRow = bubble('a', '正在分析视频…');
+    const statusEl = statusRow.querySelector('.bubble > div');
+    try {
+      const kit = await loadPoseKit();
+      const met = await chatAnalyzeFile(file, kit, view, pct => { if(statusEl) statusEl.textContent = '正在分析视频… ' + pct + '%'; });
+      const saved = saveVideoMovement(api().db(), exercise, met);
+      api().save();
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      render();
+      if(statusEl) statusEl.textContent = '分析完成。';
+      const mv = saved.movement;
+      const sym = met.symmetry == null ? '侧面视角不计算左右差' : ('左右差 ' + met.symmetry.toFixed(1) + '%');
+      const out = (met.quality === 'low' ? '视频有效帧不足，结果仅供参考。\n' : '') +
+        `动作：${exercise} · ${view === 'side' ? '侧面' : '正面'}\n` +
+        `完整次数 ${met.reps}，节奏稳定性 ${met.stability.toFixed(1)}%，${sym}，膝关节幅度 ${met.rom.toFixed(1)}°，躯干前倾峰值 ${met.trunk.toFixed(1)}°。\n` +
+        `评级：${mv.rank}。建议：${(mv.suggestions || []).join('；')}`;
+      const row = bubble('a', out, JSON.stringify(met, null, 2));
+      actionChip(row, '看动作记录', () => { const el = document.getElementById('mv-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+      actionChip(row, view === 'front' ? '换侧面再分析' : '换正面再分析', () => runChatVideoAnalysis(file, textStr, view === 'front' ? 'side' : 'front'));
+    } catch (e) {
+      if(statusEl) statusEl.textContent = '视频分析失败：' + (e.message || '未知错误');
+    }
+  }
+  function handleChatVideo(file, text){
+    const exercise = pickExerciseFromText(text) || ($('mv-ex').value || '侧身深蹲');
+    const view = /侧面|侧向|侧视/.test(String(text || '')) ? 'side' : 'front';
+    const row = bubble('me', (text ? text + '\n' : '') + '视频：' + file.name);
+    const url = URL.createObjectURL(file);
+    const vid = document.createElement('video');
+    vid.src = url; vid.muted = true; vid.controls = true; vid.playsInline = true; vid.className = 'chat-video';
+    row.querySelector('.bubble').appendChild(vid);
+    bubble('a', `收到视频，我按「${exercise} · ${view === 'side' ? '侧面' : '正面'}」分析，稍等。`);
+    runChatVideoAnalysis(file, text);
+  }
+
   function renderQuest(){
     const m = api().db();
     const q = (m.C9_quests || []).slice(-1)[0];
@@ -2816,6 +2920,21 @@ setTimeout(consumeReviewReceipt, 900);
   if (mvVideoEl) mvVideoEl.onchange = () => { const f = mvVideoEl.files && mvVideoEl.files[0]; if (f) setupVideoPreview(f); };
   const mvVideoRun = $('mv-video-run');
   if (mvVideoRun) mvVideoRun.onclick = analyzeSelectedVideo;
+
+  const chatVideoInput = $('chat-video-input');
+  const openChatVideo = () => { if (chatVideoInput) chatVideoInput.click(); };
+  const chatVideoBtn = $('chat-video-btn'), chatVideoBtn2 = $('chat-video-btn2');
+  if (chatVideoBtn) chatVideoBtn.onclick = openChatVideo;
+  if (chatVideoBtn2) chatVideoBtn2.onclick = openChatVideo;
+  if (chatVideoInput) chatVideoInput.onchange = e => {
+    const f = e.target.files && e.target.files[0];
+    if (!f) return;
+    const text = (($('input') && $('input').value) || ($('input2') && $('input2').value) || '').trim();
+    if ($('input')) $('input').value = '';
+    if ($('input2')) $('input2').value = '';
+    handleChatVideo(f, text);
+    e.target.value = '';
+  };
 
   $('mv-demo').onclick = () => {
     $('mv-tempo').value = '2.1,2.0,2.4'; $('mv-lr').value = '2.2,1.9';
