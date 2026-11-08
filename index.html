@@ -962,14 +962,14 @@ function pushState() {
     .catch(() => { syncPending = false; });
 }
 function schedulePush() { if (!SYNC_ON) return; clearTimeout(syncTimer); syncTimer = setTimeout(pushState, 400); }
-function reviewNotify(m){
+function reviewNotify(m, force){
   const rs = m.C5_reviews || [];
   const latest = rs.slice(-1)[0];
   if(!latest) return false;
   state.reviewSeen = state.reviewSeen || {};
   const seen = state.reviewSeen[m.A1_member_id];
-  if(!seen){ state.reviewSeen[m.A1_member_id] = latest.review_id; return false; }
-  if(latest.review_id === seen) return false;
+  if(!seen && !force){ state.reviewSeen[m.A1_member_id] = latest.review_id; return false; }
+  if(!force && latest.review_id === seen) return false;
   state.reviewSeen[m.A1_member_id] = latest.review_id;
   const coach = (typeof COACHES !== 'undefined' && COACHES[m.A1_member_id]) || null;
   if(latest.decision === 'approved'){
@@ -980,6 +980,30 @@ function reviewNotify(m){
     bubble('a', `${coach ? coach.name : '教练'}复核未通过：${latest.note || ''}\n本次不生成计划，可以补充资料后重新填报。`, null, 'warn');
   }
   return true;
+}
+
+function consumeReviewReceipt(){
+  const hit = (location.hash || '').match(/[#&]review=([^&]+)/);
+  if(!hit) return;
+  try {
+    let b = hit[1].replace(/-/g, '+').replace(/_/g, '/');
+    while(b.length % 4) b += '=';
+    const payload = JSON.parse(decodeURIComponent(escape(atob(b))));
+    const rv = payload && payload.review;
+    if(!payload || !payload.member_id || !rv || !rv.review_id) return;
+    const idx = state.members.findIndex(x => x.A1_member_id === payload.member_id);
+    if(idx < 0) return;
+    state.current = idx;
+    const mbr = state.members[idx];
+    mbr.C5_reviews = mbr.C5_reviews || [];
+    const had = mbr.C5_reviews.some(r => r.review_id === rv.review_id);
+    if(!had) mbr.C5_reviews.push(rv);
+    save(true);
+    history.replaceState(null, '', location.pathname + location.search);
+    if(typeof window.__onDataChange === 'function') window.__onDataChange();
+    reviewNotify(mbr, true);
+    save(true);
+  } catch(e) {}
 }
 
 function applyRemote(next, silent) {
@@ -1181,6 +1205,17 @@ function reply(text, u){
       if (!startAt) {
         state.pendingAppt = { action: 'create' }; save();
         bubble('a', '想约哪天几点？比如“周三下午三点”。');
+        return;
+      }
+      if (live) {
+        if (startAt === live.start_at) {
+          bubble('a', `这个时间就是现在的预约（${fmtWhen(live.start_at)} 的${live.service}），要改到别的时段吗？`);
+          return;
+        }
+        const rec = appointment(db(), 'reschedule', { appointment_id: live.appointment_id, start_at: startAt, reason: reason || '会员调整时间', actor: '会员本人' });
+        state.pendingAppt = null; save();
+        bubble('a', `你已有一个预约，我把它改到 ${fmtWhen(rec.start_at)} 的${rec.service}，器械按当前计划更新为：${rec.equipment}。`);
+        if (typeof window.__onDataChange === 'function') window.__onDataChange();
         return;
       }
       const rec = appointment(db(), 'create', { start_at: startAt, service: f.service || '普拉提私教', actor: '会员本人' });
@@ -1456,6 +1491,26 @@ function cnNum(str){
 function parseWhen(text, now){
   const t = String(text || '');
   const base = now ? new Date(now) : new Date();
+  const iso = d => {
+    const p = n => String(n).padStart(2, '0');
+    return `${d.getFullYear()}-${p(d.getMonth() + 1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
+  };
+  const rel = t.match(/(半|[一二两三四五六七八九十\d]{1,2})\s*个?\s*小时\s*(?:后|之后|以后)/);
+  if(rel){
+    const add = rel[1] === '半' ? 0.5 : cnNum(rel[1]);
+    if(!isFinite(add)) return null;
+    const at = new Date(base.getTime() + add * 3600000);
+    at.setSeconds(0, 0);
+    return iso(at);
+  }
+  const relMin = t.match(/([一二两三四五六七八九十\d]{1,2})\s*分钟\s*(?:后|之后|以后)/);
+  if(relMin){
+    const add = cnNum(relMin[1]);
+    if(!isFinite(add)) return null;
+    const at = new Date(base.getTime() + add * 60000);
+    at.setSeconds(0, 0);
+    return iso(at);
+  }
   let hour = null, minute = 0, period = '';
   let m = t.match(/(\d{1,2})\s*[:：]\s*(\d{1,2})/);
   if(m){ hour = +m[1]; minute = +m[2]; }
@@ -1490,12 +1545,23 @@ function parseWhen(text, now){
       }
     }
     if(dayShift === null){
-      let dm = t.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/);
+      let dm = t.match(/下个?月\s*(\d{1,2})\s*[日号]/);
       if(dm){
-        date = new Date(base.getFullYear(), +dm[1] - 1, +dm[2]);
+        const nextMonth = base.getMonth() + 1;
+        date = new Date(base.getFullYear(), nextMonth, +dm[1]);
+        if(date.getMonth() !== nextMonth % 12 || date.getDate() !== +dm[1]) return null;
       } else {
-        dm = t.match(/(\d{1,2})\s*[日号]/);
-        if(dm) date = new Date(base.getFullYear(), base.getMonth(), +dm[1]);
+        dm = t.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/);
+        if(dm){
+          date = new Date(base.getFullYear(), +dm[1] - 1, +dm[2]);
+          if(date.getMonth() !== +dm[1] - 1 || date.getDate() !== +dm[2]) return null;
+        } else {
+          dm = t.match(/(\d{1,2})\s*[日号]/);
+          if(dm){
+            date = new Date(base.getFullYear(), base.getMonth(), +dm[1]);
+            if(date.getDate() !== +dm[1]) return null;
+          }
+        }
       }
     }
   }
@@ -1548,7 +1614,7 @@ function appointment(db, action, opts){
     if(!plan) throw new Error('请先生成有效计划再预约');
     if(!opts.start_at || !opts.service) throw new Error('预约需要时间和项目');
     if(Date.parse(opts.start_at) <= Date.now()) throw new Error('预约时间需要晚于现在');
-    if(db.C3_appointments.some(a => a.status === 'booked' && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
+    if(db.C3_appointments.some(a => (a.status === 'booked' || a.status === 'rescheduled') && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
     const equip = planEquipment(db);
     const rec = {
       appointment_id: 'AP-' + String(db.C3_appointments.length + 1).padStart(3, '0'),
@@ -1650,6 +1716,7 @@ setTimeout(() => {
 }, 0);
 
 setTimeout(initCloud, 0);
+setTimeout(consumeReviewReceipt, 900);
 
 </script>
 <script>
@@ -2324,17 +2391,13 @@ setTimeout(initCloud, 0);
       const live = list.filter(a => a.status === 'booked' || a.status === 'rescheduled').slice(-1)[0];
       let msg = '';
       if(live){
-        let next_at = start_at;
-        let bumped = false;
-        if(next_at === live.start_at){
-          const d = new Date(next_at); d.setDate(d.getDate() + 1);
-          const p = n => String(n).padStart(2, '0');
-          next_at = `${d.getFullYear()}-${p(d.getMonth()+1)}-${p(d.getDate())}T${p(d.getHours())}:${p(d.getMinutes())}:00`;
-          bumped = true;
+        if(start_at === live.start_at){
+          hint('ap-hint', '这个时间就是当前预约，请选择其他时段', true);
+          return;
         }
-        appointment(m, 'reschedule', {appointment_id: live.appointment_id, start_at: next_at, reason: reason || '会员调整时间', actor: '会员本人'});
-        msg = (bumped ? '所选时段与原预约相同，已顺延一天至 ' : '已改约到 ') + fmtT(next_at) + '，器械按新计划重新准备';
-        $('ap-time').value = next_at.slice(0, 16);
+        const rec = appointment(m, 'reschedule', {appointment_id: live.appointment_id, start_at, reason: reason || '会员调整时间', coach: $('ap-coach').value.trim() || undefined, actor: '会员本人'});
+        msg = '已改约到 ' + fmtT(rec.start_at) + '，器械：' + rec.equipment;
+        $('ap-time').value = rec.start_at.slice(0, 16);
       }else{
         const rec = appointment(m, 'create', {start_at, service: svc, coach, actor: '会员本人'});
         msg = rec.appointment_id + ' 已预约，器械：' + rec.equipment;
