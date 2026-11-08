@@ -962,24 +962,31 @@ function pushState() {
     .catch(() => { syncPending = false; });
 }
 function schedulePush() { if (!SYNC_ON) return; clearTimeout(syncTimer); syncTimer = setTimeout(pushState, 400); }
+function reviewNotify(m){
+  const rs = m.C5_reviews || [];
+  const latest = rs.slice(-1)[0];
+  if(!latest) return false;
+  state.reviewSeen = state.reviewSeen || {};
+  const seen = state.reviewSeen[m.A1_member_id];
+  if(!seen){ state.reviewSeen[m.A1_member_id] = latest.review_id; return false; }
+  if(latest.review_id === seen) return false;
+  state.reviewSeen[m.A1_member_id] = latest.review_id;
+  const coach = (typeof COACHES !== 'undefined' && COACHES[m.A1_member_id]) || null;
+  if(latest.decision === 'approved'){
+    state.stage = 'reviewed';
+    const row = bubble('a', `${coach ? coach.name : '教练'}已复核通过（${(latest.recorded_at || '').slice(0, 16).replace('T', ' ')}）。\n复核不改动活动限制，那条限制仍然生效。`);
+    actionChip(row, '出计划', () => say('出计划'));
+  } else {
+    bubble('a', `${coach ? coach.name : '教练'}复核未通过：${latest.note || ''}\n本次不生成计划，可以补充资料后重新填报。`, null, 'warn');
+  }
+  return true;
+}
+
 function applyRemote(next, silent) {
   if (!next || !Array.isArray(next.members)) return;
-  const prev = (db().C5_reviews || []).length;
   state.members = next.members;
   if (typeof next.current === 'number') state.current = Math.min(next.current, state.members.length - 1);
-  const m = db();
-  const rs = m.C5_reviews || [];
-  if (!silent && rs.length > prev) {
-    const rv = rs[rs.length - 1];
-    const coach = COACHES[m.A1_member_id];
-    if (rv.decision === 'approved') {
-      state.stage = 'reviewed';
-      const row = bubble('a', `${coach ? coach.name : '教练'}已复核通过（${(rv.recorded_at || '').slice(0, 16).replace('T', ' ')}）。\n复核不改动活动限制，那条限制仍然生效。`);
-      actionChip(row, '出计划', () => say('出计划'));
-    } else {
-      bubble('a', `${coach ? coach.name : '教练'}复核未通过：${rv.note || ''}\n本次不生成计划，可以补充资料后重新填报。`, null, 'warn');
-    }
-  }
+  reviewNotify(db());
   save(true);
   if (typeof window.__onDataChange === 'function') window.__onDataChange();
 }
@@ -1136,7 +1143,8 @@ function reply(text, u){
       const d = new Date(iso);
       return isNaN(d) ? iso : d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false });
     };
-    const startAt = f.start_at || (pending && pending.start_at) || null;
+    const localWhen = parseWhen(t, new Date());
+    const startAt = localWhen || f.start_at || (pending && pending.start_at) || null;
     const reason = f.reason || (pending && pending.reason) || (pendingReason ? t : null);
     try {
       if (action === 'cancel') {
@@ -1431,6 +1439,91 @@ function updateQuest(db, completionPct){
   db.C9_quests.push(rec);
   return rec;
 }
+function cnNum(str){
+  const s = String(str || '').trim();
+  if(/^\d+$/.test(s)) return parseInt(s, 10);
+  const map = {零:0,〇:0,一:1,二:2,两:2,三:3,四:4,五:5,六:6,七:7,八:8,九:9};
+  if(s === '十') return 10;
+  let m = s.match(/^([一二两三四五六七八九])十([一二三四五六七八九])?$/);
+  if(m) return map[m[1]] * 10 + (m[2] ? map[m[2]] : 0);
+  m = s.match(/^十([一二三四五六七八九])$/);
+  if(m) return 10 + map[m[1]];
+  if(s.length === 1 && map[s] !== undefined) return map[s];
+  return NaN;
+}
+
+/* 把“周三下午三点”“明天上午十点半”解析成本地 ISO 时间；解析不出返回 null */
+function parseWhen(text, now){
+  const t = String(text || '');
+  const base = now ? new Date(now) : new Date();
+  let hour = null, minute = 0, period = '';
+  let m = t.match(/(\d{1,2})\s*[:：]\s*(\d{1,2})/);
+  if(m){ hour = +m[1]; minute = +m[2]; }
+  if(hour === null){
+    m = t.match(/(上午|早上|早晨|凌晨|中午|下午|傍晚|晚上)?\s*([一二两三四五六七八九十\d]{1,3})\s*[点时]\s*(半|[一二三四五六七八九十\d]{1,2}\s*分?)?/);
+    if(m){
+      period = m[1] || '';
+      hour = cnNum(m[2]);
+      if(m[3]) minute = m[3] === '半' ? 30 : cnNum(String(m[3]).replace(/\s*分/, ''));
+    }
+  }
+  if(hour === null || !isFinite(hour) || !isFinite(minute)) return null;
+
+  let dayShift = null;
+  let date = new Date(base.getFullYear(), base.getMonth(), base.getDate());
+  const week = {一:1, 二:2, 三:3, 四:4, 五:5, 六:6, 日:0, 天:0};
+  if(/大后天/.test(t)){ dayShift = 3; }
+  else if(/后天/.test(t)){ dayShift = 2; }
+  else if(/明天|明日/.test(t)){ dayShift = 1; }
+  else if(/今天|今日/.test(t)){ dayShift = 0; }
+  else {
+    let wm = t.match(/(下|下个)(?:周|星期|礼拜)([一二三四五六日天])/);
+    if(wm){
+      dayShift = ((week[wm[2]] - base.getDay() + 7) % 7) + 7;
+    } else {
+      wm = t.match(/(?:这|本)(?:周|星期|礼拜)([一二三四五六日天])/);
+      if(wm){
+        dayShift = (week[wm[1]] - base.getDay() + 7) % 7;
+      } else {
+        wm = t.match(/(?:周|星期|礼拜)([一二三四五六日天])/);
+        if(wm) dayShift = (week[wm[1]] - base.getDay() + 7) % 7;
+      }
+    }
+    if(dayShift === null){
+      let dm = t.match(/(\d{1,2})\s*月\s*(\d{1,2})\s*[日号]/);
+      if(dm){
+        date = new Date(base.getFullYear(), +dm[1] - 1, +dm[2]);
+      } else {
+        dm = t.match(/(\d{1,2})\s*[日号]/);
+        if(dm) date = new Date(base.getFullYear(), base.getMonth(), +dm[1]);
+      }
+    }
+  }
+  if(dayShift !== null) date.setDate(date.getDate() + dayShift);
+
+  if(period === '下午' || period === '傍晚' || period === '晚上'){
+    if(hour < 12) hour += 12;
+    else if(period === '晚上' && hour === 12) hour = 0;
+  } else if(!period && hour >= 1 && hour <= 6){
+    hour += 12;
+  }
+  if(hour < 0 || hour > 23 || minute < 0 || minute > 59) return null;
+
+  const when = new Date(date.getFullYear(), date.getMonth(), date.getDate(), hour, minute, 0, 0);
+  if(dayShift === null && when <= base) when.setDate(when.getDate() + 1);
+  if(when <= base) return null;
+  const p = n => String(n).padStart(2, '0');
+  return `${when.getFullYear()}-${p(when.getMonth() + 1)}-${p(when.getDate())}T${p(hour)}:${p(minute)}:00`;
+}
+
+function planEquipment(db){
+  const plan = (db.C2_plans || []).slice(-1)[0];
+  if(plan && plan.schedule && plan.schedule.equipment) return plan.schedule.equipment;
+  const avail = db.A14_availability || {};
+  if(avail.equipment && avail.equipment.length) return avail.equipment.join('、');
+  return '普拉提训练床';
+}
+
 function appointment(db, action, opts){
   db.C3_appointments = db.C3_appointments || [];
   opts = opts || {};
@@ -1454,8 +1547,9 @@ function appointment(db, action, opts){
     const plan = (db.C2_plans || []).slice(-1)[0];
     if(!plan) throw new Error('请先生成有效计划再预约');
     if(!opts.start_at || !opts.service) throw new Error('预约需要时间和项目');
+    if(Date.parse(opts.start_at) <= Date.now()) throw new Error('预约时间需要晚于现在');
     if(db.C3_appointments.some(a => a.status === 'booked' && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
-    const equip = ((plan.actions || []).length ? ['普拉提训练床', '弹力带', '普拉提圈'] : ['普拉提训练床']).join('、');
+    const equip = planEquipment(db);
     const rec = {
       appointment_id: 'AP-' + String(db.C3_appointments.length + 1).padStart(3, '0'),
       member_id: db.A1_member_id, plan_version: plan.version,
@@ -1473,11 +1567,17 @@ function appointment(db, action, opts){
     if(!rec) throw new Error('未找到预约记录');
     if(!String(opts.reason || '').trim()) throw new Error('改约必须记录原因');
     if(!opts.start_at) throw new Error('改约需要新的时间');
+    if(Date.parse(opts.start_at) <= Date.now()) throw new Error('预约时间需要晚于现在');
+    if(db.C3_appointments.some(a => a !== rec && (a.status === 'booked' || a.status === 'rescheduled') && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
     rec.history = rec.history || [];
     rec.history.push({before:{start_at:rec.start_at, status:rec.status}, reason:opts.reason, at:new Date().toISOString(), by:opts.actor || '会员本人'});
     rec.start_at = opts.start_at; rec.status = 'rescheduled'; rec.reschedule_reason = opts.reason;
     const plan = (db.C2_plans || []).slice(-1)[0];
-    if(plan && plan.appointment_id === rec.appointment_id) plan.appointment_at = rec.start_at;
+    if(plan){
+      rec.equipment = planEquipment(db); rec.plan_version = plan.version;
+      if(plan.appointment_id === rec.appointment_id) plan.appointment_at = rec.start_at;
+    }
+    if(opts.coach) rec.coach = opts.coach;
     return rec;
   }
   throw new Error('未知预约操作');
@@ -1528,25 +1628,11 @@ addEventListener('storage', e => {
   try {
     const next = JSON.parse(e.newValue || 'null');
     if (!next || !Array.isArray(next.members)) return;
-    const prevCount = (db().C5_reviews || []).length;
     const prevCurrent = state.current;
     state.members = next.members;
     state.current = Math.min(prevCurrent, state.members.length - 1);
-    const m = db();
-    const rs = m.C5_reviews || [];
-    if (rs.length > prevCount) {
-      const rv = rs[rs.length - 1];
-      const coach = (typeof COACHES !== 'undefined' && COACHES[m.A1_member_id]) || null;
-      if (rv.decision === 'approved') {
-        state.stage = 'reviewed';
-        const row = bubble('a', `${coach ? coach.name : '教练'}已复核通过（${(rv.recorded_at || '').slice(0, 16).replace('T', ' ')}）。\n复核不改动活动限制，那条限制仍然生效。`);
-        actionChip(row, '出计划', () => say('出计划'));
-      } else {
-        bubble('a', `${coach ? coach.name : '教练'}复核未通过：${rv.note || ''}\n本次不生成计划，可以补充资料后重新填报。`, null, 'warn');
-      }
-      save(true);
-      if (typeof window.__onDataChange === 'function') window.__onDataChange();
-    }
+    if (reviewNotify(db())) save(true);
+    if (typeof window.__onDataChange === 'function') window.__onDataChange();
   } catch (err) {}
 });
 
