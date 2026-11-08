@@ -318,7 +318,8 @@ function renderDetail() {
       '<div class="kv"><span class="k">结论</span><span>' + (rv.decision === 'approved' ? '通过' : '否决') + '</span></div>' +
       '<div class="kv"><span class="k">复核人</span><span>' + esc(rv.recorded_by || '—') + '</span></div>' +
       '<div class="kv"><span class="k">时间</span><span>' + esc((rv.recorded_at || '').slice(0, 16).replace('T', ' ')) + '</span></div>' +
-      '<div class="kv"><span class="k">意见</span><span>' + esc(rv.note || '—') + '</span></div></div>';
+      '<div class="kv"><span class="k">意见</span><span>' + esc(rv.note || '—') + '</span></div>' +
+      '<div class="acts"><button class="btn" id="rv-copy">复制复核回执</button><span class="hint" id="rv-copy-hint"></span></div></div>';
   } else if (v && v.code === 'review') {
     reviewBlock = '<div class="card"><h3>复核</h3>' +
       '<div class="fgrid">' +
@@ -384,6 +385,33 @@ function renderDetail() {
     '</div>' +
     timeline +
     '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。</div>';
+
+  const copyBtn = document.getElementById('rv-copy');
+  if (copyBtn) copyBtn.onclick = () => {
+    const base = location.href.split('#')[0].replace(/[^/]*$/, 'index.html');
+    const payload = { member_id: m.A1_member_id, review: rv };
+    let code = '';
+    try {
+      code = btoa(unescape(encodeURIComponent(JSON.stringify(payload)))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
+    } catch (e) { return; }
+    const url = base + '#review=' + code;
+    const hint = document.getElementById('rv-copy-hint');
+    const done = ok => {
+      if (!hint) return;
+      hint.textContent = ok ? '回执已复制，发给会员打开后会提醒复核结果。' : '复制失败，请手动复制：' + url;
+      hint.className = 'hint' + (ok ? '' : ' bad');
+    };
+    const fallback = () => {
+      const ta = document.createElement('textarea');
+      ta.value = url;
+      document.body.appendChild(ta);
+      ta.select();
+      try { document.execCommand('copy'); done(true); } catch (e) { done(false); }
+      ta.remove();
+    };
+    if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(url).then(() => done(true)).catch(fallback);
+    else fallback();
+  };
 
   const rvBtn = document.getElementById('rv-submit');
   if (rvBtn) rvBtn.onclick = () => {
