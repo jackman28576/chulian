@@ -600,9 +600,10 @@
   <div class="head"><h3>会员</h3><button id="regCancel">关闭</button></div>
   <div class="body">
     <div id="memberList"></div>
+    <div class="actions" style="margin:8px 0 2px"><button class="btn" id="editCurrent" type="button">编辑当前档案</button></div>
     <div class="hr"></div>
-    <h3 style="margin:0;font-size:14px;font-weight:620">登记会员</h3>
-    <p style="margin:4px 0 0;color:var(--muted);font-size:12.5px">只填必要的几项，其余留空也能开始。</p>
+    <h3 id="regTitle" style="margin:0;font-size:14px;font-weight:620">登记会员</h3>
+    <p id="regNote" style="margin:4px 0 0;color:var(--muted);font-size:12.5px">只填必要的几项，其余留空也能开始。</p>
     <label>称呼</label><input id="regName" placeholder="例如：王女士">
     <div class="grid2">
       <div><label>训练经验（年）</label><input id="regYears" type="number" min="0" max="40" value="1"></div>
@@ -614,8 +615,12 @@
       <div><label>每次时长（分钟）</label><input id="regMinutes" type="number" min="15" max="120" value="50"></div>
     </div>
     <label>偏好时段</label><input id="regWhen" placeholder="例如：工作日傍晚">
-    <label>既往诊断或手术</label><input id="regInjury" placeholder="没有就留空">
-    <label>专业活动限制</label><input id="regRestrict" placeholder="没有就留空">
+    <label>饮食偏好（合成）</label><input id="regDiet" placeholder="例如：控糖、乳糖不耐">
+    <div id="regLimitFields">
+      <label>既往诊断或手术</label><input id="regInjury" placeholder="没有就留空">
+      <label>专业活动限制</label><input id="regRestrict" placeholder="没有就留空">
+    </div>
+    <p id="regLimitNote" style="display:none;margin:8px 0 0;color:var(--muted);font-size:12px;line-height:1.6"></p>
     <div class="actions"><button class="btn primary" id="regSave">登记并切换</button></div>
   </div>
 </div>
@@ -2300,13 +2305,49 @@ setTimeout(consumeReviewReceipt, 900);
       el.innerHTML = `<div class="av3">${(m.A2_display_name || '会').slice(0, 1)}</div>
         <div class="t"><b>${(m.A2_display_name || '').replace(/（合成）/, '')}${flags ? `<span class="badge-r">风险 ${flags}</span>` : ''}</b>
         <small>${m.A1_member_id} ｜ ${(m.A4_goal || []).join('、') || '未设目标'}</small></div>`;
-      el.onclick = () => { if (i !== api().current) api().switchTo(i); refresh(); closeSheets(); };
+      el.onclick = () => { if (i !== api().current) api().switchTo(i); setMemberFormMode(false); refresh(); closeSheets(); };
       box.appendChild(el);
     });
   }
+  let editMode = false;
+  function setMemberFormMode(edit){
+    editMode = !!edit;
+    const title = $('regTitle'), note = $('regNote'), save = $('regSave');
+    const limitFields = $('regLimitFields'), limitNote = $('regLimitNote'), btn = $('editCurrent');
+    if(title) title.textContent = edit ? '修改当前档案' : '登记会员';
+    if(note) note.textContent = edit ? '会员编号固定；活动限制和专业意见由教练维护。' : '只填必要的几项，其余留空也能开始。';
+    if(save) save.textContent = edit ? '保存修改' : '登记并切换';
+    if(limitFields) limitFields.style.display = edit ? 'none' : '';
+    if(limitNote) limitNote.style.display = edit ? 'block' : 'none';
+    if(btn) btn.textContent = edit ? '取消编辑' : '编辑当前档案';
+    if(!edit){
+      ['regName','regInjury','regRestrict','regGoal','regWhen','regDiet'].forEach(id => { const el = $(id); if(el) el.value = ''; });
+      const defaults = {regYears: '1', regDays: '2', regMinutes: '50'};
+      Object.keys(defaults).forEach(id => { const el = $(id); if(el) el.value = defaults[id]; });
+      const lv = $('regLevel'); if(lv) lv.value = '初';
+      if(limitNote) limitNote.textContent = '';
+      return;
+    }
+    const m = api().db();
+    if(!m) return;
+    $('regName').value = (m.A2_display_name || '').replace(/（合成）$/, '');
+    const exp = m.A5_experience || {};
+    $('regYears').value = exp.years || 0;
+    const lv = String(exp.equipment || '初级');
+    $('regLevel').value = lv.indexOf('高') === 0 ? '高' : lv.indexOf('中') === 0 ? '中' : '初';
+    $('regGoal').value = (m.A4_goal || []).join('、');
+    const av = m.A14_availability || {};
+    $('regDays').value = av.days_per_week || 2;
+    $('regMinutes').value = av.minutes_per_session || 50;
+    $('regWhen').value = av.preferred_time || '';
+    $('regDiet').value = (m.A10_diet || {}).text || '';
+    const restr = (m.A9_restrictions || []).map(r => typeof r === 'string' ? r : r.item).filter(Boolean);
+    if(limitNote) limitNote.textContent = '当前专业限制：' + (restr.join('；') || '无') + '。这部分由教练或专业人员维护，会员端不能自行修改。';
+    setTimeout(() => { const t = $('regTitle'); if(t) t.scrollIntoView({behavior: 'smooth', block: 'start'}); }, 80);
+  }
   function openSheet(w) {
     ['mask1','mask2','memberSheet','modelSheet'].forEach(id => $(id).classList.remove('on'));
-    if (w === 'member') { listInSheet(); $('mask1').classList.add('on'); $('memberSheet').classList.add('on'); }
+    if (w === 'member') { setMemberFormMode(false); listInSheet(); $('mask1').classList.add('on'); $('memberSheet').classList.add('on'); }
     else {
       const c = api().llmCfg();
       $('cfg-key').value = c.key || ''; $('cfg-base').value = c.base || 'https://api.deepseek.com';
@@ -2316,6 +2357,7 @@ setTimeout(consumeReviewReceipt, 900);
   }
   function closeSheets() { ['mask1','mask2','memberSheet','modelSheet'].forEach(id => $(id).classList.remove('on')); }
   $('memberBtn').onclick = () => openSheet('member');
+  $('editCurrent').onclick = () => setMemberFormMode(!editMode);
   $('cfg').onclick = () => openSheet('model');
   $('mask1').onclick = closeSheets; $('mask2').onclick = closeSheets;
   $('regCancel').onclick = closeSheets; $('modelClose').onclick = closeSheets;
@@ -2337,16 +2379,38 @@ setTimeout(consumeReviewReceipt, 900);
   $('regSave').onclick = () => {
     const name = $('regName').value.trim();
     if (!name) { $('regName').focus(); return; }
-    const years = +($('regYears').value || 0), level = $('regLevel').value;
+    const years = Math.max(0, Math.min(40, +($('regYears').value || 0)));
+    const level = $('regLevel').value;
+    const levelMap = level === '初' ? '初级' : level === '中' ? '中级' : '高级';
     const goals = ($('regGoal').value.trim() || '体态改善').split(/[、,，\s]+/).filter(Boolean);
-    const injury = $('regInjury').value.trim(), restrict = $('regRestrict').value.trim();
+    const days = Math.max(1, Math.min(7, +($('regDays').value || 2)));
+    const minutes = Math.max(15, Math.min(120, +($('regMinutes').value || 50)));
+    const when = $('regWhen').value.trim() || '与场馆确认的时段';
+    const diet = $('regDiet').value.trim();
     const now = new Date().toISOString();
-    const seq = (api().members.length + 1).toString().padStart(4, '0');
     const meta = { source: '会员本人', recorded_at: now, recorded_by: '会员本人' };
+
+    if (editMode) {
+      const m = api().db();
+      if (!m) return;
+      m.A2_display_name = /（合成）/.test(name) ? name : name + '（合成）';
+      m.A4_goal = goals;
+      m.A5_experience = Object.assign({}, m.A5_experience || {}, { years: years, equipment: levelMap }, meta);
+      m.A14_availability = Object.assign({}, m.A14_availability || {}, { days_per_week: days, minutes_per_session: minutes, preferred_time: when }, meta);
+      m.A10_diet = Object.assign({}, m.A10_diet || {}, { text: diet }, meta);
+      api().save(); refresh();
+      if (typeof window.__onDataChange === 'function') window.__onDataChange();
+      closeSheets(); setMemberFormMode(false);
+      api().bubble('a', `档案已更新：${m.A2_display_name.replace(/（合成）/, '')}（${m.A1_member_id}）。目标：${(m.A4_goal || []).join('、')}。`);
+      return;
+    }
+
+    const injury = $('regInjury').value.trim(), restrict = $('regRestrict').value.trim();
+    const seq = (api().members.length + 1).toString().padStart(4, '0');
     const m = {
       schema_version: '1.0', A1_member_id: 'L-' + seq, A2_display_name: name + '（合成）',
       A3_age_band: '', A3_sex: '未提供（本人声明）', A4_goal: goals,
-      A5_experience: Object.assign({ years, equipment: level, long_term_coach: false }, meta),
+      A5_experience: Object.assign({ years, equipment: levelMap, long_term_coach: false }, meta),
       A6_recent_activity: Object.assign({ weeks: 4, sessions_per_week: 2, items: ['普拉提私教'],
         minutes_per_session: 50, intensity_self: '中', intensity_increase_pct: 0 }, meta),
       A7_diagnoses: injury ? [{ item: injury, date: '', source: '会员本人' }] : [],
@@ -2355,12 +2419,11 @@ setTimeout(consumeReviewReceipt, 900);
       A9_restrictions: restrict ? [{ item: restrict, level: '禁用', ref: 'A8-01' }] : [],
       A9_confirmation: { status: restrict ? 'confirmed' : 'confirmed_none',
         source: '专业人员', recorded_at: now, recorded_by: '场馆专业人员' },
-      A10_diet: Object.assign({ text: '' }, meta),
+      A10_diet: Object.assign({ text: diet }, meta),
       A11_sleep_profile: Object.assign({ bedtime: '23:30', average_hours: 7, quality: 3, issue: '无' }, meta),
-      A14_availability: { days_per_week: Math.max(1, Math.min(7, +($('regDays').value || 2))),
-        minutes_per_session: Math.max(15, Math.min(120, +($('regMinutes').value || 50))),
-        preferred_time: $('regWhen').value.trim() || '与场馆确认的时段',
-        equipment: ['普拉提训练床', '弹力带'], source: '会员本人', recorded_at: now, recorded_by: '会员本人' },
+      A14_availability: { days_per_week: days, minutes_per_session: minutes,
+        preferred_time: when, equipment: ['普拉提训练床', '弹力带'],
+        source: '会员本人', recorded_at: now, recorded_by: '会员本人' },
       A12_risk_flags: injury ? ['损伤或术后记录（来自 A7）'] : [],
       A13_consent: Object.assign({ voluntary: true, scope: ['训练计划', '风险提示'], synthetic: true, desensitized: true }, meta),
       B_current: {}, C1_visits: [], C2_plans: [], C3_appointments: [], C4_followups: [],
@@ -2368,9 +2431,8 @@ setTimeout(consumeReviewReceipt, 900);
       data_quality_conflicts: []
     };
     api().addMember(m); api().switchTo(api().members.length - 1, true);
-    refresh(); closeSheets();
+    refresh(); closeSheets(); setMemberFormMode(false);
     api().bubble('a', `档案建好了：${m.A2_display_name}（${m.A1_member_id}）。说一句今天的状态就能开始记录。`);
-    ['regName','regInjury','regRestrict','regGoal','regWhen'].forEach(id => $(id).value = '');
   };
 
   window.__onMemberChange = refresh;
