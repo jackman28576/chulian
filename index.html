@@ -122,6 +122,9 @@
   .plan-row{display:grid;grid-template-columns:52px 1fr;gap:12px;padding:10px 0;border-top:1px solid rgba(255,255,255,.10);font-size:14px;line-height:1.7;color:var(--ink2)}
   .plan-row:first-of-type{border-top:0}
   .plan-row .k{color:var(--muted);font-size:13px}
+  .plan-more{margin-top:10px;font-size:12.5px;color:var(--ink2)}
+  .plan-more summary{cursor:pointer;color:var(--muted);padding:4px 0}
+  .plan-more .wrapnote{margin-top:6px}
   .logline{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.10);font-size:13px;color:var(--ink2)}
   .logline:first-of-type{border-top:0}
   .logline .d{font:11.5px var(--mono);color:var(--muted);flex:0 0 62px}
@@ -380,6 +383,7 @@
       <div><label class="lab">左侧 / 右侧时长（秒）</label><input id="mv-lr" value="2.2,1.9"></div>
       <div><label class="lab">资料来源</label><input id="mv-src" value="教练现场记录（合成）"></div>
     </div>
+    <div class="wrapnote">示例：节奏 2.1,2.0,2.4 秒；左侧 2.2、右侧 1.9。稳定性越高、左右差越小越好。</div>
     <div class="acts">
       <button class="act primary" id="mv-run">评估</button>
       <button class="act" id="mv-demo">载入演示数据</button>
@@ -769,6 +773,17 @@ function memberBrief(m) {
   if (v && v.recorded_at) bits.push('上次到店 ' + v.recorded_at.slice(5, 10) + '，疲劳 ' + v.fatigue + '/10，完成度 ' + (v.completion_pct ?? '—') + '%');
   const av = m.A16_last_verdict;
   if (av && av.at) bits.push('上次判定 ' + av.status + '（' + av.rule + '）');
+  const plan = (m.C2_plans || []).slice(-1)[0];
+  if (plan) {
+    const s = plan.schedule || {};
+    bits.push('当前计划 ' + plan.version + '：每周 ' + (s.days_per_week || '—') + ' 次，' + (plan.actions || []).length + ' 个动作，限制 ' + ((plan.limitations || []).slice(0, 2).join('、') || '无'));
+  }
+  const live = (m.C3_appointments || [])
+    .filter(a => (a.status === 'booked' || a.status === 'rescheduled') && Date.parse(a.start_at) > Date.now())
+    .sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at))[0];
+  if (live) bits.push('下次预约 ' + String(live.start_at).slice(5, 16).replace('T', ' ') + ' ' + live.service + (live.coach ? '，教练 ' + live.coach : ''));
+  const recent = (state.recentUser || []).slice(-3);
+  if (recent.length) bits.push('会员最近说 ' + recent.join(' / '));
   return bits.join('；');
 }
 
@@ -1077,6 +1092,7 @@ function actionChip(row, label, fn){
   meta.appendChild(b); row.querySelector('.bubble').appendChild(meta);
 }
 async function say(text){
+  state.recentUser = (state.recentUser || []).concat([String(text || '')]).slice(-3);
   bubble('me', text);
   const m = db();
   const u = await llmUnderstand(text, `${m.A2_display_name}（${m.A1_member_id}）`);
@@ -1302,7 +1318,8 @@ function reply(text, u){
     const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
     if(ev.status_code === 'review'){
       const coach = COACHES[m.A1_member_id];
-      if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），复核通过后这里会出现「出计划」。`);
+      const at = new Date().toLocaleString('zh-CN', {hour12:false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+      if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），提交时间 ${at}。教练端显示为待复核，通过后这里会出现「出计划」。`);
     }
     if(typeof window.__onDataChange === 'function') window.__onDataChange();
     return;
@@ -1313,6 +1330,17 @@ function reply(text, u){
   }
 
   // 上一轮问过“还差哪几项”，用户只回数字也能接住
+  if(state.need && state.need.length && /不清楚|不知道|不确定|没测|忘了|没量/.test(t)){
+    const k = state.need.shift();
+    state.draft[k + '_unknown'] = true;
+    if(k === 'pain') state.draft.pain_missing = true;
+    bubble('a', '这项先记为「不清楚」，判定会按资料不足处理。');
+    if(state.need.length){
+      const labelOf = kk => kk === 'pain' ? '疼痛（0—10）' : kk === 'fatigue' ? '疲劳（0–10）' : '昨晚睡了几小时';
+      bubble('a', `还差 ${state.need.length} 项：${state.need.map(labelOf).join('、')}。`);
+      return;
+    }
+  }
   if(state.need && state.need.length){
     const nums = (t.match(/\d+(?:\.\d+)?/g) || []).map(Number);
     const hasKeyword = /疲劳|累|困|睡|小时|疼|痛|酸|分/.test(t);
@@ -1362,9 +1390,9 @@ function reply(text, u){
   const hasAcute = Array.isArray(d.acute) && d.acute.length > 0;
   const needKeys = [];
   if(!hasAcute){
-    if(d.pain_missing && d.pain === undefined) needKeys.push('pain');
-    if(d.fatigue === undefined) needKeys.push('fatigue');
-    if(d.sleep_hours === undefined) needKeys.push('sleep_hours');
+    if(d.pain_missing && d.pain === undefined && !d.pain_unknown) needKeys.push('pain');
+    if(d.fatigue === undefined && !d.fatigue_unknown) needKeys.push('fatigue');
+    if(d.sleep_hours === undefined && !d.sleep_unknown) needKeys.push('sleep_hours');
   }
   if(needKeys.length){
     state.need = needKeys.slice();
@@ -1385,7 +1413,7 @@ function reply(text, u){
   const m = db();
   m.B_current = {
     B1_visit_id: 'V-' + new Date().toISOString().slice(0,19).replace(/[-:T]/g,''),
-    B2_body_feeling: {text: d.pain_text || '无特别说明', pain_score: d.pain === undefined ? 0 : d.pain, acute_signals: d.acute || []},
+    B2_body_feeling: {text: d.pain_text || (d.pain_unknown ? '疼痛未记录' : '无特别说明'), pain_score: d.pain_unknown ? undefined : (d.pain === undefined ? 0 : d.pain), acute_signals: d.acute || []},
     B3_fatigue: d.fatigue,
     B4_sleep_last: {hours: d.sleep_hours, quality: 3},
     B5_vitals: {resting_hr: 70},
@@ -1397,8 +1425,10 @@ function reply(text, u){
   state.last = ev; state.stage = 'assessed'; state.draft = {}; save();
 
   if(!hasAcute){
-    let line = ((u && u.ack) ? u.ack + '\n' : '') + `好，按你说的记下了：疲劳 ${m.B_current.B3_fatigue}/10、睡眠 ${m.B_current.B4_sleep_last.hours}h` +
-      (m.B_current.B2_body_feeling.pain_score ? `、疼痛 ${m.B_current.B2_body_feeling.pain_score}/10` : '') + '。';
+    const fTxt = m.B_current.B3_fatigue === undefined ? '不清楚' : m.B_current.B3_fatigue + '/10';
+    const sTxt = m.B_current.B4_sleep_last.hours === undefined ? '不清楚' : m.B_current.B4_sleep_last.hours + 'h';
+    let line = ((u && u.ack) ? u.ack + '\n' : '') + `好，按你说的记下了：疲劳 ${fTxt}、睡眠 ${sTxt}` +
+      (m.B_current.B2_body_feeling.pain_score ? `、疼痛 ${m.B_current.B2_body_feeling.pain_score}/10` : '') + '。说“改一下，疲劳改成6”可以更正。';
     const prior = (m.C1_visits || []).slice(-1)[0];
     if (prior && prior.fatigue !== undefined && m.B_current.B3_fatigue !== undefined) {
       const diff = m.B_current.B3_fatigue - prior.fatigue;
@@ -1410,7 +1440,8 @@ function reply(text, u){
   const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
   if(ev.status_code === 'review'){
     const coach = COACHES[m.A1_member_id];
-    if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），复核通过后这里会出现「出计划」。`);
+    const at = new Date().toLocaleString('zh-CN', {hour12:false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
+    if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），提交时间 ${at}。教练端显示为待复核，通过后这里会出现「出计划」。`);
   }
   if(ev.status_code === 'continue') actionChip(row, '出计划', () => say('出计划'));
   if(ev.status_code === 'pause'){
@@ -1944,6 +1975,7 @@ setTimeout(consumeReviewReceipt, 900);
     const plans = api().plans || [];
     if (!plans.length) { $('p-ver').textContent = ''; $('p-body').innerHTML = '<div class="empty">复核通过后生成第一版计划。</div>'; }
     else {
+      const esc = s => String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c]));
       const p = plans[plans.length - 1];
       $('p-ver').textContent = p.version + (p.status === 'active' ? ' · 生效' : ' · ' + p.status);
       const s = p.schedule || {};
@@ -1954,7 +1986,15 @@ setTimeout(consumeReviewReceipt, 900);
       let html = rows.map(([k, v]) => `<div class="plan-row"><div class="k">${k}</div><div>${v}</div></div>`).join('');
       if (p.actions && p.actions.length) {
         html += `<div class="tagline">${p.actions.map(a => `<span class="chip">${a.name} × ${a.sets} 组</span>`).join('')}</div>`;
+        html += `<details class="plan-more"><summary>动作清单与依据</summary>` +
+          p.actions.map(a => `<div class="plan-row"><div class="k">${esc(a.name)}</div><div>${a.sets} 组 × ${esc(a.reps || '—')} · ${esc(a.load || '—')} 负荷${a.limit ? ' · ' + esc(a.limit) : ''}</div></div>`).join('') +
+          `<div class="wrapnote">依据字段：${(p.basis_field_ids || []).join('、')}</div></details>`;
       }
+      html += `<details class="plan-more"><summary>版本记录（${plans.length} 版）</summary>` +
+        plans.slice().reverse().map(pl => {
+          const diffs = (pl.diff_from_previous || []).map(d => `${esc(d.section)}：${esc(String(d.before).slice(0, 36))} → ${esc(String(d.after).slice(0, 36))}`).join('<br>');
+          return `<div class="wrapnote"><b>${esc(pl.version)}</b> · ${esc(pl.status)}${(pl.change_reasons || []).length ? ' · ' + esc(pl.change_reasons.join('；')) : ''}${diffs ? '<br>' + diffs : ''}</div>`;
+        }).join('') + '</details>';
       if (p.appointment_at) html += `<div class="wrapnote">已关联预约：${String(p.appointment_at).replace('T',' ').slice(5,16)}</div>`;
       $('p-body').innerHTML = html;
     }
@@ -2444,6 +2484,7 @@ setTimeout(consumeReviewReceipt, 900);
     const m = api().db();
     const list = (m.C8_movements || []);
     const last = list.slice(-1)[0];
+    const prev = list.length > 1 ? list[list.length - 2] : null;
     $('mv-state').textContent = last ? (last.exercise + ' · ' + last.rank) : '';
     $('mv-body').innerHTML = last ? `
       <div class="kpis">
@@ -2451,6 +2492,7 @@ setTimeout(consumeReviewReceipt, 900);
         <div class="kpi"><b>${last.left_right_difference_pct}%</b><span>左右差异</span></div>
         <div class="kpi"><b>${esc(last.rank)}</b><span>本次评级</span></div>
       </div>
+      ${prev ? `<div class="wrapnote">上次 ${esc(prev.exercise)}：稳定性 ${prev.tempo_stability_pct}%、左右差 ${prev.left_right_difference_pct}%（${esc(prev.rank)}）</div>` : ''}
       <div class="wrapnote">${esc(last.method)}</div>
       <div class="tagline">${(last.suggestions || []).map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>
       <div class="wrapnote">${esc(last.movement_id)} · ${esc(last.source)} · 已写入评估记录 ${esc(((m.C6_assessments||[]).slice(-1)[0]||{}).assessment_id || '')}</div>`
@@ -2466,6 +2508,9 @@ setTimeout(consumeReviewReceipt, 900);
         <span class="st ${q.status === 'frozen' ? 'cancelled' : 'booked'}">${q.status === 'frozen' ? '冻结' : '进行中'}</span></div>
       <div class="bigbar"><i style="width:${q.progress_pct}%"></i></div>
       <div class="wrapnote">进度 ${q.progress_pct}% · 场景状态：${esc(q.scene)}</div>
+      <div class="wrapnote">${q.status === 'frozen'
+        ? '解锁条件：风险状态恢复为「继续训练」，并重新生成计划后自动下发。'
+        : '下一档：完成度 ≥ 60% 灯带渐亮，≥ 90% 全亮。'}</div>
       <div class="kpis">
         <div class="kpi"><b>${q.score}</b><span>本次得分</span></div>
         <div class="kpi"><b>${esc(q.badge)}</b><span>徽章</span></div>
@@ -2480,7 +2525,9 @@ setTimeout(consumeReviewReceipt, 900);
     const last = list.slice(-1)[0];
     $('fl-state').textContent = last && last.next_review ? ('下次复核 ' + last.next_review) : (list.length ? '已随访 ' + list.length + ' 次' : '');
     const restr = (m.A9_restrictions || []).map(r => String(r.item || ''));
-    $('fl-body').innerHTML = (list.length ? list.slice(-3).reverse().map(f => `
+    const conflicts = list.filter(f => (f.restriction_conflicts || []).length).length;
+    $('fl-body').innerHTML = `<div class="wrapnote">下次复核：${esc(last && last.next_review ? last.next_review : '未安排')}${conflicts ? ' · 有 ' + conflicts + ' 条冲突记录，需人工复核' : ''}</div>` +
+      (list.length ? list.slice(-3).reverse().map(f => `
       <div class="arow"><span>${esc(f.followup_id)} · ${esc(String(f.content).slice(0, 40))}</span>
         <span class="st ${f.restriction_conflicts.length ? 'cancelled' : 'booked'}">${f.restriction_conflicts.length ? '限制优先' : '已记录'}</span></div>
       <div class="wrapnote" style="padding:0 0 8px">依据 ${esc(f.professional_advice_ref)}｜${esc(f.handling)}${f.restriction_conflicts.length ? '（' + f.restriction_conflicts.map(esc).join('、') + '）' : ''}</div>`).join('')
