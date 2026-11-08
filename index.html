@@ -66,7 +66,12 @@
     font-size:14px;cursor:pointer;text-align:left}
   .ad-item:hover,.ad-home:hover{background:rgba(255,255,255,.06)}
   .ad-item.on,.ad-home.on{background:rgba(54,226,202,.10);border-color:rgba(122,246,223,.28);color:#fff}
-  .ad-item span{color:var(--muted);font-size:11.5px;text-align:right}
+  .ad-item .ad-ic,.ad-home .ad-ic{width:18px;height:18px;flex:0 0 18px;display:grid;place-items:center;color:var(--muted)}
+  .ad-item .ad-ic svg,.ad-home .ad-ic svg{width:17px;height:17px;fill:none;stroke:currentColor;
+    stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
+  .ad-item .ad-label,.ad-home .ad-label{flex:1;font-size:14px}
+  .ad-item .ad-val{color:var(--muted);font-size:11.5px;text-align:right;margin-left:8px}
+  .ad-item.on .ad-ic,.ad-home.on .ad-ic{color:#7cf6df}
   .ad-foot{margin-top:auto;padding:16px 10px 4px;color:var(--muted);font-size:11px;line-height:1.6}
   .screenhead{display:none;align-items:center;gap:10px;margin:0 0 14px}
   .screenhead button{width:32px;height:32px;border-radius:10px;border:1px solid rgba(255,255,255,.14);
@@ -77,6 +82,7 @@
   body:not([data-screen="home"]) .dock{display:none !important}
   body:not([data-screen="home"]) .content{padding-top:92px;max-width:900px}
   body[data-screen="home"] .content [data-screen]:not([data-screen="home"]){display:none !important}
+  body[data-screen="state"] .content [data-screen]:not([data-screen="state"]){display:none !important}
   body[data-screen="plan"] .content [data-screen]:not([data-screen="plan"]){display:none !important}
   body[data-screen="visits"] .content [data-screen]:not([data-screen="visits"]){display:none !important}
   body[data-screen="appointment"] .content [data-screen]:not([data-screen="appointment"]){display:none !important}
@@ -376,15 +382,40 @@
     <div class="ad-av" id="adAv">林</div>
     <div><b id="adName">林女士</b><small id="adGoal">会员健康档案</small></div>
   </div>
-  <button class="ad-home" type="button" data-screen="home" id="adHome">首页</button>
+  <button class="ad-home" type="button" data-screen="home" id="adHome">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><path d="M4 11 12 4l8 7v8a1 1 0 0 1-1 1h-5v-6h-4v6H5a1 1 0 0 1-1-1z"/></svg></span>
+    <span class="ad-label">首页</span>
+  </button>
+  <button class="ad-item" type="button" data-screen="state">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="8"/><path d="M12 12l4-4"/></svg></span>
+    <span class="ad-label">今日状态</span><span class="ad-val" id="adState">—</span>
+  </button>
   <div class="ad-group">训练与记录</div>
-  <button class="ad-item" type="button" data-screen="plan">训练计划<span id="adPlan">—</span></button>
-  <button class="ad-item" type="button" data-screen="visits">到店记录<span id="adVisits">—</span></button>
-  <button class="ad-item" type="button" data-screen="appointment">预约与场馆服务<span id="adAppt">—</span></button>
+  <button class="ad-item" type="button" data-screen="plan">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 10h8M8 14h6"/></svg></span>
+    <span class="ad-label">训练计划</span><span class="ad-val" id="adPlan">—</span>
+  </button>
+  <button class="ad-item" type="button" data-screen="visits">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></span>
+    <span class="ad-label">到店记录</span><span class="ad-val" id="adVisits">—</span>
+  </button>
+  <button class="ad-item" type="button" data-screen="appointment">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16M8.5 14.5l2.5 2.5 4.5-5"/></svg></span>
+    <span class="ad-label">预约与场馆服务</span><span class="ad-val" id="adAppt">—</span>
+  </button>
   <div class="ad-group">评估与任务</div>
-  <button class="ad-item" type="button" data-screen="movement">动作评估<span id="adMove">—</span></button>
-  <button class="ad-item" type="button" data-screen="quest">虚拟任务 · 场景联动<span id="adQuest">—</span></button>
-  <button class="ad-item" type="button" data-screen="followup">随访与慢病管理<span id="adFollow">—</span></button>
+  <button class="ad-item" type="button" data-screen="movement">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><path d="M3 12h4l2-5 4 10 2-5h6"/></svg></span>
+    <span class="ad-label">动作评估</span><span class="ad-val" id="adMove">—</span>
+  </button>
+  <button class="ad-item" type="button" data-screen="quest">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="7"/><circle cx="12" cy="12" r="2.5"/></svg></span>
+    <span class="ad-label">虚拟任务 · 场景联动</span><span class="ad-val" id="adQuest">—</span>
+  </button>
+  <button class="ad-item" type="button" data-screen="followup">
+    <span class="ad-ic"><svg viewBox="0 0 24 24"><path d="M12 20s-7-4.5-7-9a4 4 0 0 1 7-2 4 4 0 0 1 7 2c0 4.5-7 9-7 9z"/></svg></span>
+    <span class="ad-label">随访与慢病管理</span><span class="ad-val" id="adFollow">—</span>
+  </button>
   <div class="ad-foot" id="adFoot">判定由确定性规则引擎给出 · 不构成医疗建议</div>
 </aside>
 
@@ -419,7 +450,7 @@
     <div class="log"><div class="wrap" id="wrap"></div></div>
   </section>
 
-  <section class="card summary" data-screen="home">
+  <section class="card summary" data-screen="state">
     <div class="ringwrap">
       <svg width="150" height="150" viewBox="0 0 150 150">
         <defs>
@@ -442,7 +473,7 @@
     <div class="coachline" id="coachLine"></div>
   </section>
 
-  <section class="card" data-screen="home">
+  <section class="card" data-screen="state">
     <div class="card-h"><h3 id="d-title">今日判定</h3><span class="code" id="d-rule"></span><span class="right"><button class="tbtn" id="d-more" style="height:28px;padding:0 12px;font-size:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);color:#fff">依据</button></span></div>
     <div class="verdict-head"><span class="pill idle" id="d-tag">等待今日状态</span></div>
     <p id="d-reason" style="margin:0 0 12px;color:var(--ink2);font-size:14px;line-height:1.7">会员说一句今天的状态，这里会出现判定。</p>
@@ -2609,6 +2640,16 @@ setTimeout(consumeReviewReceipt, 900);
   // 相机轨迹：上滑时推进+横移
   const A = { p: new THREE.Vector3(5.4, 2.9, 8.2), t: new THREE.Vector3(0.4, 1.05, 0.3), fov: 34 };
   const B = { p: new THREE.Vector3(1.05, 10.2, 4.4), t: new THREE.Vector3(0.75, 0.05, 0.55), fov: 40 };
+  const SCREEN_CAM = {
+    state: { p: new THREE.Vector3(4.2, 2.6, 6.6), t: new THREE.Vector3(0.6, 1.1, 0.2), fov: 36 },
+    plan: { p: new THREE.Vector3(-4.4, 2.7, 4.4), t: new THREE.Vector3(-0.6, 0.8, 0.2), fov: 38 },
+    visits: { p: new THREE.Vector3(2.8, 2.2, 4.2), t: new THREE.Vector3(0.2, 0.8, -0.5), fov: 38 },
+    appointment: { p: new THREE.Vector3(3.6, 2.5, 7.0), t: new THREE.Vector3(0.7, 1.0, 0.9), fov: 36 },
+    movement: { p: new THREE.Vector3(-3.6, 1.9, 3.8), t: new THREE.Vector3(-0.5, 0.35, 1.0), fov: 40 },
+    quest: { p: new THREE.Vector3(2.3, 2.7, 5.4), t: new THREE.Vector3(0.0, 0.45, 1.8), fov: 38 },
+    followup: { p: new THREE.Vector3(-3.9, 2.2, 2.8), t: new THREE.Vector3(-0.6, 0.9, 0.3), fov: 38 }
+  };
+  let screenMix = 0;
   const ease = x => x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2;
 
   function sizeOf() {
@@ -2638,7 +2679,7 @@ setTimeout(consumeReviewReceipt, 900);
   onScroll();
 
   const camPos = new THREE.Vector3(), camTgt = new THREE.Vector3();
-  const pA = new THREE.Vector3(), pB = new THREE.Vector3();
+  const pA = new THREE.Vector3(), pB = new THREE.Vector3(), pPose = new THREE.Vector3();
   function frame(now) {
     const dt = lastNow ? Math.min(0.05, (now - lastNow) / 1000) : 0.0166;
     lastNow = now;
@@ -2654,10 +2695,22 @@ setTimeout(consumeReviewReceipt, 900);
     pB.copy(B.p).sub(B.t).multiplyScalar(f).add(B.t);
     camPos.lerpVectors(pA, pB, k);
     camTgt.lerpVectors(A.t, B.t, k);
+    let fv = A.fov + (B.fov - A.fov) * k;
+    const screen = document.body.dataset.screen || 'home';
+    const pose = SCREEN_CAM[screen];
+    const wantMix = pose ? 1 : 0;
+    screenMix += (wantMix - screenMix) * (1 - Math.pow(0.975, dt * 60));
+    if(Math.abs(wantMix - screenMix) < 0.0005) screenMix = wantMix;
+    if(pose && screenMix > 0.001){
+      pPose.copy(pose.p).sub(pose.t).multiplyScalar(f).add(pose.t);
+      camPos.lerp(pPose, screenMix);
+      camTgt.lerp(pose.t, screenMix);
+      fv = fv + (pose.fov - fv) * screenMix;
+    }
     // 轻微呼吸感
     camPos.y += Math.sin(t * 0.5) * 0.012;
     camera.position.copy(camPos);
-    camera.fov = A.fov + (B.fov - A.fov) * k;
+    camera.fov = fv;
     camera.updateProjectionMatrix();
     camera.lookAt(camTgt);
     // 滚动时背景渐糊、渐暗，卡片像浮在玻璃上
@@ -3354,7 +3407,7 @@ setTimeout(consumeReviewReceipt, 900);
     }catch(err){ hint('fl-hint', err.message, true); }
   };
 
-  const SCREEN_TITLES = {home: '首页', plan: '训练计划', visits: '到店记录', appointment: '预约与场馆服务', movement: '动作评估', quest: '虚拟任务 · 场景联动', followup: '随访与慢病管理'};
+  const SCREEN_TITLES = {home: '首页', state: '今日状态', plan: '训练计划', visits: '到店记录', appointment: '预约与场馆服务', movement: '动作评估', quest: '虚拟任务 · 场景联动', followup: '随访与慢病管理'};
   function renderDrawer(){
     if(!api() || !api().db()) return;
     const m = api().db();
@@ -3363,6 +3416,8 @@ setTimeout(consumeReviewReceipt, 900);
     const nm = $('adName'); if(nm) nm.textContent = name;
     const gl = $('adGoal'); if(gl) gl.textContent = m.A1_member_id + ' · ' + ((m.A4_goal || []).join('、') || '未设目标');
     const set = (id, txt) => { const el = $(id); if(el) el.textContent = txt; };
+    const verdict = m.A16_last_verdict;
+    set('adState', verdict ? verdict.status : '未填报');
     const plan = (m.C2_plans || []).slice(-1)[0];
     set('adPlan', plan ? plan.version : '—');
     set('adVisits', (m.C1_visits || []).length + ' 条');
