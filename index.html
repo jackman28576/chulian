@@ -47,6 +47,8 @@
     background:rgba(255,255,255,.06);display:flex;flex-direction:column;justify-content:center;align-items:center;
     gap:4px;cursor:pointer;flex:0 0 34px;padding:0}
   .burger span{display:block;width:15px;height:1.6px;background:rgba(255,255,255,.82);border-radius:2px}
+  .swapveil{position:fixed;inset:0;z-index:80;background:rgba(6,9,14,.55);opacity:0;pointer-events:none;transition:opacity .18s ease}
+  .swapveil.on{opacity:1}
   .appmask{position:fixed;inset:0;z-index:90;background:rgba(4,6,10,.55);opacity:0;pointer-events:none;transition:opacity .25s}
   .appmask.on{opacity:1;pointer-events:auto}
   .appdrawer{position:fixed;left:0;top:0;bottom:0;z-index:91;width:min(320px,86vw);padding:20px 14px;
@@ -388,6 +390,7 @@
   </div>
 </div>
 
+<div class="swapveil" id="swapveil"></div>
 <div class="appmask" id="appmask"></div>
 <aside class="appdrawer" id="appdrawer">
   <div class="ad-head">
@@ -3534,21 +3537,41 @@ setTimeout(consumeReviewReceipt, 900);
     if(mask) mask.classList.remove('on');
     document.body.classList.remove('drawer-open');
   }
-  function showScreen(name){
-    if(!SCREEN_TITLES[name]) name = 'home';
+  let swapFirst = true, swapBusy = false;
+  function applyScreen(name){
     document.body.dataset.screen = name;
     const t = $('screenTitle'); if(t) t.textContent = SCREEN_TITLES[name];
     const heroCopy = SCREEN_HERO[name] || {eyebrow: '', sub: ''};
     const ey = $('screenEyebrow'); if(ey) ey.textContent = heroCopy.eyebrow;
     const sb = $('screenSub'); if(sb) sb.textContent = heroCopy.sub;
-    if(name !== 'home'){
-      const sh = $('screenhead');
-      if(sh){ sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
+    const sh = $('screenhead');
+    if(name !== 'home' && sh){ sh.style.animation = 'none'; void sh.offsetWidth; sh.style.animation = ''; }
+    if(name === 'home'){
+      const hi = document.querySelector('.hero .inner');
+      if(hi){ hi.style.animation = 'none'; void hi.offsetWidth; hi.style.animation = ''; }
     }
     document.querySelectorAll('.ad-item,.ad-home').forEach(b => b.classList.toggle('on', b.dataset.screen === name));
-    closeDrawer();
     window.scrollTo({ top: 0, behavior: 'auto' });
     if(typeof window.__shellScroll === 'function') window.__shellScroll();
+    const card = document.querySelector('.content [data-screen="' + name + '"]');
+    if(card){ card.style.animation = 'none'; void card.offsetWidth; card.style.animation = ''; }
+  }
+  function showScreen(name){
+    if(!SCREEN_TITLES[name]) name = 'home';
+    if(swapFirst){ swapFirst = false; closeDrawer(); applyScreen(name); return; }
+    if(document.body.dataset.screen === name){ closeDrawer(); return; }
+    if(swapBusy) return;
+    swapBusy = true;
+    closeDrawer();
+    const veil = $('swapveil');
+    if(veil) veil.classList.add('on');
+    setTimeout(() => {
+      applyScreen(name);
+      requestAnimationFrame(() => {
+        if(veil) veil.classList.remove('on');
+        swapBusy = false;
+      });
+    }, 150);
   }
   const burger = $('burger');
   if(burger) burger.onclick = () => { $('appdrawer').classList.contains('on') ? closeDrawer() : openDrawer(); };
