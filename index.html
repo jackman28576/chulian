@@ -129,6 +129,30 @@
   .plan-more{margin-top:10px;font-size:12.5px;color:var(--ink2)}
   .plan-more summary{cursor:pointer;color:var(--muted);padding:4px 0}
   .plan-more .wrapnote{margin-top:6px}
+  .q-task{display:flex;flex-direction:column;gap:8px;margin-top:10px}
+  .q-item{display:flex;align-items:center;gap:10px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);
+    border-radius:12px;background:rgba(255,255,255,.04);cursor:pointer;text-align:left;color:var(--ink);font-size:13.5px}
+  .q-item.on{border-color:rgba(122,246,223,.4);background:rgba(54,226,202,.10)}
+  .q-item.disabled{opacity:.45;cursor:not-allowed}
+  .q-check{width:20px;height:20px;border-radius:6px;border:1px solid rgba(255,255,255,.25);
+    display:grid;place-items:center;font-size:12px;color:#0A0C10;flex:0 0 20px}
+  .q-item.on .q-check{background:#7cf6df;border-color:#7cf6df}
+  .q-breath{display:flex;align-items:center;gap:12px;padding:10px 12px;border:1px solid rgba(255,255,255,.10);
+    border-radius:12px;background:rgba(255,255,255,.04)}
+  .q-breath.disabled{opacity:.45}
+  .q-orb{width:34px;height:34px;border-radius:50%;flex:0 0 34px;
+    background:radial-gradient(circle at 35% 35%,#b9fff4,#36e2ca 55%,#0d5a58);
+    box-shadow:0 0 18px rgba(54,226,202,.35)}
+  .q-orb.run{animation:qBreath 10s ease-in-out infinite}
+  @keyframes qBreath{0%,100%{transform:scale(.75);opacity:.75}40%{transform:scale(1.15);opacity:1}60%{transform:scale(1.15);opacity:1}}
+  .q-breath-t{flex:1;font-size:13px;line-height:1.5}
+  .q-breath-t span{display:block;font-size:11.5px;color:var(--muted)}
+  .q-breath button{padding:6px 12px;border-radius:999px;border:1px solid rgba(255,255,255,.16);
+    background:rgba(255,255,255,.08);color:var(--ink);font-size:12px;cursor:pointer}
+  .q-breath button:disabled{opacity:.45;cursor:not-allowed}
+  .q-leds{display:flex;gap:4px;margin-top:12px}
+  .q-leds i{height:6px;flex:1;border-radius:99px;background:rgba(255,255,255,.10)}
+  .q-leds i.on{background:#7cf6df;box-shadow:0 0 8px rgba(124,246,223,.6)}
   .video-assess{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10)}
   .va-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
   .va-head .tt{font-size:12px;color:var(--muted);letter-spacing:.06em}
@@ -421,13 +445,8 @@
 
   <section class="card">
     <div class="card-h"><h3>虚拟任务 · 场景联动</h3><span class="right" id="q-state"></span></div>
-    <div id="q-body"><div class="empty">完成训练后回填完成度，映射为场景进度与得分。</div></div>
-    <div class="acts">
-      <button class="act" data-q="60">完成 60%</button>
-      <button class="act" data-q="80">完成 80%</button>
-      <button class="act primary" data-q="100">完成 100%</button>
-      <span class="hint" id="q-hint"></span>
-    </div>
+    <div id="q-body"><div class="empty">生成计划后，这里会按动作下发打卡任务。</div></div>
+    <div class="acts"><span class="hint" id="q-hint"></span></div>
   </section>
 
   <section class="card">
@@ -2373,6 +2392,43 @@ setTimeout(consumeReviewReceipt, 900);
     l.rotation.x = -Math.PI / 2; l.position.set(-0.4 + i * 1.2, 0.004, 0.6); scene.add(l);
   }
 
+  // 任务进度灯环：与虚拟任务卡联动
+  const taskRing = new THREE.Group();
+  taskRing.position.set(0, 0.012, 1.8);
+  scene.add(taskRing);
+  const taskRingBase = new THREE.Mesh(new THREE.RingGeometry(0.9, 0.98, 64),
+    new THREE.MeshBasicMaterial({ color: 0x123238, transparent: true, opacity: 0.3, side: THREE.DoubleSide }));
+  taskRingBase.rotation.x = -Math.PI / 2; taskRing.add(taskRingBase);
+  const taskSegs = [];
+  for (let i = 0; i < 24; i++) {
+    const a = i / 24 * Math.PI * 2;
+    const mat = new THREE.MeshBasicMaterial({ color: 0x17333a, transparent: true, opacity: 0.3 });
+    const seg = new THREE.Mesh(new THREE.BoxGeometry(0.16, 0.018, 0.05), mat);
+    seg.position.set(Math.cos(a) * 1.0, 0, Math.sin(a) * 1.0);
+    seg.rotation.y = -a;
+    taskRing.add(seg); taskSegs.push(seg);
+  }
+  const taskLight = new THREE.PointLight(0x36e2ca, 2.5, 5, 2);
+  taskLight.position.set(0, 0.5, 1.8); scene.add(taskLight);
+  const taskTint = new THREE.Color();
+  function updateTaskScene() {
+    const s = window.__sceneTask || { progress: 0, frozen: false };
+    const p = Math.max(0, Math.min(100, Number(s.progress) || 0));
+    const color = s.frozen ? 0xffb15c : (p >= 100 ? 0x7cf6df : 0x36e2ca);
+    const lit = Math.round(p / 100 * taskSegs.length);
+    taskSegs.forEach((seg, i) => {
+      const on = i < lit;
+      seg.material.color.setHex(on ? color : 0x17333a);
+      seg.material.opacity = on ? 0.9 : 0.3;
+    });
+    taskTint.setHex(color).multiplyScalar(s.frozen ? 0.55 : (0.18 + p / 100 * 0.82));
+    taskRingBase.material.color.copy(taskTint);
+    taskRingBase.material.opacity = s.frozen ? 0.15 : 0.3;
+    taskLight.color.setHex(color);
+    taskLight.intensity = s.frozen ? 1 : (1.5 + p / 100 * 3.5);
+    bar.material.color.copy(taskTint);
+  }
+
   // 相机轨迹：上滑时推进+横移
   const A = { p: new THREE.Vector3(5.4, 2.9, 8.2), t: new THREE.Vector3(0.4, 1.05, 0.3), fov: 34 };
   const B = { p: new THREE.Vector3(1.05, 10.2, 4.4), t: new THREE.Vector3(0.75, 0.05, 0.55), fov: 40 };
@@ -2431,6 +2487,7 @@ setTimeout(consumeReviewReceipt, 900);
     cv.style.filter = 'blur(' + (scrollP * 7).toFixed(2) + 'px) saturate(' + (1 - 0.18 * scrollP).toFixed(2) + ') brightness(' + (1 - 0.34 * scrollP).toFixed(2) + ')';
     const hi = document.querySelector('.hero .inner');
     if (hi) hi.style.opacity = Math.max(0, 1 - scrollP * 1.5).toFixed(2);
+    updateTaskScene();
     renderer.render(scene, camera);
     requestAnimationFrame(frame);
   }
@@ -2822,24 +2879,127 @@ setTimeout(consumeReviewReceipt, 900);
     runChatVideoAnalysis(file, text);
   }
 
+  let questBreathEnd = 0, questBreathTimer = null, questBreathMember = '';
+
+  function questItems(m){
+    const plan = (m.C2_plans || []).slice(-1)[0];
+    return plan && plan.actions && plan.actions.length
+      ? plan.actions.slice(0, 4).map(a => a.name + (a.sets ? ' × ' + a.sets + ' 组' : ''))
+      : [];
+  }
+  function questState(m){
+    const q = (m.C9_quests || []).slice(-1)[0];
+    const items = questItems(m);
+    const total = items.length + 1;
+    let checked = q && Array.isArray(q.task_items) ? q.task_items.filter(x => items.includes(x)) : [];
+    let breathDone = !!(q && q.task_breath);
+    if(q && !Array.isArray(q.task_items)){
+      const n = Math.round((q.progress_pct || 0) / 100 * total);
+      checked = items.slice(0, Math.min(items.length, n));
+      breathDone = n >= total;
+    }
+    const done = checked.length + (breathDone ? 1 : 0);
+    const pct = total ? Math.round(done / total * 100) : 0;
+    const frozen = !!(q && q.status === 'frozen');
+    return {q: q, items: items, total: total, checked: checked, breathDone: breathDone, done: done, pct: pct, frozen: frozen};
+  }
+  function saveQuestState(m, checked, breathDone, message){
+    const st = questState(m);
+    if(!st.total) return null;
+    const done = checked.length + (breathDone ? 1 : 0);
+    const pct = Math.round(done / st.total * 100);
+    const q = updateQuest(m, pct);
+    q.task_items = checked.slice();
+    q.task_breath = !!breathDone;
+    api().save();
+    if(typeof window.__onDataChange === 'function') window.__onDataChange();
+    render();
+    if(message) hint('q-hint', message);
+    return q;
+  }
+  function toggleQuestItem(name){
+    const m = api().db();
+    const st = questState(m);
+    if(st.frozen || !st.total) return;
+    const checked = st.checked.slice();
+    const i = checked.indexOf(name);
+    if(i >= 0) checked.splice(i, 1); else checked.push(name);
+    const done = checked.length + (st.breathDone ? 1 : 0);
+    saveQuestState(m, checked, st.breathDone, '完成度已更新为 ' + Math.round(done / st.total * 100) + '%');
+  }
+  function startQuestBreath(){
+    const m = api().db();
+    const st = questState(m);
+    if(st.frozen || st.breathDone) return;
+    if(questBreathEnd > Date.now() && questBreathMember === m.A1_member_id) return;
+    questBreathMember = m.A1_member_id;
+    questBreathEnd = Date.now() + 60000;
+    render();
+    hint('q-hint', '呼吸练习开始，跟着圆点吸气 4 秒、呼气 6 秒。');
+    if(questBreathTimer) clearInterval(questBreathTimer);
+    questBreathTimer = setInterval(() => {
+      const left = Math.max(0, Math.ceil((questBreathEnd - Date.now()) / 1000));
+      const el = document.getElementById('q-breath-left');
+      if(el && questBreathEnd > Date.now()) el.textContent = '剩余 ' + left + ' 秒';
+      if(Date.now() >= questBreathEnd){
+        clearInterval(questBreathTimer); questBreathTimer = null;
+        const mm = api().db();
+        if(questBreathMember && mm.A1_member_id === questBreathMember){
+          const ss = questState(mm);
+          if(ss.total && !ss.breathDone){
+            questBreathEnd = 0;
+            saveQuestState(mm, ss.checked, true, '呼吸练习完成，已计入任务。');
+          }
+        }
+        questBreathEnd = 0;
+      }
+    }, 1000);
+  }
+
   function renderQuest(){
     const m = api().db();
-    const q = (m.C9_quests || []).slice(-1)[0];
-    $('q-state').textContent = q ? (q.status === 'frozen' ? '已冻结' : q.badge) : '';
-    $('q-body').innerHTML = q ? `
-      <div class="arow" style="border-top:0;padding-top:0"><span>${q.status === 'frozen' ? '任务冻结 · ' + esc(q.reason) : '任务进行中 · 关联 ' + esc(q.plan_version || '—')}</span>
-        <span class="st ${q.status === 'frozen' ? 'cancelled' : 'booked'}">${q.status === 'frozen' ? '冻结' : '进行中'}</span></div>
-      <div class="bigbar"><i style="width:${q.progress_pct}%"></i></div>
-      <div class="wrapnote">进度 ${q.progress_pct}% · 场景状态：${esc(q.scene)}</div>
-      <div class="wrapnote">${q.status === 'frozen'
+    const st = questState(m);
+    const q = st.q;
+    const plan = (m.C2_plans || []).slice(-1)[0];
+    window.__sceneTask = {progress: st.frozen ? 0 : st.pct, frozen: st.frozen, complete: !st.frozen && st.pct >= 100, updated: Date.now()};
+    $('q-state').textContent = q ? (st.frozen ? '已冻结' : q.badge) : (plan ? '待打卡' : '');
+    if(!plan){
+      $('q-body').innerHTML = '<div class="empty">生成计划后，这里会按动作下发打卡任务。</div>';
+      return;
+    }
+    const running = questBreathEnd > Date.now() && questBreathMember === m.A1_member_id;
+    const left = running ? Math.max(0, Math.ceil((questBreathEnd - Date.now()) / 1000)) : 60;
+    const badge = q ? q.badge : '继续积累';
+    const score = q ? q.score : 0;
+    const qid = q ? q.quest_id : '待下发';
+    const itemsHtml = st.items.map(name => {
+      const on = st.checked.includes(name);
+      return `<button type="button" class="q-item${on ? ' on' : ''}${st.frozen ? ' disabled' : ''}" data-qitem="${encodeURIComponent(name)}">
+        <span class="q-check">${on ? '✓' : ''}</span><span>${esc(name)}</span></button>`;
+    }).join('');
+    const leds = Array.from({length: 12}, (_, i) => `<i class="${i < Math.round(st.pct / 100 * 12) ? 'on' : ''}"></i>`).join('');
+    $('q-body').innerHTML =
+      `<div class="arow" style="border-top:0;padding-top:0"><span>${st.frozen ? '任务冻结 · ' + esc(q.reason) : '任务进行中 · 关联 ' + esc((q && q.plan_version) || plan.version)}</span>
+        <span class="st ${st.frozen ? 'cancelled' : 'booked'}">${st.frozen ? '冻结' : '进行中'}</span></div>
+      <div class="bigbar"><i style="width:${st.pct}%"></i></div>
+      <div class="wrapnote">已完成 ${st.done}/${st.total} 项 · 场景灯带 ${st.pct}%</div>
+      <div class="q-task">${itemsHtml}
+        <div class="q-breath${st.frozen ? ' disabled' : ''}">
+          <span class="q-orb${running ? ' run' : ''}"></span>
+          <div class="q-breath-t">呼吸练习 · 4 秒吸气 / 6 秒呼气
+            <span id="q-breath-left">${st.breathDone ? '已完成' : (running ? '剩余 ' + left + ' 秒' : '60 秒，跟着圆点呼吸')}</span></div>
+          <button type="button" id="q-breath-btn" ${st.frozen || st.breathDone || running ? 'disabled' : ''}>${st.breathDone ? '已完成' : (running ? '进行中' : '开始')}</button>
+        </div>
+      </div>
+      <div class="q-leds">${leds}</div>
+      <div class="wrapnote">${st.frozen
         ? '解锁条件：风险状态恢复为「继续训练」，并重新生成计划后自动下发。'
-        : '下一档：完成度 ≥ 60% 灯带渐亮，≥ 90% 全亮。'}</div>
+        : '完成全部动作打卡和呼吸练习后，场景灯带全亮。'}</div>
       <div class="kpis">
-        <div class="kpi"><b>${q.score}</b><span>本次得分</span></div>
-        <div class="kpi"><b>${esc(q.badge)}</b><span>徽章</span></div>
-        <div class="kpi"><b>${esc(q.quest_id)}</b><span>任务编号</span></div>
-      </div>`
-      : '<div class="empty">完成训练后回填完成度，映射为场景进度与得分；风险升级时任务自动冻结。</div>';
+        <div class="kpi"><b>${score}</b><span>本次得分</span></div>
+        <div class="kpi"><b>${esc(badge)}</b><span>徽章</span></div>
+        <div class="kpi"><b>${esc(qid)}</b><span>任务编号</span></div>
+      </div>`;
   }
 
   function renderFollowup(){
@@ -2942,15 +3102,12 @@ setTimeout(consumeReviewReceipt, 900);
     $('mv-run').click();
   };
 
-  document.querySelectorAll('[data-q]').forEach(b => {
-    b.onclick = () => {
-      const m = api().db();
-      try{
-        const q = updateQuest(m, +b.dataset.q);
-        api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
-        hint('q-hint', q.status === 'frozen' ? '风险状态下任务已冻结' : '进度已更新为 ' + q.progress_pct + '%');
-      }catch(err){ hint('q-hint', err.message, true); }
-    };
+  const qBodyEl = $('q-body');
+  if (qBodyEl) qBodyEl.addEventListener('click', e => {
+    const item = e.target.closest('[data-qitem]');
+    if (item) { toggleQuestItem(decodeURIComponent(item.dataset.qitem)); return; }
+    const btn = e.target.closest('#q-breath-btn');
+    if (btn) startQuestBreath();
   });
 
   $('fl-add').onclick = () => {
