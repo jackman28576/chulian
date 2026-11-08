@@ -153,6 +153,9 @@
   .q-leds{display:flex;gap:4px;margin-top:12px}
   .q-leds i{height:6px;flex:1;border-radius:99px;background:rgba(255,255,255,.10)}
   .q-leds i.on{background:#7cf6df;box-shadow:0 0 8px rgba(124,246,223,.6)}
+  .fl-trend{width:100%;height:90px;margin-top:8px;background:rgba(0,0,0,.18);border-radius:10px}
+  .fl-warn{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,120,90,.4);
+    background:rgba(255,120,90,.10);color:#ffb4a8;font-size:12.5px;line-height:1.6}
   .video-assess{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10)}
   .va-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
   .va-head .tt{font-size:12px;color:var(--muted);letter-spacing:.06em}
@@ -453,11 +456,15 @@
     <div class="card-h"><h3>随访与慢病管理</h3><span class="right" id="fl-state"></span></div>
     <div id="fl-body"><div class="empty">康复与慢病相关记录只做随访，不生成诊疗建议。</div></div>
     <div class="fgrid">
-      <div class="wide"><label class="lab">随访内容</label><input id="fl-content" placeholder="例：记录本次执行与腰部感受，下次复核"></div>
+      <div><label class="lab">疼痛（0—10）</label><input id="fl-pain" type="number" min="0" max="10" step="1" placeholder="2"></div>
+      <div><label class="lab">功能（0—10）</label><input id="fl-func" type="number" min="0" max="10" step="1" placeholder="8"></div>
+      <div><label class="lab">完成度（%）</label><input id="fl-adh" type="number" min="0" max="100" step="5" placeholder="80"></div>
+      <div><label class="lab">睡眠（小时）</label><input id="fl-sleep" type="number" min="0" max="24" step="0.5" placeholder="7"></div>
+      <div><label class="lab">是否加重</label><select id="fl-worse"><option value="">没有</option><option value="1">有</option></select></div>
+      <div><label class="lab">下次复核</label><input id="fl-next" type="date"></div>
       <div><label class="lab">依据的专业意见</label><select id="fl-ref"></select></div>
       <div><label class="lab">涉及活动</label><select id="fl-tags"><option>中立位呼吸</option><option>肩胛控制</option><option>脊柱屈曲类动作</option><option>居家步行</option></select></div>
-      <div><label class="lab">下次复核</label><input id="fl-next" type="date"></div>
-      <div><label class="lab">慢病监测（合成）</label><input id="fl-mono" placeholder="例：晨起血压 118/76"></div>
+      <div class="wide"><label class="lab">备注 / 慢病监测（合成，可不填）</label><input id="fl-content" placeholder="例：晨起血压 118/76，腰部感受稳定"></div>
     </div>
     <div class="acts">
       <button class="act primary" id="fl-add">记录随访</button>
@@ -648,7 +655,15 @@ function assess(db){
   }
 }
 
+function followupGate(db){
+  const open = (db.C4_followups || []).filter(f => Array.isArray(f.red_flags) && f.red_flags.length && !f.handled_at);
+  if(!open.length) return [true, ''];
+  const last = open[open.length - 1];
+  return [false, '随访出现红色信号（' + last.red_flags.join('、') + '），需教练确认处理后再安排'];
+}
 function planGate(db, ev){
+  const fg = followupGate(db);
+  if(!fg[0]) return fg;
   if(ev.status_code === 'continue') return [true,''];
   if(ev.status_code === 'review' && approvedReview(db, ev.visit_id)) return [true,''];
   if(ev.status_code === 'pause') return [false, '当前为「暂停活动」（'+ev.rule+'），属于急性信号或未到期禁训，不能通过复核解除；请暂停本次安排，待身体恢复后重新填报'];
@@ -975,11 +990,11 @@ function load(){
     if(raw){
       const s = JSON.parse(raw);
       // 会话状态不跨次保留，避免上次停在“等反馈”时劫持新对话
-      s.draft = {}; s.need = []; s.stage = 'idle'; s.last = null;
+      s.draft = {}; s.need = []; s.stage = 'idle'; s.last = null; s.pendingFollowup = null;
       return s;
     }
   }catch(e){}
-  return {members: JSON.parse(JSON.stringify(MEMBERS)), current: 0, draft: {}, need: [], stage: 'idle', last: null};
+  return {members: JSON.parse(JSON.stringify(MEMBERS)), current: 0, draft: {}, need: [], stage: 'idle', last: null, pendingFollowup: null};
 }
 function save(nopush){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} if(!nopush) schedulePush(); }
 
@@ -1301,7 +1316,7 @@ function reply(text, u){
   }
   if(intent === 'switch' || /切换会员|换个人/.test(t)){
     state.current = (state.current + 1) % state.members.length;
-    state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null; save();
+    state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null; state.pendingFollowup = null; save();
     const m = db();
     bubble('a', `好，现在处理的是 ${m.A2_display_name}（${m.A1_member_id}），目标：${(m.A4_goal||[]).join('、')}。说说今天的状态就行。`);
     return;
@@ -1327,6 +1342,71 @@ function reply(text, u){
       }else{
         bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。这条反馈和上次一样，我记下了，计划不用改。`);
       }
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+    }catch(err){ bubble('a', err.message, null, 'warn'); }
+    return;
+  }
+
+  const fuPending = state.pendingFollowup || null;
+  if(!acuteNow && (/随访|复查|慢病记录/.test(t) || fuPending) && !/计划|预约|改约/.test(t)){
+    const parseFu = text => {
+      const o = {};
+      let m;
+      if((m = text.match(/(?:疼痛|疼|痛)[^\d]{0,6}(\d{1,2})/))) o.pain_score = +m[1];
+      if((m = text.match(/(?:功能|活动能力|日常活动)[^\d]{0,6}(\d{1,2})/))) o.function_score = +m[1];
+      if((m = text.match(/(?:完成|依从|打卡)[^\d]{0,6}(\d{1,3})\s*%?/))) o.adherence_pct = +m[1];
+      if((m = text.match(/(?:睡|睡眠|睡了)[^\d]{0,8}(\d{1,2}(?:\.\d)?)/))) o.sleep_hours = +m[1];
+      if(/(没加重|没有加重|不加重|稳定|还好)/.test(text)) o.worsening = false;
+      else if(/(加重|更疼|更痛|更严重|变差)/.test(text)) o.worsening = true;
+      return o;
+    };
+    const parsed = Object.assign({}, fuPending || {}, parseFu(t));
+    if(fuPending && !/疼痛|疼|痛|功能|完成|依从|打卡|睡/.test(t)){
+      const nums = (t.match(/\d+(?:\.\d+)?/g) || []).map(Number);
+      const keys = ['pain_score', 'function_score', 'adherence_pct', 'sleep_hours'];
+      let idx = 0;
+      for(const k of keys){ if(parsed[k] === undefined && nums[idx] !== undefined){ parsed[k] = nums[idx]; idx++; } }
+    }
+    const need = ['pain_score', 'function_score', 'adherence_pct', 'sleep_hours'].filter(k => parsed[k] === undefined);
+    if(need.length){
+      state.pendingFollowup = parsed; save();
+      const ask = need[0] === 'pain_score' ? '这次疼痛 0—10 分，大概几分？'
+        : need[0] === 'function_score' ? '日常活动功能 0—10 分，大概几分？'
+        : need[0] === 'adherence_pct' ? '训练完成度大概百分之多少？'
+        : '最近一晚睡了几小时？';
+      bubble('a', (Object.keys(parsed).length ? '记下了。' : '好，做一次随访。') + ask);
+      return;
+    }
+    for(const [k, label, max] of [['pain_score', '疼痛', 10], ['function_score', '功能', 10], ['adherence_pct', '完成度', 100], ['sleep_hours', '睡眠', 24]]){
+      const v = parsed[k];
+      if(!isFinite(v) || v < 0 || v > max){ state.pendingFollowup = parsed; save(); bubble('a', label + '需在 0—' + max + '，再给一个？'); return; }
+    }
+    if(parsed.worsening === undefined){
+      state.pendingFollowup = parsed; save();
+      bubble('a', '和上次比有没有加重？回“有”或“没有”就行。');
+      return;
+    }
+    try{
+      const rec = addFollowup(db(), {
+        pain_score: parsed.pain_score, function_score: parsed.function_score,
+        adherence_pct: parsed.adherence_pct, sleep_hours: parsed.sleep_hours,
+        worsening: !!parsed.worsening, content: parsed.note || t
+      }, '会员本人');
+      state.pendingFollowup = null; save();
+      const list = db().C4_followups || [];
+      const prev = list.slice(-2)[0];
+      let line = `随访记下了：疼痛 ${rec.pain_score}/10、功能 ${rec.function_score}/10、完成度 ${rec.adherence_pct}%、睡眠 ${rec.sleep_hours}h${rec.worsening ? '、自述加重' : ''}。`;
+      if(prev && typeof prev.pain_score === 'number' && typeof prev.function_score === 'number'){
+        const dp = rec.pain_score - prev.pain_score, df = rec.function_score - prev.function_score;
+        line += `\n和上次比：疼痛 ${dp === 0 ? '持平' : (dp > 0 ? '+' : '') + dp}，功能 ${df === 0 ? '持平' : (df > 0 ? '+' : '') + df}。`;
+      }
+      if(rec.red_flags.length){
+        const coach = COACHES[db().A1_member_id];
+        line += `\n出现红色信号：${rec.red_flags.join('、')}。已转给${coach ? coach.name : '教练'}确认处理，处理前不安排新计划和预约。`;
+      } else {
+        line += '\n没有红色信号，记录已保存。';
+      }
+      bubble('a', line, null, rec.red_flags.length ? 'warn' : null);
       if(typeof window.__onDataChange === 'function') window.__onDataChange();
     }catch(err){ bubble('a', err.message, null, 'warn'); }
     return;
@@ -1508,7 +1588,7 @@ input.addEventListener('input', () => { input.style.height = 'auto'; input.style
 /* ---------------- 对外接口：由外壳驱动会员与模型 ---------------- */
 function switchTo(i, silent){
   if(!(i >= 0 && i < state.members.length)) return null;
-  state.current = i; state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null;
+  state.current = i; state.draft = {}; state.need = []; state.stage = 'idle'; state.last = null; state.pendingFollowup = null;
   save();
   const m = db();
   const box = document.getElementById('wrap');
@@ -1840,18 +1920,54 @@ function appointment(db, action, opts){
   }
   throw new Error('未知预约操作');
 }
+function followupRedFlags(db, payload, conflicts){
+  const num = v => typeof v === 'number' && isFinite(v);
+  const last = (db.C4_followups || []).slice(-1)[0];
+  const flags = [];
+  if(num(payload.pain_score) && payload.pain_score >= 7) flags.push('疼痛≥7');
+  if(num(payload.pain_score) && last && num(last.pain_score) && payload.pain_score - last.pain_score >= 2) flags.push('疼痛较上次上升≥2');
+  if(num(payload.function_score) && payload.function_score <= 3) flags.push('功能≤3');
+  if(num(payload.function_score) && last && num(last.function_score) && last.function_score - payload.function_score >= 2) flags.push('功能较上次下降≥2');
+  if(num(payload.adherence_pct) && payload.adherence_pct < 50) flags.push('依从性<50%');
+  if(num(payload.sleep_hours) && payload.sleep_hours < 5) flags.push('睡眠<5小时');
+  if(payload.worsening) flags.push('自述加重');
+  if((payload.acute_signals || []).length) flags.push('急性信号');
+  if(conflicts && conflicts.length) flags.push('与专业限制冲突');
+  return flags;
+}
 function addFollowup(db, payload, actor){
   db.C4_followups = db.C4_followups || [];
-  if(!payload.content || !payload.professional_advice_ref) throw new Error('随访需要内容和对应的专业意见编号');
+  const num = v => typeof v === 'number' && isFinite(v);
+  const pain = num(payload.pain_score) ? payload.pain_score : undefined;
+  const func = num(payload.function_score) ? payload.function_score : undefined;
+  const adh = num(payload.adherence_pct) ? payload.adherence_pct : undefined;
+  const sleep = num(payload.sleep_hours) ? payload.sleep_hours : undefined;
+  const parts = [];
+  if(pain !== undefined) parts.push('疼痛 ' + pain + '/10');
+  if(func !== undefined) parts.push('功能 ' + func + '/10');
+  if(adh !== undefined) parts.push('完成度 ' + adh + '%');
+  if(sleep !== undefined) parts.push('睡眠 ' + sleep + 'h');
+  if(payload.worsening) parts.push('自述加重');
+  if(payload.monitoring) parts.push('监测 ' + payload.monitoring);
+  const content = String(payload.content || parts.join('，')).trim();
+  if(!content) throw new Error('随访需要至少一项记录');
+  const ref = payload.professional_advice_ref
+    || ((db.C5_reviews || []).slice(-1)[0] || {}).review_id
+    || ((db.A8_professional_advice || []).slice(-1)[0] || {}).advice_id
+    || '会员自述随访';
   const proposed = payload.activity_tags || [];
   const restrictions = (db.A9_restrictions || []).map(r => String(r.item || ''));
   const conflicts = proposed.filter(t => restrictions.some(item => item.indexOf(t) >= 0 || t.indexOf(item) >= 0));
+  const fields = {pain_score: pain, function_score: func, adherence_pct: adh, sleep_hours: sleep, worsening: !!payload.worsening, acute_signals: payload.acute_signals || []};
+  const red = followupRedFlags(db, fields, conflicts);
   const rec = {
     followup_id: 'FU-' + String(db.C4_followups.length + 1).padStart(3, '0'),
     member_id: db.A1_member_id, visit_id: (db.B_current || {}).B1_visit_id,
-    content: payload.content, professional_advice_ref: payload.professional_advice_ref,
-    activity_tags: proposed, restriction_conflicts: conflicts,
-    handling: conflicts.length ? '专业限制优先，不执行冲突活动' : '仅记录执行情况，不生成诊疗建议',
+    content: content, professional_advice_ref: ref,
+    pain_score: pain, function_score: func, adherence_pct: adh, sleep_hours: sleep,
+    worsening: !!payload.worsening, monitoring: payload.monitoring || '',
+    activity_tags: proposed, restriction_conflicts: conflicts, red_flags: red,
+    handling: red.length ? '红色信号，需教练确认处理' : (conflicts.length ? '专业限制优先，不执行冲突活动' : '仅记录执行情况，不生成诊疗建议'),
     next_review: payload.next_review || '',
     recorded_at: new Date().toISOString(), recorded_by: actor || '专业人员'
   };
@@ -3006,16 +3122,50 @@ setTimeout(consumeReviewReceipt, 900);
     const m = api().db();
     const list = (m.C4_followups || []);
     const last = list.slice(-1)[0];
-    $('fl-state').textContent = last && last.next_review ? ('下次复核 ' + last.next_review) : (list.length ? '已随访 ' + list.length + ' 次' : '');
+    const openRed = list.filter(f => (f.red_flags || []).length && !f.handled_at);
+    $('fl-state').textContent = openRed.length ? ('待处理 ' + openRed.length) : (last && last.next_review ? ('下次复核 ' + last.next_review) : (list.length ? '已随访 ' + list.length + ' 次' : ''));
     const restr = (m.A9_restrictions || []).map(r => String(r.item || ''));
-    const conflicts = list.filter(f => (f.restriction_conflicts || []).length).length;
-    $('fl-body').innerHTML = `<div class="wrapnote">下次复核：${esc(last && last.next_review ? last.next_review : '未安排')}${conflicts ? ' · 有 ' + conflicts + ' 条冲突记录，需人工复核' : ''}</div>` +
-      (list.length ? list.slice(-3).reverse().map(f => `
-      <div class="arow"><span>${esc(f.followup_id)} · ${esc(String(f.content).slice(0, 40))}</span>
-        <span class="st ${f.restriction_conflicts.length ? 'cancelled' : 'booked'}">${f.restriction_conflicts.length ? '限制优先' : '已记录'}</span></div>
-      <div class="wrapnote" style="padding:0 0 8px">依据 ${esc(f.professional_advice_ref)}｜${esc(f.handling)}${f.restriction_conflicts.length ? '（' + f.restriction_conflicts.map(esc).join('、') + '）' : ''}</div>`).join('')
-      : '<div class="empty">康复与慢病相关记录只做随访，不生成诊疗建议。</div>') +
-      (restr.length ? `<div class="wrapnote">当前生效的专业限制：${restr.map(esc).join('；')}（优先于一切计划与互动）</div>` : '');
+    const structured = list.filter(f => typeof f.pain_score === 'number' || typeof f.function_score === 'number' || typeof f.adherence_pct === 'number' || typeof f.sleep_hours === 'number');
+    let html = `<div class="wrapnote">下次复核：${esc(last && last.next_review ? last.next_review : '未安排')}${openRed.length ? ' · 有 ' + openRed.length + ' 条红色信号待处理' : ''}</div>`;
+    if(openRed.length){
+      const r = openRed.slice(-1)[0];
+      html += `<div class="fl-warn">红色信号：${r.red_flags.map(esc).join('、')}。处理前不能生成新计划或新建预约，等教练在教练端确认。</div>`;
+    }
+    if(structured.length >= 2){
+      const last5 = structured.slice(-5);
+      const W = 300, H = 90, pad = 10;
+      const x = i => pad + (W - 2 * pad) * (last5.length === 1 ? 0.5 : i / (last5.length - 1));
+      const y = v => H - pad - (H - 2 * pad) * (Math.max(0, Math.min(10, v)) / 10);
+      const painPts = last5.map((f, i) => typeof f.pain_score === 'number' ? x(i) + ',' + y(f.pain_score) : null).filter(Boolean).join(' ');
+      const funcPts = last5.map((f, i) => typeof f.function_score === 'number' ? x(i) + ',' + y(f.function_score) : null).filter(Boolean).join(' ');
+      const dots = last5.map((f, i) => [
+        typeof f.pain_score === 'number' ? `<circle cx="${x(i)}" cy="${y(f.pain_score)}" r="3" fill="#ff8f7a"/>` : '',
+        typeof f.function_score === 'number' ? `<circle cx="${x(i)}" cy="${y(f.function_score)}" r="3" fill="#7cf6df"/>` : ''
+      ].join('')).join('');
+      html += `<svg class="fl-trend" viewBox="0 0 ${W} ${H}" preserveAspectRatio="none">
+        <line x1="${pad}" y1="${y(0)}" x2="${W - pad}" y2="${y(0)}" stroke="rgba(255,255,255,.12)" stroke-width="1"/>
+        <line x1="${pad}" y1="${y(10)}" x2="${W - pad}" y2="${y(10)}" stroke="rgba(255,255,255,.08)" stroke-width="1"/>
+        ${painPts ? `<polyline points="${painPts}" fill="none" stroke="#ff8f7a" stroke-width="2"/>` : ''}
+        ${funcPts ? `<polyline points="${funcPts}" fill="none" stroke="#7cf6df" stroke-width="2"/>` : ''}
+        ${dots}
+      </svg><div class="wrapnote">最近 ${last5.length} 次随访：疼痛（红）与功能（青），0—10 分。</div>`;
+    } else {
+      html += `<div class="wrapnote">再记录一次结构化随访，就会出现疼痛与功能的趋势。</div>`;
+    }
+    html += list.length ? list.slice(-5).reverse().map(f => {
+      const flags = f.red_flags || [];
+      const st = flags.length ? (f.handled_at ? '已处理' : '待处理') : '已记录';
+      const cls = flags.length ? (f.handled_at ? 'booked' : 'cancelled') : '';
+      const vals = [];
+      if(typeof f.pain_score === 'number') vals.push('疼痛 ' + f.pain_score);
+      if(typeof f.function_score === 'number') vals.push('功能 ' + f.function_score);
+      if(typeof f.adherence_pct === 'number') vals.push('完成 ' + f.adherence_pct + '%');
+      if(typeof f.sleep_hours === 'number') vals.push('睡眠 ' + f.sleep_hours + 'h');
+      return `<div class="arow"><span>${esc((f.recorded_at || '').slice(5, 10))} · ${esc(vals.join(' / ') || String(f.content).slice(0, 30))}</span><span class="st ${cls}">${st}</span></div>` +
+        (flags.length ? `<div class="wrapnote" style="padding:0 0 8px">红色信号：${flags.map(esc).join('、')}${f.handled_at ? ' · ' + esc(f.handled_by || '教练') + ' 已处理' + (f.handling ? '：' + esc(f.handling) : '') : ''}</div>` : '');
+    }).join('') : '<div class="empty">还没有随访记录。可以在这里填量表，也可以直接在对话里说“随访，疼痛2分，功能8分，完成80%，睡了7小时”。</div>';
+    if(restr.length) html += `<div class="wrapnote">当前生效的专业限制：${restr.map(esc).join('；')}（优先于一切计划与互动）</div>`;
+    $('fl-body').innerHTML = html;
   }
 
   /* ---------- 事件 ---------- */
@@ -3112,19 +3262,34 @@ setTimeout(consumeReviewReceipt, 900);
 
   $('fl-add').onclick = () => {
     const m = api().db();
-    const content = $('fl-content').value.trim();
-    const mono = $('fl-mono').value.trim();
-    if(!content){ hint('fl-hint', '请填写随访内容', true); return; }
+    const readNum = id => {
+      const v = $(id).value.trim();
+      if(v === '') return undefined;
+      const n = Number(v);
+      return isFinite(n) ? n : NaN;
+    };
+    const pain = readNum('fl-pain'), func = readNum('fl-func'), adh = readNum('fl-adh'), sleep = readNum('fl-sleep');
+    if([pain, func, adh, sleep].some(v => Number.isNaN(v))){ hint('fl-hint', '数值不对，请检查', true); return; }
+    if(pain !== undefined && (pain < 0 || pain > 10)){ hint('fl-hint', '疼痛需在 0—10', true); return; }
+    if(func !== undefined && (func < 0 || func > 10)){ hint('fl-hint', '功能需在 0—10', true); return; }
+    if(adh !== undefined && (adh < 0 || adh > 100)){ hint('fl-hint', '完成度需在 0—100', true); return; }
+    if(sleep !== undefined && (sleep < 0 || sleep > 24)){ hint('fl-hint', '睡眠需在 0—24 小时', true); return; }
+    if([pain, func, adh, sleep].every(v => v === undefined)){ hint('fl-hint', '至少填疼痛、功能、完成度或睡眠中的一项', true); return; }
     try{
       const rec = addFollowup(m, {
-        content: content + (mono ? '；监测：' + mono : ''),
+        pain_score: pain, function_score: func, adherence_pct: adh, sleep_hours: sleep,
+        worsening: $('fl-worse').value === '1',
+        content: $('fl-content').value.trim(),
         professional_advice_ref: $('fl-ref').value,
         activity_tags: [$('fl-tags').value],
         next_review: $('fl-next').value
       }, '合成教练');
       api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
-      $('fl-content').value = ''; $('fl-mono').value = '';
-      hint('fl-hint', rec.followup_id + ' 已记录' + (rec.restriction_conflicts.length ? '：命中专业限制，按限制执行' : ''));
+      ['fl-pain','fl-func','fl-adh','fl-sleep','fl-content'].forEach(id => { const el = $(id); if(el) el.value = ''; });
+      $('fl-worse').value = '';
+      hint('fl-hint', rec.followup_id + ' 已记录' + (rec.red_flags.length
+        ? '：出现红色信号，待教练确认处理'
+        : (rec.restriction_conflicts.length ? '：命中专业限制，按限制执行' : '')));
     }catch(err){ hint('fl-hint', err.message, true); }
   };
 
