@@ -43,6 +43,47 @@
   .brand svg{width:20px;height:20px}
   .brand svg path,.brand svg rect{fill:none;stroke:currentColor;stroke-width:1.9;stroke-linecap:round;stroke-linejoin:round}
   .brand svg .pulse{stroke:var(--ring-a)}
+  .burger{width:34px;height:34px;border-radius:10px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06);display:flex;flex-direction:column;justify-content:center;align-items:center;
+    gap:4px;cursor:pointer;flex:0 0 34px;padding:0}
+  .burger span{display:block;width:15px;height:1.6px;background:rgba(255,255,255,.82);border-radius:2px}
+  .appmask{position:fixed;inset:0;z-index:90;background:rgba(4,6,10,.55);opacity:0;pointer-events:none;transition:opacity .25s}
+  .appmask.on{opacity:1;pointer-events:auto}
+  .appdrawer{position:fixed;left:0;top:0;bottom:0;z-index:91;width:min(320px,86vw);padding:20px 14px;
+    background:rgba(10,13,18,.97);border-right:1px solid rgba(255,255,255,.1);
+    backdrop-filter:blur(26px);-webkit-backdrop-filter:blur(26px);
+    transform:translateX(-102%);transition:transform .3s cubic-bezier(.22,.8,.24,1);
+    display:flex;flex-direction:column;gap:4px;overflow-y:auto}
+  .appdrawer.on{transform:none}
+  .ad-head{display:flex;align-items:center;gap:10px;padding:6px 8px 16px;border-bottom:1px solid rgba(255,255,255,.08);margin-bottom:10px}
+  .ad-av{width:40px;height:40px;border-radius:50%;background:linear-gradient(135deg,#36e2ca,#3d7bff);
+    display:grid;place-items:center;font-weight:600;color:#081014;flex:0 0 40px}
+  .ad-head b{display:block;font-size:15px}
+  .ad-head small{display:block;color:var(--muted);font-size:11.5px;margin-top:3px}
+  .ad-group{font-size:10.5px;letter-spacing:.12em;color:var(--muted);padding:14px 10px 6px}
+  .ad-item,.ad-home{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;
+    padding:11px 12px;border-radius:12px;border:1px solid transparent;background:transparent;color:var(--ink);
+    font-size:14px;cursor:pointer;text-align:left}
+  .ad-item:hover,.ad-home:hover{background:rgba(255,255,255,.06)}
+  .ad-item.on,.ad-home.on{background:rgba(54,226,202,.10);border-color:rgba(122,246,223,.28);color:#fff}
+  .ad-item span{color:var(--muted);font-size:11.5px;text-align:right}
+  .ad-foot{margin-top:auto;padding:16px 10px 4px;color:var(--muted);font-size:11px;line-height:1.6}
+  .screenhead{display:none;align-items:center;gap:10px;margin:0 0 14px}
+  .screenhead button{width:32px;height:32px;border-radius:10px;border:1px solid rgba(255,255,255,.14);
+    background:rgba(255,255,255,.06);color:var(--ink);cursor:pointer;font-size:16px}
+  .screenhead span{font-size:20px;font-weight:600}
+  body:not([data-screen="home"]) .screenhead{display:flex}
+  body:not([data-screen="home"]) .hero{display:none !important}
+  body:not([data-screen="home"]) .dock{display:none !important}
+  body:not([data-screen="home"]) .content{padding-top:92px;max-width:900px}
+  body[data-screen="home"] .content [data-screen]:not([data-screen="home"]){display:none !important}
+  body[data-screen="plan"] .content [data-screen]:not([data-screen="plan"]){display:none !important}
+  body[data-screen="visits"] .content [data-screen]:not([data-screen="visits"]){display:none !important}
+  body[data-screen="appointment"] .content [data-screen]:not([data-screen="appointment"]){display:none !important}
+  body[data-screen="movement"] .content [data-screen]:not([data-screen="movement"]){display:none !important}
+  body[data-screen="quest"] .content [data-screen]:not([data-screen="quest"]){display:none !important}
+  body[data-screen="followup"] .content [data-screen]:not([data-screen="followup"]){display:none !important}
+  body:not([data-screen="home"]) .content [data-screen] > .card-h h3{display:none}
   .member{display:flex;align-items:center;gap:8px;height:32px;padding:0 11px 0 7px;border-radius:999px;background:rgba(255,255,255,.16);border:1px solid rgba(255,255,255,.24);color:#fff;backdrop-filter:blur(10px);transition:all .3s;max-width:260px}
   .topbar.solid .member{background:rgba(255,255,255,.10);border-color:rgba(255,255,255,.16);color:#fff}
   .coachchip{font-size:11.5px;color:var(--muted);padding:4px 9px;border:1px solid rgba(255,255,255,.12);border-radius:999px;white-space:nowrap}
@@ -296,7 +337,7 @@
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}}
 </style>
 </head>
-<body>
+<body data-screen="home">
 
 <div id="intro">
   <svg class="mark" viewBox="0 0 64 64" aria-hidden="true">
@@ -308,6 +349,7 @@
 </div>
 
 <div class="topbar" id="topbar">
+  <button class="burger" id="burger" type="button" aria-label="打开菜单"><span></span><span></span><span></span></button>
   <div class="brand">
     <svg viewBox="0 0 24 24" aria-hidden="true">
       <rect x="3.5" y="3.5" width="17" height="17" rx="5"></rect>
@@ -327,6 +369,24 @@
     <button class="tbtn" id="reset">重来</button>
   </div>
 </div>
+
+<div class="appmask" id="appmask"></div>
+<aside class="appdrawer" id="appdrawer">
+  <div class="ad-head">
+    <div class="ad-av" id="adAv">林</div>
+    <div><b id="adName">林女士</b><small id="adGoal">会员健康档案</small></div>
+  </div>
+  <button class="ad-home" type="button" data-screen="home" id="adHome">首页</button>
+  <div class="ad-group">训练与记录</div>
+  <button class="ad-item" type="button" data-screen="plan">训练计划<span id="adPlan">—</span></button>
+  <button class="ad-item" type="button" data-screen="visits">到店记录<span id="adVisits">—</span></button>
+  <button class="ad-item" type="button" data-screen="appointment">预约与场馆服务<span id="adAppt">—</span></button>
+  <div class="ad-group">评估与任务</div>
+  <button class="ad-item" type="button" data-screen="movement">动作评估<span id="adMove">—</span></button>
+  <button class="ad-item" type="button" data-screen="quest">虚拟任务 · 场景联动<span id="adQuest">—</span></button>
+  <button class="ad-item" type="button" data-screen="followup">随访与慢病管理<span id="adFollow">—</span></button>
+  <div class="ad-foot" id="adFoot">判定由确定性规则引擎给出 · 不构成医疗建议</div>
+</aside>
 
 <canvas id="stage"></canvas>
 <div id="offline">未连接服务 · 本地模式</div>
@@ -353,12 +413,13 @@
 </header>
 
 <main class="content">
-  <section class="card chatcard">
+  <div class="screenhead" id="screenhead"><button id="screenBack" type="button" aria-label="返回首页">←</button><span id="screenTitle">训练计划</span></div>
+  <section class="card chatcard" data-screen="home">
     <div class="chat-head"><b>初练</b><span>会员健康档案助手</span></div>
     <div class="log"><div class="wrap" id="wrap"></div></div>
   </section>
 
-  <section class="card summary">
+  <section class="card summary" data-screen="home">
     <div class="ringwrap">
       <svg width="150" height="150" viewBox="0 0 150 150">
         <defs>
@@ -381,23 +442,23 @@
     <div class="coachline" id="coachLine"></div>
   </section>
 
-  <section class="card">
+  <section class="card" data-screen="home">
     <div class="card-h"><h3 id="d-title">今日判定</h3><span class="code" id="d-rule"></span><span class="right"><button class="tbtn" id="d-more" style="height:28px;padding:0 12px;font-size:12px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.16);color:#fff">依据</button></span></div>
     <div class="verdict-head"><span class="pill idle" id="d-tag">等待今日状态</span></div>
     <p id="d-reason" style="margin:0 0 12px;color:var(--ink2);font-size:14px;line-height:1.7">会员说一句今天的状态，这里会出现判定。</p>
     <div class="chips" id="d-basis"></div>
   </section>
 
-  <section class="card">
+  <section class="card" data-screen="plan">
     <div class="card-h"><h3>训练计划</h3><span class="right" id="p-ver"></span></div>
     <div id="p-body"><div class="empty">复核通过后生成第一版计划。</div></div>
   </section>
 
-  <section class="card">
+  <section class="card" data-screen="visits">
     <div class="card-h"><h3>到店记录</h3><span class="right" id="v-count"></span></div>
     <div id="v-body"><div class="empty">还没有记录。</div></div>
   </section>
-  <section class="card">
+  <section class="card" data-screen="appointment">
     <div class="card-h"><h3>预约与场馆服务</h3><span class="right" id="ap-state"></span></div>
     <div id="ap-body"><div class="empty">生成计划后可预约；改约与取消都会留下记录。</div></div>
     <div class="fgrid">
@@ -413,7 +474,7 @@
     </div>
   </section>
 
-  <section class="card">
+  <section class="card" data-screen="movement">
     <div class="card-h"><h3>动作评估 · 运动模式</h3><span class="right" id="mv-state"></span></div>
     <div id="mv-body"><div class="empty">录一次动作节奏，得到可核查的稳定性与左右对称结果。</div></div>
     <div class="fgrid">
@@ -446,13 +507,13 @@
     </div>
   </section>
 
-  <section class="card">
+  <section class="card" data-screen="quest">
     <div class="card-h"><h3>虚拟任务 · 场景联动</h3><span class="right" id="q-state"></span></div>
     <div id="q-body"><div class="empty">生成计划后，这里会按动作下发打卡任务。</div></div>
     <div class="acts"><span class="hint" id="q-hint"></span></div>
   </section>
 
-  <section class="card">
+  <section class="card" data-screen="followup">
     <div class="card-h"><h3>随访与慢病管理</h3><span class="right" id="fl-state"></span></div>
     <div id="fl-body"><div class="empty">康复与慢病相关记录只做随访，不生成诊疗建议。</div></div>
     <div class="fgrid">
@@ -1337,8 +1398,8 @@ function reply(text, u){
       const rec = out[0];
       if(plan){
         const row = bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。\n已经更新到 ${plan.version}，${plan.change_reasons[plan.change_reasons.length-1]}。`, JSON.stringify(plan.diff_from_previous, null, 2));
-        actionChip(row, '看新计划', () => { const el = document.getElementById('p-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
-        actionChip(row, '安排下次到店', () => { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+        actionChip(row, '看新计划', () => { if(window.__showScreen) window.__showScreen('plan'); else { const el = document.getElementById('p-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); } });
+        actionChip(row, '安排下次到店', () => { if(window.__showScreen) window.__showScreen('appointment'); else { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); } });
       }else{
         bubble('a', `收到：完成度 ${rec.completion_pct}%、疲劳 ${rec.fatigue}/10。这条反馈和上次一样，我记下了，计划不用改。`);
       }
@@ -1508,7 +1569,7 @@ function reply(text, u){
       const plan = createPlan(db()); save(); state.stage = 'planned';
       const s = plan.schedule || {};
       const row = bubble('a', `${plan.version} 好了：每周 ${s.days_per_week} 次、每次 ${s.minutes_per_session} 分钟，共 ${(plan.actions||[]).length} 个动作。\n训练：${plan.training}\n饮食：${plan.diet}\n睡眠：${plan.sleep}\n限制：${plan.limitations.slice(0,2).join('；')}`);
-      actionChip(row, '约课', () => { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+      actionChip(row, '约课', () => { if(window.__showScreen) window.__showScreen('appointment'); else { const el = document.getElementById('ap-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); } });
       if(typeof window.__onDataChange === 'function') window.__onDataChange();
     }catch(err){ bubble('a', err.message, null, 'warn'); }
     return;
@@ -1574,7 +1635,7 @@ function reply(text, u){
   }
   if(ev.status_code === 'continue') actionChip(row, '出计划', () => say('出计划'));
   if(ev.status_code === 'pause'){
-    actionChip(row, '查看活动限制', () => { const el = document.getElementById('fl-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+    actionChip(row, '查看活动限制', () => { if(window.__showScreen) window.__showScreen('followup'); else { const el = document.getElementById('fl-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); } });
   }
   if(typeof window.__onDataChange === 'function') window.__onDataChange();
 }
@@ -2177,7 +2238,7 @@ setTimeout(consumeReviewReceipt, 900);
   new MutationObserver(ms => {
     for (const m of ms) if (m.addedNodes.length) {
       refresh();
-      if (scrollY < 240) {
+      if (document.body.dataset.screen === 'home' && scrollY < 240) {
         const c = document.querySelector('.chatcard');
         if (c) c.scrollIntoView({ behavior: 'smooth', block: 'start' });
       }
@@ -2660,7 +2721,7 @@ setTimeout(consumeReviewReceipt, 900);
     if(!api() || !api().db()) return;
     ['ap-hint','mv-hint','q-hint','fl-hint'].forEach(id => hint(id, ''));
     ensureDefaults(); fillSelects();
-    renderAppointment(); renderMovement(); renderQuest(); renderFollowup();
+    renderAppointment(); renderMovement(); renderQuest(); renderFollowup(); renderDrawer();
   }
 
   function renderAppointment(){
@@ -2977,7 +3038,7 @@ setTimeout(consumeReviewReceipt, 900);
         `完整次数 ${met.reps}，节奏稳定性 ${met.stability.toFixed(1)}%，${sym}，膝关节幅度 ${met.rom.toFixed(1)}°，躯干前倾峰值 ${met.trunk.toFixed(1)}°。\n` +
         `评级：${mv.rank}。建议：${(mv.suggestions || []).join('；')}`;
       const row = bubble('a', out, JSON.stringify(met, null, 2));
-      actionChip(row, '看动作记录', () => { const el = document.getElementById('mv-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); });
+      actionChip(row, '看动作记录', () => { if(window.__showScreen) window.__showScreen('movement'); else { const el = document.getElementById('mv-body'); if(el) el.scrollIntoView({behavior:'smooth', block:'center'}); } });
       actionChip(row, view === 'front' ? '换侧面再分析' : '换正面再分析', () => runChatVideoAnalysis(file, textStr, view === 'front' ? 'side' : 'front'));
     } catch (e) {
       if(statusEl) statusEl.textContent = '视频分析失败：' + (e.message || '未知错误');
@@ -3292,6 +3353,60 @@ setTimeout(consumeReviewReceipt, 900);
         : (rec.restriction_conflicts.length ? '：命中专业限制，按限制执行' : '')));
     }catch(err){ hint('fl-hint', err.message, true); }
   };
+
+  const SCREEN_TITLES = {home: '首页', plan: '训练计划', visits: '到店记录', appointment: '预约与场馆服务', movement: '动作评估', quest: '虚拟任务 · 场景联动', followup: '随访与慢病管理'};
+  function renderDrawer(){
+    if(!api() || !api().db()) return;
+    const m = api().db();
+    const name = (m.A2_display_name || '会员').replace(/（合成）/, '');
+    const av = $('adAv'); if(av) av.textContent = name.slice(0, 1);
+    const nm = $('adName'); if(nm) nm.textContent = name;
+    const gl = $('adGoal'); if(gl) gl.textContent = m.A1_member_id + ' · ' + ((m.A4_goal || []).join('、') || '未设目标');
+    const set = (id, txt) => { const el = $(id); if(el) el.textContent = txt; };
+    const plan = (m.C2_plans || []).slice(-1)[0];
+    set('adPlan', plan ? plan.version : '—');
+    set('adVisits', (m.C1_visits || []).length + ' 条');
+    const live = (m.C3_appointments || [])
+      .filter(a => (a.status === 'booked' || a.status === 'rescheduled') && Date.parse(a.start_at) > Date.now())
+      .sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at))[0];
+    set('adAppt', live ? String(live.start_at).slice(5, 10) : '未预约');
+    const mv = (m.C8_movements || []).slice(-1)[0];
+    set('adMove', mv ? mv.rank : '未评估');
+    const q = (m.C9_quests || []).slice(-1)[0];
+    set('adQuest', q ? (q.status === 'frozen' ? '冻结' : q.progress_pct + '%') : '未开始');
+    const red = (m.C4_followups || []).filter(f => (f.red_flags || []).length && !f.handled_at);
+    set('adFollow', red.length ? ('待处理 ' + red.length) : ((m.C4_followups || []).length ? (m.C4_followups.length + ' 次') : '未随访'));
+  }
+  function openDrawer(){
+    const d = $('appdrawer'), mask = $('appmask');
+    if(d) d.classList.add('on');
+    if(mask) mask.classList.add('on');
+    document.body.classList.add('drawer-open');
+    renderDrawer();
+  }
+  function closeDrawer(){
+    const d = $('appdrawer'), mask = $('appmask');
+    if(d) d.classList.remove('on');
+    if(mask) mask.classList.remove('on');
+    document.body.classList.remove('drawer-open');
+  }
+  function showScreen(name){
+    if(!SCREEN_TITLES[name]) name = 'home';
+    document.body.dataset.screen = name;
+    const t = $('screenTitle'); if(t) t.textContent = SCREEN_TITLES[name];
+    document.querySelectorAll('.ad-item,.ad-home').forEach(b => b.classList.toggle('on', b.dataset.screen === name));
+    closeDrawer();
+    window.scrollTo({ top: 0, behavior: 'auto' });
+  }
+  const burger = $('burger');
+  if(burger) burger.onclick = () => { $('appdrawer').classList.contains('on') ? closeDrawer() : openDrawer(); };
+  const appmask = $('appmask'); if(appmask) appmask.onclick = closeDrawer;
+  document.querySelectorAll('.ad-item,.ad-home').forEach(b => { b.onclick = () => showScreen(b.dataset.screen); });
+  const screenBack = $('screenBack'); if(screenBack) screenBack.onclick = () => showScreen('home');
+  document.addEventListener('keydown', e => { if(e.key === 'Escape') closeDrawer(); });
+  showScreen(document.body.dataset.screen || 'home');
+  window.__showScreen = showScreen;
+  renderDrawer();
 
   const prevHook = window.__onMemberChange;
   window.__onMemberChange = function(){ if(typeof prevHook === 'function') prevHook(); render(); };
