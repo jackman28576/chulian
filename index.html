@@ -125,6 +125,13 @@
   .plan-more{margin-top:10px;font-size:12.5px;color:var(--ink2)}
   .plan-more summary{cursor:pointer;color:var(--muted);padding:4px 0}
   .plan-more .wrapnote{margin-top:6px}
+  .video-assess{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10)}
+  .va-head{display:flex;justify-content:space-between;gap:10px;margin-bottom:8px;flex-wrap:wrap}
+  .va-head .tt{font-size:12px;color:var(--muted);letter-spacing:.06em}
+  .va-head .va-note{font-size:11px;color:var(--muted)}
+  .va-stage{position:relative;margin:8px 0;border-radius:12px;overflow:hidden;background:#000;max-height:260px}
+  .va-stage video{display:block;width:100%;height:auto;max-height:260px;object-fit:contain}
+  .va-stage canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
   .logline{display:flex;align-items:baseline;gap:10px;padding:8px 0;border-top:1px solid rgba(255,255,255,.10);font-size:13px;color:var(--ink2)}
   .logline:first-of-type{border-top:0}
   .logline .d{font:11.5px var(--mono);color:var(--muted);flex:0 0 62px}
@@ -388,6 +395,22 @@
       <button class="act primary" id="mv-run">评估</button>
       <button class="act" id="mv-demo">载入演示数据</button>
       <span class="hint" id="mv-hint"></span>
+    </div>
+    <div class="video-assess">
+      <div class="va-head"><span class="tt">现场视频评估 · 2D 姿态估计</span><span class="va-note">本地处理，不上传</span></div>
+      <div class="fgrid">
+        <div><label class="lab">视频文件</label><input id="mv-video" type="file" accept="video/*"></div>
+        <div><label class="lab">拍摄视角</label><select id="mv-view"><option value="front">正面（看左右对称）</option><option value="side">侧面（看躯干与幅度）</option></select></div>
+      </div>
+      <div class="va-stage" id="va-stage" hidden>
+        <video id="mv-video-el" muted playsinline preload="auto"></video>
+        <canvas id="mv-canvas"></canvas>
+      </div>
+      <div class="acts">
+        <button class="act primary" id="mv-video-run">分析视频</button>
+        <span class="hint" id="mv-video-hint"></span>
+      </div>
+      <div class="wrapnote">视频评估为 2D 关键点近似，受拍摄角度、光线和遮挡影响，不作为医疗诊断。建议全身入镜、固定机位、10—20 秒。</div>
     </div>
   </section>
 
@@ -2489,14 +2512,210 @@ setTimeout(consumeReviewReceipt, 900);
     $('mv-body').innerHTML = last ? `
       <div class="kpis">
         <div class="kpi"><b>${last.tempo_stability_pct}%</b><span>节奏稳定性</span></div>
-        <div class="kpi"><b>${last.left_right_difference_pct}%</b><span>左右差异</span></div>
+        <div class="kpi"><b>${last.left_right_difference_pct == null ? '—' : last.left_right_difference_pct + '%'}</b><span>左右差异</span></div>
         <div class="kpi"><b>${esc(last.rank)}</b><span>本次评级</span></div>
       </div>
+      ${last.video_metrics ? `<div class="kpis">
+        <div class="kpi"><b>${last.video_metrics.reps}</b><span>完整次数</span></div>
+        <div class="kpi"><b>${last.video_metrics.rom_deg}°</b><span>膝关节幅度</span></div>
+        <div class="kpi"><b>${last.video_metrics.trunk_lean_deg}°</b><span>躯干前倾峰值</span></div>
+      </div>
+      <div class="wrapnote">视角：${last.video_metrics.view === 'side' ? '侧面' : '正面'} · 有效帧 ${last.video_metrics.valid_frames}/${last.video_metrics.frames}${last.video_metrics.quality === 'low' ? ' · 视频质量不足，建议重录' : ''}</div>` : ''}
       ${prev ? `<div class="wrapnote">上次 ${esc(prev.exercise)}：稳定性 ${prev.tempo_stability_pct}%、左右差 ${prev.left_right_difference_pct}%（${esc(prev.rank)}）</div>` : ''}
       <div class="wrapnote">${esc(last.method)}</div>
       <div class="tagline">${(last.suggestions || []).map(s => `<span class="chip">${esc(s)}</span>`).join('')}</div>
       <div class="wrapnote">${esc(last.movement_id)} · ${esc(last.source)} · 已写入评估记录 ${esc(((m.C6_assessments||[]).slice(-1)[0]||{}).assessment_id || '')}</div>`
       : '<div class="empty">录一次动作节奏，得到可核查的稳定性与左右对称结果。冲突动作会被专业限制拦截。</div>';
+  }
+
+  let poseKit = null, analyzingVideo = false;
+
+  function vaAngle(a, b, c){
+    if(!a || !b || !c) return 0;
+    const v1 = {x: a.x - b.x, y: a.y - b.y}, v2 = {x: c.x - b.x, y: c.y - b.y};
+    const m = Math.hypot(v1.x, v1.y) * Math.hypot(v2.x, v2.y);
+    if(!m) return 0;
+    return Math.acos(Math.max(-1, Math.min(1, (v1.x * v2.x + v1.y * v2.y) / m))) * 180 / Math.PI;
+  }
+  function vaTrunk(ls, rs, lh, rh){
+    if(!ls || !rs || !lh || !rh) return 0;
+    const sx = (ls.x + rs.x) / 2, sy = (ls.y + rs.y) / 2;
+    const hx = (lh.x + rh.x) / 2, hy = (lh.y + rh.y) / 2;
+    return Math.atan2(Math.abs(sx - hx), Math.max(1, hy - sy)) * 180 / Math.PI;
+  }
+  function computeVideoMetrics(frames, view){
+    const all = frames.filter(f => isFinite(f.lk) && isFinite(f.rk));
+    const valid = frames.filter(f => f.vis >= 0.35 && isFinite(f.lk) && isFinite(f.rk));
+    const data = valid.length >= 8 ? valid : all;
+    if(data.length < 8) return {reps: 0, rom: 0, stability: 0, symmetry: null, trunk: 0, quality: 'low', frames: frames.length, valid: valid.length, view: view};
+    const knee = data.map(f => (f.lk + f.rk) / 2);
+    const sm = knee.map((v, i) => (knee[Math.max(0, i - 1)] + v + knee[Math.min(knee.length - 1, i + 1)]) / 3);
+    const min = Math.min.apply(null, sm), max = Math.max.apply(null, sm), rom = max - min;
+    const mins = [];
+    for(let i = 3; i < sm.length - 3; i++){
+      if(sm[i] <= sm[i - 1] && sm[i] <= sm[i + 1] && sm[i] < min + rom * 0.45){
+        const localMax = Math.max.apply(null, sm.slice(Math.max(0, i - 10), Math.min(sm.length, i + 11)));
+        if(localMax - sm[i] > rom * 0.25){
+          if(!mins.length || data[i].t - data[mins[mins.length - 1]].t > 0.45) mins.push(i);
+        }
+      }
+    }
+    const durations = [];
+    for(let i = 1; i < mins.length; i++) durations.push(data[mins[i]].t - data[mins[i - 1]].t);
+    let stability = 0;
+    if(durations.length){
+      const mean = durations.reduce((a, b) => a + b, 0) / durations.length;
+      const sd = Math.sqrt(durations.reduce((s, v) => s + (v - mean) * (v - mean), 0) / durations.length);
+      stability = Math.max(0, Math.min(100, 100 - sd / Math.max(0.001, mean) * 100));
+    }
+    const syms = mins.map(i => {
+      const f = data[i];
+      return Math.abs(f.lk - f.rk) / Math.max(f.lk, f.rk) * 100;
+    });
+    const symVals = syms.length ? syms : data.map(f => Math.abs(f.lk - f.rk) / Math.max(f.lk, f.rk) * 100);
+    const symmetry = view === 'side' ? null : symVals.reduce((a, b) => a + b, 0) / symVals.length;
+    const trunks = data.map(f => Math.abs(f.trunk)).sort((a, b) => b - a);
+    const topN = Math.max(1, Math.ceil(trunks.length * 0.2));
+    const trunk = trunks.slice(0, topN).reduce((a, b) => a + b, 0) / topN;
+    const quality = (valid.length >= 8 && mins.length >= 2 && data.length / frames.length > 0.5) ? 'good' : 'low';
+    return {reps: mins.length, rom: rom, stability: stability, symmetry: symmetry, trunk: trunk, quality: quality, frames: frames.length, valid: valid.length, view: view};
+  }
+  function saveVideoMovement(db, exercise, met){
+    const conf = (typeof EX_TAGS !== 'undefined' && EX_TAGS[exercise]) || null;
+    const restr = (db.A9_restrictions || []).map(r => String(r.item || ''));
+    const hit = restr.find(item => conf && conf.conflict && conf.conflict.test(item));
+    if(hit) throw new Error('该动作与专业活动限制「' + hit + '」冲突，按“专业限制优先”不予评估，请更换动作');
+    db.C8_movements = db.C8_movements || []; db.C6_assessments = db.C6_assessments || [];
+    const vid = (db.B_current || {}).B1_visit_id || 'V-NA';
+    const sug = [];
+    if(met.symmetry !== null && met.symmetry > 10) sug.push('左右差异偏大，降低负荷并请教练现场观察');
+    if(met.trunk > 15) sug.push('控制躯干前倾，先缩小动作幅度');
+    if(met.rom < 40) sug.push('膝关节幅度偏小，确认是否受限');
+    if(met.stability < 85) sug.push('使用固定节拍器，先求节奏稳定');
+    if(met.quality === 'low') sug.unshift('有效帧不足，建议重录或改用人工时长评估');
+    if(!sug.length) sug.push('保持当前动作节奏，下一次同机位复测对比');
+    const rank = met.quality === 'low' ? '需复测' : (met.stability >= 90 && (met.symmetry === null || met.symmetry <= 8) ? '达标' : met.stability >= 75 ? '需巩固' : '需干预');
+    const id = 'MA-VID-' + vid + '-' + String(db.C8_movements.length + 1).padStart(2, '0');
+    const mv = {
+      movement_id: id, member_id: db.A1_member_id, visit_id: vid, exercise: exercise,
+      source: '现场视频（本地处理）', source_type: '视频',
+      tempo_stability_pct: Math.round(met.stability * 10) / 10,
+      left_right_difference_pct: met.symmetry === null ? null : Math.round(met.symmetry * 10) / 10,
+      rank: rank, method: '2D 姿态估计（MediaPipe Pose，关节角度为近似值，非医疗诊断）',
+      suggestions: sug, recorded_at: new Date().toISOString(), recorded_by: '初练系统',
+      video_metrics: {reps: met.reps, rom_deg: Math.round(met.rom * 10) / 10, trunk_lean_deg: Math.round(met.trunk * 10) / 10, view: met.view, quality: met.quality, frames: met.frames, valid_frames: met.valid}
+    };
+    db.C8_movements.push(mv);
+    db.C6_assessments.push({
+      assessment_id: 'AS-VID-' + vid + '-' + String(db.C6_assessments.length + 1).padStart(2, '0'),
+      member_id: db.A1_member_id, visit_id: vid, type: '视频动作评估', exercise: exercise,
+      metrics: {tempo_stability_pct: mv.tempo_stability_pct, left_right_difference_pct: mv.left_right_difference_pct, rom_deg: mv.video_metrics.rom_deg, trunk_lean_deg: mv.video_metrics.trunk_lean_deg, reps: mv.video_metrics.reps},
+      verdict: rank, movement_id: id, recorded_at: mv.recorded_at
+    });
+    return {movement: mv};
+  }
+  async function loadPoseKit(){
+    if(poseKit) return poseKit;
+    const mod = await import('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14');
+    const files = await mod.FilesetResolver.forVisionTasks('https://cdn.jsdelivr.net/npm/@mediapipe/tasks-vision@0.10.14/wasm');
+    const landmarker = await mod.PoseLandmarker.createFromOptions(files, {
+      baseOptions: {
+        modelAssetPath: 'https://storage.googleapis.com/mediapipe-models/pose_landmarker/pose_landmarker_lite/float16/1/pose_landmarker_lite.task',
+        delegate: 'CPU'
+      },
+      runningMode: 'IMAGE', numPoses: 1,
+      minPoseDetectionConfidence: 0.5, minPosePresenceConfidence: 0.5, minTrackingConfidence: 0.5
+    });
+    poseKit = {landmarker: landmarker};
+    return poseKit;
+  }
+  function setupVideoPreview(file){
+    const v = $('mv-video-el');
+    if(!v || !file) return;
+    if(v.src) URL.revokeObjectURL(v.src);
+    v.src = URL.createObjectURL(file);
+    $('va-stage').hidden = false;
+    v.load();
+    hint('mv-video-hint', '视频已载入，点“分析视频”开始。');
+  }
+  async function analyzeSelectedVideo(){
+    const fileEl = $('mv-video');
+    const file = fileEl && fileEl.files && fileEl.files[0];
+    if(!file){ hint('mv-video-hint', '先选择一个视频文件', true); return; }
+    if(analyzingVideo) return;
+    analyzingVideo = true;
+    const v = $('mv-video-el'), canvas = $('mv-canvas'), stage = $('va-stage');
+    try {
+      if(!v.src) setupVideoPreview(file);
+      hint('mv-video-hint', '正在加载姿态模型…');
+      const kit = await loadPoseKit();
+      hint('mv-video-hint', '正在分析视频…');
+      await new Promise(res => { if(v.readyState >= 1) res(); else v.onloadedmetadata = res; });
+      canvas.width = v.videoWidth || 640;
+      canvas.height = v.videoHeight || 360;
+      stage.hidden = false;
+      const ctx = canvas.getContext('2d');
+      const grab = document.createElement('canvas');
+      grab.width = canvas.width; grab.height = canvas.height;
+      const gctx = grab.getContext('2d');
+      const frames = [];
+      const draw = lm => {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+        ctx.strokeStyle = 'rgba(120,220,190,.9)';
+        ctx.fillStyle = 'rgba(120,220,190,.9)';
+        ctx.lineWidth = Math.max(2, canvas.width / 320);
+        const pairs = [[11,12],[11,23],[12,24],[23,24],[23,25],[25,27],[24,26],[26,28],[11,13],[13,15],[12,14],[14,16]];
+        pairs.forEach(([a, b]) => {
+          const A = lm[a], B = lm[b];
+          if(A && B){ ctx.beginPath(); ctx.moveTo(A.x * canvas.width, A.y * canvas.height); ctx.lineTo(B.x * canvas.width, B.y * canvas.height); ctx.stroke(); }
+        });
+        [11,12,23,24,25,26,27,28].forEach(i => {
+          const p = lm[i];
+          if(p){ ctx.beginPath(); ctx.arc(p.x * canvas.width, p.y * canvas.height, 4, 0, Math.PI * 2); ctx.fill(); }
+        });
+      };
+      const collect = (lm, t) => {
+        const P = i => lm[i] ? {x: lm[i].x * (v.videoWidth || 640), y: lm[i].y * (v.videoHeight || 360)} : null;
+        const lh = P(23), rh = P(24), lk = P(25), rk = P(26), la = P(27), ra = P(28), ls = P(11), rs = P(12);
+        if(!lh || !rh || !lk || !rk || !la || !ra) return;
+        const vis = Math.min(lm[23].visibility || 0, lm[24].visibility || 0, lm[25].visibility || 0, lm[26].visibility || 0, lm[27].visibility || 0, lm[28].visibility || 0);
+        frames.push({t: t, lk: vaAngle(lh, lk, la), rk: vaAngle(rh, rk, ra), lh: vaAngle(ls, lh, lk), rh: vaAngle(rs, rh, rk), trunk: vaTrunk(ls, rs, lh, rh), vis: vis});
+      };
+      v.muted = true;
+      const duration = Math.min(Number(v.duration) || 0, 60);
+      if(!duration) throw new Error('无法读取视频时长');
+      const step = 1 / 12;
+      v.currentTime = 0.001;
+      for(let t = 0; t < duration; t += step){
+        v.currentTime = Math.min(t, Math.max(0, duration - 0.05));
+        await new Promise(res => {
+          let done = false;
+          const fin = () => { if(done) return; done = true; v.removeEventListener('seeked', fin); res(); };
+          v.addEventListener('seeked', fin);
+          setTimeout(fin, 400);
+        });
+        try {
+          gctx.drawImage(v, 0, 0, grab.width, grab.height);
+          const res = kit.landmarker.detect(grab);
+          if(res && res.landmarks && res.landmarks[0]){ draw(res.landmarks[0]); collect(res.landmarks[0], v.currentTime); }
+        } catch (e) {}
+        if(Math.floor(t) !== Math.floor(t - step)) hint('mv-video-hint', '正在分析视频… ' + Math.min(100, Math.round(t / duration * 100)) + '%');
+      }
+      v.pause();
+      const met = computeVideoMetrics(frames, $('mv-view').value);
+      const m = api().db();
+      saveVideoMovement(m, $('mv-ex').value || '侧身深蹲', met);
+      api().save();
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      render();
+      hint('mv-video-hint', met.quality === 'low'
+        ? '分析完成，但有效帧不足，建议固定机位重录，或改用上面的时长评估。'
+        : ('分析完成：' + met.reps + ' 次，稳定性 ' + met.stability.toFixed(1) + '%。'), met.quality === 'low');
+    } catch (err) {
+      hint('mv-video-hint', '视频分析失败：' + (err.message || '未知错误') + '。可改用上面的时长评估。', true);
+    } finally {
+      analyzingVideo = false;
+    }
   }
 
   function renderQuest(){
@@ -2593,6 +2812,11 @@ setTimeout(consumeReviewReceipt, 900);
       hint('mv-hint', '已生成 ' + out.assessment.assessment_id + '：' + out.movement.rank);
     }catch(err){ hint('mv-hint', err.message, true); }
   };
+  const mvVideoEl = $('mv-video');
+  if (mvVideoEl) mvVideoEl.onchange = () => { const f = mvVideoEl.files && mvVideoEl.files[0]; if (f) setupVideoPreview(f); };
+  const mvVideoRun = $('mv-video-run');
+  if (mvVideoRun) mvVideoRun.onclick = analyzeSelectedVideo;
+
   $('mv-demo').onclick = () => {
     $('mv-tempo').value = '2.1,2.0,2.4'; $('mv-lr').value = '2.2,1.9';
     const sel = $('mv-ex'); const first = [...sel.options].find(o => !o.disabled); if(first) sel.value = first.value;
