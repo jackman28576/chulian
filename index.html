@@ -972,12 +972,14 @@ function reviewNotify(m, force){
   if(!force && latest.review_id === seen) return false;
   state.reviewSeen[m.A1_member_id] = latest.review_id;
   const coach = (typeof COACHES !== 'undefined' && COACHES[m.A1_member_id]) || null;
+  const who = latest.recorded_by || (coach ? coach.name : '教练');
+  const when = (latest.recorded_at || '').slice(0, 16).replace('T', ' ');
   if(latest.decision === 'approved'){
     state.stage = 'reviewed';
-    const row = bubble('a', `${coach ? coach.name : '教练'}已复核通过（${(latest.recorded_at || '').slice(0, 16).replace('T', ' ')}）。\n复核不改动活动限制，那条限制仍然生效。`);
+    const row = bubble('a', `${who} 已复核通过（${when}）。\n意见：${latest.note || '—'}\n复核不改动活动限制，那条限制仍然生效。`);
     actionChip(row, '出计划', () => say('出计划'));
   } else {
-    bubble('a', `${coach ? coach.name : '教练'}复核未通过：${latest.note || ''}\n本次不生成计划，可以补充资料后重新填报。`, null, 'warn');
+    bubble('a', `${who} 复核未通过（${when}）。\n意见：${latest.note || '—'}\n本次不生成计划，可以补充资料后重新填报。`, null, 'warn');
   }
   return true;
 }
@@ -1196,9 +1198,9 @@ function reply(text, u){
           bubble('a', '改约要写个原因，比如“临时出差”。');
           return;
         }
-        appointment(db(), 'reschedule', { appointment_id: live.appointment_id, start_at: startAt, reason, actor: '会员本人' });
+        const rec = appointment(db(), 'reschedule', { appointment_id: live.appointment_id, start_at: startAt, reason, actor: '会员本人' });
         state.pendingAppt = null; save();
-        bubble('a', `改好了：${fmtWhen(startAt)} 的${live.service}，原因已记录。`);
+        bubble('a', `改好了：${fmtWhen(startAt)}–${appointmentEnd(rec)} 的${live.service}，教练 ${rec.coach}，原因已记录。`);
         if (typeof window.__onDataChange === 'function') window.__onDataChange();
         return;
       }
@@ -1214,13 +1216,13 @@ function reply(text, u){
         }
         const rec = appointment(db(), 'reschedule', { appointment_id: live.appointment_id, start_at: startAt, reason: reason || '会员调整时间', actor: '会员本人' });
         state.pendingAppt = null; save();
-        bubble('a', `你已有一个预约，我把它改到 ${fmtWhen(rec.start_at)} 的${rec.service}，器械按当前计划更新为：${rec.equipment}。`);
+        bubble('a', `你已有一个预约，我把它改到 ${fmtWhen(rec.start_at)}–${appointmentEnd(rec)} 的${rec.service}，教练 ${rec.coach}，器械按当前计划更新为：${rec.equipment}。`);
         if (typeof window.__onDataChange === 'function') window.__onDataChange();
         return;
       }
       const rec = appointment(db(), 'create', { start_at: startAt, service: f.service || '普拉提私教', actor: '会员本人' });
       state.pendingAppt = null; save();
-      bubble('a', `约好了：${fmtWhen(rec.start_at)} 的${rec.service}，编号 ${rec.appointment_id}。器械已留：${rec.equipment}。我会提前一天在这里提醒你。`);
+      bubble('a', `约好了：${fmtWhen(rec.start_at)}–${appointmentEnd(rec)} 的${rec.service}，教练 ${rec.coach}，编号 ${rec.appointment_id}。器械已留：${rec.equipment}。我会提前一天在这里提醒你。`);
       if (typeof window.__onDataChange === 'function') window.__onDataChange();
       return;
     } catch (e) {
@@ -1267,6 +1269,48 @@ function reply(text, u){
 
   Object.assign(state.draft, extract(t));
   if(u && u.fields) Object.assign(state.draft, u.fields);
+
+  const corrWords = /改一下|说错|更正|改成|重新说|刚才.*(说|填)/.test(t) && !/计划|预约|改约|课程/.test(t);
+  if(corrWords && state.stage === 'assessed'){
+    const m = db();
+    const b = m.B_current || {};
+    if((m.C2_plans || []).length){
+      bubble('a', '这次已经出计划了，改数字要重新填报。说“重新填”，我带你从头来。');
+      return;
+    }
+    const d = state.draft;
+    const patch = {};
+    if(d.fatigue !== undefined) patch.B3_fatigue = d.fatigue;
+    if(d.sleep_hours !== undefined) patch.B4_sleep_last = Object.assign({}, b.B4_sleep_last || {}, {hours: d.sleep_hours});
+    if(d.pain !== undefined) patch.B2_body_feeling = Object.assign({}, b.B2_body_feeling || {}, {pain_score: d.pain});
+    if(d.pain_text) patch.B2_body_feeling = Object.assign({}, patch.B2_body_feeling || b.B2_body_feeling || {}, {text: d.pain_text});
+    if(d.acute && d.acute.length) patch.B2_body_feeling = Object.assign({}, patch.B2_body_feeling || b.B2_body_feeling || {}, {acute_signals: d.acute});
+    if(!Object.keys(patch).length){
+      bubble('a', '要改哪一项？比如“疲劳改成6”或“睡眠改成7小时”。');
+      return;
+    }
+    if(!b.B1_visit_id){ bubble('a', '还没有可以更正的填报。'); return; }
+    Object.assign(b, patch);
+    b.corrected_at = new Date().toISOString();
+    b.corrections = (b.corrections || []).concat([{ at: new Date().toISOString(), fields: Object.keys(patch) }]);
+    const ev = assess(m);
+    m.A16_last_verdict = { code: ev.status_code, status: ev.status, rule: ev.rule, at: new Date().toISOString(), basis: ev.basis_field_ids, reasons: ev.reasons };
+    state.last = ev; state.stage = 'assessed'; state.draft = {}; state.need = []; save();
+    const pain = b.B2_body_feeling && b.B2_body_feeling.pain_score;
+    bubble('a', `改好了：疲劳 ${b.B3_fatigue}/10、睡眠 ${(b.B4_sleep_last || {}).hours}h${pain ? '、疼痛 ' + pain + '/10' : ''}。按更正后的数据重新判定。`);
+    const detail = JSON.stringify({分档:ev.status, 规则:ev.rule, 依据字段:ev.basis_field_ids, 理由:ev.reasons, 下一步:ev.next_step}, null, 2);
+    const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
+    if(ev.status_code === 'review'){
+      const coach = COACHES[m.A1_member_id];
+      if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），复核通过后这里会出现「出计划」。`);
+    }
+    if(typeof window.__onDataChange === 'function') window.__onDataChange();
+    return;
+  }
+  if(corrWords && (state.stage === 'planned' || state.stage === 'reviewed')){
+    bubble('a', '这次已经出计划或复核了，改数字要重新填报。说“重新填”，我带你从头来。');
+    return;
+  }
 
   // 上一轮问过“还差哪几项”，用户只回数字也能接住
   if(state.need && state.need.length){
@@ -1590,6 +1634,70 @@ function planEquipment(db){
   return '普拉提训练床';
 }
 
+const COACH_HOURS = {
+  '张教练': {days: [1, 2, 3, 4, 5, 6], start: 9 * 60, end: 21 * 60},
+  '李教练': {days: [0, 2, 3, 4, 5, 6], start: 10 * 60, end: 20 * 60},
+  '场馆教练（合成）': {days: [0, 1, 2, 3, 4, 5, 6], start: 8 * 60, end: 22 * 60}
+};
+const SERVICE_MIN = { '普拉提私教': 60, '普拉提小班': 60, '康复评估': 45 };
+const SERVICE_CAP = { '普拉提私教': 1, '普拉提小班': 4, '康复评估': 1 };
+function serviceDuration(name){ return SERVICE_MIN[name] || 60; }
+function coachOf(db, explicit){
+  if(explicit) return explicit;
+  if(typeof COACHES !== 'undefined' && COACHES[db.A1_member_id]) return COACHES[db.A1_member_id].name;
+  return '场馆教练（合成）';
+}
+function fmtHM(mins){
+  return String(Math.floor(mins / 60)).padStart(2, '0') + ':' + String(mins % 60).padStart(2, '0');
+}
+function allActiveAppointments(excludeId, db){
+  const members = (typeof state !== 'undefined' && state.members && state.members.length) ? state.members : [db];
+  const out = [];
+  members.forEach(m => (m.C3_appointments || []).forEach(a => {
+    if(a.status !== 'booked' && a.status !== 'rescheduled') return;
+    if(excludeId && a.appointment_id === excludeId) return;
+    out.push({ a, member_id: m.A1_member_id });
+  }));
+  return out;
+}
+function assertBookingSlot(db, coach, startIso, duration, service, excludeId){
+  const d = new Date(startIso);
+  if(isNaN(d)) throw new Error('预约时间格式不对');
+  const sch = COACH_HOURS[coach] || COACH_HOURS['场馆教练（合成）'];
+  const mins = d.getHours() * 60 + d.getMinutes();
+  if(sch.days.indexOf(d.getDay()) < 0) throw new Error(coach + '当天休息，换一天或换教练');
+  if(mins < sch.start || mins + duration > sch.end){
+    throw new Error(coach + '的排期是 ' + fmtHM(sch.start) + '–' + fmtHM(sch.end) + '，这个时段排不下');
+  }
+  const start = d.getTime(), end = start + duration * 60000;
+  const list = allActiveAppointments(excludeId, db);
+  const overlapOf = x => {
+    const s = Date.parse(x.a.start_at);
+    const e = s + (x.a.duration_min || serviceDuration(x.a.service)) * 60000;
+    return start < e && s < end;
+  };
+  if(list.filter(x => x.member_id === db.A1_member_id).some(overlapOf)){
+    throw new Error('你在这个时段已有预约，先改约或取消原预约');
+  }
+  const sameCoach = list.filter(x => (x.a.coach || '场馆教练（合成）') === coach && overlapOf(x));
+  const cap = SERVICE_CAP[service] || 1;
+  if(cap <= 1){
+    if(sameCoach.length) throw new Error(coach + '在这个时段已有安排，换一个时间');
+  } else {
+    const sameClass = sameCoach.filter(x => x.a.service === service).length;
+    if(sameClass >= cap) throw new Error('这个时段的小班已满 ' + cap + ' 人，换一个时段');
+    if(sameCoach.some(x => x.a.service !== service && (SERVICE_CAP[x.a.service] || 1) <= 1)){
+      throw new Error(coach + '在这个时段已有安排，换一个时间');
+    }
+  }
+}
+function appointmentEnd(rec){
+  const s = Date.parse(rec.start_at);
+  if(isNaN(s)) return '';
+  const d = new Date(s + (rec.duration_min || serviceDuration(rec.service)) * 60000);
+  return String(d.getHours()).padStart(2, '0') + ':' + String(d.getMinutes()).padStart(2, '0');
+}
+
 function appointment(db, action, opts){
   db.C3_appointments = db.C3_appointments || [];
   opts = opts || {};
@@ -1614,12 +1722,14 @@ function appointment(db, action, opts){
     if(!plan) throw new Error('请先生成有效计划再预约');
     if(!opts.start_at || !opts.service) throw new Error('预约需要时间和项目');
     if(Date.parse(opts.start_at) <= Date.now()) throw new Error('预约时间需要晚于现在');
-    if(db.C3_appointments.some(a => (a.status === 'booked' || a.status === 'rescheduled') && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
+    const coach = coachOf(db, opts.coach);
+    const duration = serviceDuration(opts.service);
+    assertBookingSlot(db, coach, opts.start_at, duration, opts.service, null);
     const equip = planEquipment(db);
     const rec = {
       appointment_id: 'AP-' + String(db.C3_appointments.length + 1).padStart(3, '0'),
       member_id: db.A1_member_id, plan_version: plan.version,
-      start_at: opts.start_at, service: opts.service, coach: opts.coach || '场馆教练（合成）',
+      start_at: opts.start_at, service: opts.service, coach: coach, duration_min: duration,
       equipment: opts.equipment || equip,
       status: 'booked', history: [], recorded_at: new Date().toISOString(), recorded_by: '会员本人'
     };
@@ -1634,16 +1744,18 @@ function appointment(db, action, opts){
     if(!String(opts.reason || '').trim()) throw new Error('改约必须记录原因');
     if(!opts.start_at) throw new Error('改约需要新的时间');
     if(Date.parse(opts.start_at) <= Date.now()) throw new Error('预约时间需要晚于现在');
-    if(db.C3_appointments.some(a => a !== rec && (a.status === 'booked' || a.status === 'rescheduled') && a.start_at === opts.start_at)) throw new Error('该时段已有预约');
+    const coach = opts.coach || rec.coach || coachOf(db);
+    const duration = rec.duration_min || serviceDuration(rec.service);
+    assertBookingSlot(db, coach, opts.start_at, duration, rec.service, rec.appointment_id);
     rec.history = rec.history || [];
     rec.history.push({before:{start_at:rec.start_at, status:rec.status}, reason:opts.reason, at:new Date().toISOString(), by:opts.actor || '会员本人'});
     rec.start_at = opts.start_at; rec.status = 'rescheduled'; rec.reschedule_reason = opts.reason;
+    rec.coach = coach; rec.duration_min = duration;
     const plan = (db.C2_plans || []).slice(-1)[0];
     if(plan){
       rec.equipment = planEquipment(db); rec.plan_version = plan.version;
       if(plan.appointment_id === rec.appointment_id) plan.appointment_at = rec.start_at;
     }
-    if(opts.coach) rec.coach = opts.coach;
     return rec;
   }
   throw new Error('未知预约操作');
@@ -2318,7 +2430,7 @@ setTimeout(consumeReviewReceipt, 900);
     const rows = list.slice(-4).reverse().map(a => {
       const st = a.status === 'booked' ? '已预约' : a.status === 'rescheduled' ? '已改约' : '已取消';
       return `<div class="arow"><span>${esc(a.appointment_id)} · ${fmtT(a.start_at)} · ${esc(a.service)}</span><span class="st ${a.status}">${st}</span></div>
-        <div class="wrapnote" style="padding:0 0 8px">器械：${esc(a.equipment)}｜教练：${esc(a.coach || '—')}｜关联 ${esc(a.plan_version || '—')}${a.cancel_reason ? '｜原因：' + esc(a.cancel_reason) : ''}${a.reschedule_reason ? '｜改约原因：' + esc(a.reschedule_reason) : ''}</div>`;
+        <div class="wrapnote" style="padding:0 0 8px">器械：${esc(a.equipment)}｜教练：${esc(a.coach || '—')}｜时长 ${a.duration_min || 60} 分钟｜关联 ${esc(a.plan_version || '—')}${a.cancel_reason ? '｜原因：' + esc(a.cancel_reason) : ''}${a.reschedule_reason ? '｜改约原因：' + esc(a.reschedule_reason) : ''}</div>`;
     }).join('');
     $('ap-body').innerHTML = rows || '<div class="empty">还没有预约。生成计划后，这里可以把计划落到具体时段与器械。</div>';
     $('ap-create').disabled = false;
@@ -2379,7 +2491,7 @@ setTimeout(consumeReviewReceipt, 900);
   /* ---------- 事件 ---------- */
   $('ap-create').onclick = () => {
     const m = api().db();
-    const t = $('ap-time').value, svc = $('ap-svc').value, coach = $('ap-coach').value.trim() || '场馆教练（合成）';
+    const t = $('ap-time').value, svc = $('ap-svc').value, coach = $('ap-coach').value.trim() || coachOf(m);
     const reason = $('ap-reason').value.trim();
     const gate = planGate(m, assess(m));
     if(!(api().plans || []).length){ hint('ap-hint', '先生成计划再预约', true); return; }
@@ -2396,11 +2508,11 @@ setTimeout(consumeReviewReceipt, 900);
           return;
         }
         const rec = appointment(m, 'reschedule', {appointment_id: live.appointment_id, start_at, reason: reason || '会员调整时间', coach: $('ap-coach').value.trim() || undefined, actor: '会员本人'});
-        msg = '已改约到 ' + fmtT(rec.start_at) + '，器械：' + rec.equipment;
+        msg = '已改约到 ' + fmtT(rec.start_at) + '–' + appointmentEnd(rec) + '，教练 ' + rec.coach + '，器械：' + rec.equipment;
         $('ap-time').value = rec.start_at.slice(0, 16);
       }else{
         const rec = appointment(m, 'create', {start_at, service: svc, coach, actor: '会员本人'});
-        msg = rec.appointment_id + ' 已预约，器械：' + rec.equipment;
+        msg = rec.appointment_id + ' 已预约，教练 ' + rec.coach + '，器械：' + rec.equipment;
       }
       api().save(); if(typeof window.__onDataChange === 'function') window.__onDataChange(); render();
       hint('ap-hint', msg);
