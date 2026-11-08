@@ -156,6 +156,7 @@
 </div>
 
 <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="demo-members.js"></script>
 <script>
 const KEY = 'chulian-single-v1';
 const COACHES = [
@@ -167,6 +168,23 @@ const TONE = { pause: 'stop', review: 'warn', supplement: 'info', continue: 'ok'
 
 let state = null;
 try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
+
+/* 教练端也要能独立打开：旧状态缺少演示会员时补齐，空状态直接载入演示会员 */
+const DEMO_MEMBERS = window.DEMO_MEMBERS || [];
+function mergeDemo(st){
+  if (!st) return st;
+  if (!Array.isArray(st.members)) st.members = [];
+  DEMO_MEMBERS.forEach(dm => {
+    if (!st.members.some(m => m.A1_member_id === dm.A1_member_id)) {
+      st.members.push(JSON.parse(JSON.stringify(dm)));
+    }
+  });
+  return st;
+}
+if (state) mergeDemo(state);
+if (!state && DEMO_MEMBERS.length) {
+  state = mergeDemo({ members: [], current: 0, draft: {}, need: [], stage: 'idle', last: null });
+}
 
 /* ---------------- 与服务端同步 ---------------- */
 const SYNC_ON = location.protocol !== 'file:';
@@ -203,8 +221,11 @@ function pull() {
     setOffline(false);
     if (!d || typeof d.version !== 'number' || d.version === syncVersion) return;
     syncVersion = d.version;
-    if (d.state) { state = d.state; localStorage.setItem(KEY, JSON.stringify(state)); render(); }
-    else { state = null; render(); }
+    if (d.state) { state = mergeDemo(d.state); localStorage.setItem(KEY, JSON.stringify(state)); render(); }
+    else if (!state && DEMO_MEMBERS.length) {
+      state = mergeDemo({ members: [], current: 0, draft: {}, need: [], stage: 'idle', last: null });
+      render();
+    }
   }).catch(() => setOffline(true));
 }
 function initTools() {
@@ -242,7 +263,7 @@ function initialPull() {
   fetch('/api/state').then(r => r.json()).then(d => {
     if (!d) return;
     syncVersion = d.version || 0;
-    if (d.state) { state = d.state; localStorage.setItem(KEY, JSON.stringify(state)); render(); }
+    if (d.state) { state = mergeDemo(d.state); localStorage.setItem(KEY, JSON.stringify(state)); render(); }
   }).catch(() => {});
 }
 if (SYNC_ON) { setTimeout(initialPull, 0); setInterval(pull, 2000); }
@@ -271,7 +292,7 @@ let selected = null;
 
 function membersOf(id) {
   if (!state || !Array.isArray(state.members)) return [];
-  return state.members.filter(m => MAP[m.A1_member_id] === id);
+  return state.members.filter(m => (m.coach_id || MAP[m.A1_member_id] || 'T-102') === id);
 }
 
 function renderTabs() {
@@ -299,7 +320,7 @@ function renderList() {
   if (only) list = list.filter(m => { const v = m.A16_last_verdict; return v && v.code === 'review' && !currentReview(m); });
   box.innerHTML = '';
   if (!list.length) {
-    box.innerHTML = '<div class="empty">' + (q || only ? '没有匹配的会员。' : '这个教练还没有绑定会员。') + '</div>';
+    box.innerHTML = '<div class="empty">' + (q || only ? '没有匹配的会员。' : '这个教练还没有绑定会员。可以切到张教练，或先在<a href="index.html">会员端</a>建一份档案。') + '</div>';
     return;
   }
   list.forEach(m => {
@@ -321,7 +342,7 @@ function renderDetail() {
   const box = document.getElementById('detail');
   const list = membersOf(coachId);
   if (!list.length) {
-    box.innerHTML = '<div class="empty">这个教练还没有绑定会员。</div>';
+    box.innerHTML = '<div class="empty">这个教练还没有绑定会员。可以切到张教练，或先在<a href="index.html">会员端</a>建一份档案。</div>';
     return;
   }
   const m = list.find(x => x.A1_member_id === selected) || list[0];
@@ -663,8 +684,8 @@ function initLogin() {
 addEventListener('storage', e => {
   if (e.key !== KEY) return;
   try {
-    state = JSON.parse(e.newValue || 'null');
-    if (state && Array.isArray(state.members)) render();
+    const next = JSON.parse(e.newValue || 'null');
+    if (next && Array.isArray(next.members)) { state = mergeDemo(next); render(); }
   } catch (err) {}
 });
 
