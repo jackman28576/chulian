@@ -69,7 +69,7 @@
   .lab input,.lab select,.lab textarea{display:block;width:100%;margin-top:4px;background:rgba(255,255,255,.06);
     border:1px solid var(--line);border-radius:10px;padding:7px 10px;color:var(--ink);font:inherit}
   .lab textarea{resize:vertical}
-  .acts{display:flex;align-items:center;gap:10px;margin-top:10px}
+  .acts{display:flex;align-items:center;flex-wrap:wrap;gap:10px;margin-top:10px}
   .btn{height:34px;padding:0 16px;border-radius:10px;border:1px solid var(--line);
        background:rgba(255,255,255,.08);color:var(--ink);cursor:pointer;font:inherit}
   .btn.primary{background:rgba(120,160,220,.22);border-color:rgba(150,190,240,.4)}
@@ -101,6 +101,8 @@
   .tools .qr{display:flex;justify-content:center;margin:10px 0 4px;padding:8px;background:#fff;border-radius:12px}
   .tools .qr:empty{display:none}
   .tools .qr img,.tools .qr canvas{display:block;width:148px;height:148px}
+  .tools .qr .qr-empty{width:148px;height:148px;display:flex;align-items:center;justify-content:center;
+    text-align:center;color:#3a4250;font-size:11.5px;line-height:1.7;padding:10px}
   .tools .qr-note{text-align:center;color:var(--muted);font-size:11px;margin-bottom:6px}
   @media (max-width:820px){
     main{grid-template-columns:1fr;grid-template-rows:auto 1fr}
@@ -136,9 +138,10 @@
       <div class="rail-h">演示工具</div>
       <div class="lan" id="lanUrl">—</div>
       <div class="qr" id="lanQr"></div>
-      <div class="qr-note">扫码打开会员端</div>
+      <div class="qr-note" id="qrNote">扫码进入会员端 / 教练端</div>
       <div class="acts">
-        <button class="btn" id="copyUrl">复制手机地址</button>
+        <button class="btn" id="copyUrl">复制双端地址</button>
+        <button class="btn" id="refreshUrl">刷新地址</button>
         <button class="btn" id="resetData">重置数据</button>
       </div>
     </div>
@@ -152,11 +155,11 @@
     <label>工号后四位<input id="lg-pin" inputmode="numeric" maxlength="4" placeholder="4 位数字"></label>
     <button id="lg-go">进入教练端</button>
     <div class="hint bad" id="lg-err"></div>
-    <div class="hint" id="lg-ver">演示数据 v3.1 · 教练端可独立打开</div>
+    <div class="hint" id="lg-ver">演示数据 v3.2 · 本地双端二维码</div>
   </div>
 </div>
 
-<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script src="qrcode.min.js"></script>
 <script src="demo-members.js"></script>
 <script>
 const KEY = 'chulian-single-v1';
@@ -242,26 +245,57 @@ function pull() {
 }
 function initTools() {
   const qrBox = document.getElementById('lanQr');
+  const urlEl = document.getElementById('lanUrl');
+  const noteEl = document.getElementById('qrNote');
+  let currentJoin = '';
+  let lastUrl = '';
+
   const drawQr = url => {
-    if (!qrBox || !window.QRCode || !url) return;
+    if (!qrBox) return;
     qrBox.innerHTML = '';
+    if (!window.QRCode) {
+      qrBox.innerHTML = '<div class="qr-empty">二维码库未加载<br>请刷新页面</div>';
+      return;
+    }
     new QRCode(qrBox, {
       text: url, width: 148, height: 148,
       colorDark: '#0B0E13', colorLight: '#FFFFFF',
       correctLevel: QRCode.CorrectLevel.M
     });
+    qrBox.dataset.url = url;
   };
-  fetch('/api/info').then(r => r.json()).then(d => {
-    const el = document.getElementById('lanUrl');
-    if (el && d.lan_url) el.textContent = d.lan_url;
-    drawQr(d.lan_url);
-  }).catch(() => {
-    drawQr(location.origin + location.pathname.replace(/coach\.html.*$/, 'index.html'));
-  });
+
+  const applyInfo = d => {
+    const join = d && (d.join_url || (d.lan_url ? d.lan_url.replace(/\/$/, '') + '/join.html' : ''));
+    if (!join) {
+      currentJoin = '';
+      if (urlEl) urlEl.textContent = '当前为线上页面';
+      if (noteEl) noteEl.textContent = '本地互联二维码需在电脑上运行 start.bat';
+      qrBox.innerHTML = '<div class="qr-empty">本地互联二维码<br>请在电脑上运行 start.bat<br>再用 127.0.0.1:8080 打开教练端</div>';
+      qrBox.dataset.url = '';
+      lastUrl = '';
+      return;
+    }
+    currentJoin = join;
+    if (urlEl) urlEl.textContent = join.replace(/^https?:\/\//, '');
+    if (noteEl) noteEl.textContent = '扫码进入会员端 / 教练端';
+    if (join !== lastUrl) {
+      drawQr(join);
+      lastUrl = join;
+    }
+  };
+
+  const refresh = () => fetch('/api/info').then(r => r.json()).then(applyInfo).catch(() => applyInfo(null));
+  refresh();
+  setInterval(refresh, 5000);
+  window.__refreshLan = refresh;
+
+  const rf = document.getElementById('refreshUrl');
+  if (rf) rf.onclick = () => refresh();
   const cp = document.getElementById('copyUrl');
   if (cp) cp.onclick = () => {
-    const t = document.getElementById('lanUrl').textContent;
-    if (navigator.clipboard) navigator.clipboard.writeText(t);
+    if (!currentJoin) return;
+    if (navigator.clipboard) navigator.clipboard.writeText(currentJoin);
   };
   const rs = document.getElementById('resetData');
   if (rs) rs.onclick = () => {
@@ -486,7 +520,7 @@ function renderDetail() {
              : '<div class="empty" style="padding:0">还没有到店记录。</div>') +
     '</div>' +
     timeline +
-    '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。数据版本 v3.1。</div>';
+    '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。数据版本 v3.2。</div>';
 
   const profEdit = document.getElementById('prof-edit');
   if (profEdit) profEdit.onclick = () => {
