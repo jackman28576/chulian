@@ -641,9 +641,10 @@
   </div>
 </div>
 
+<script src="demo-members.js"></script>
 <script>
 
-const MEMBERS = [{"schema_version": "1.0", "A14_availability": {"days_per_week": 2, "minutes_per_session": 50, "preferred_time": "工作日傍晚", "equipment": ["普拉提训练床", "弹力带", "普拉提圈"], "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "_note": "全部字段均为比赛演示合成数据，不对应真实会员。不得将本规则原型用于真实医疗或康复决策。", "A1_member_id": "L-0231", "A2_display_name": "林女士（合成）", "A3_age_band": "30-39", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善", "术后恢复"], "A5_experience": {"years": 1, "equipment": "初级", "long_term_coach": false, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 1, "items": ["普拉提团课"], "minutes_per_session": 50, "intensity_self": "低", "intensity_increase_pct": 0, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [{"item": "腰椎间盘突出术后（合成）", "date": "2026-02", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}], "A8_professional_advice": [{"advice_id": "A8-01", "content": "术后12个月内避免脊柱屈曲负荷与前屈负重（合成专业意见）", "by": "康复科（合成）", "date": "2026-03-10", "prohibit_training": false, "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}], "A9_restrictions": [{"item": "脊柱屈曲类动作", "level": "禁用", "ref": "A8-01", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}], "A9_confirmation": {"status": "confirmed", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律，控糖中，乳糖不耐", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "00:30", "average_hours": 6.0, "quality": 3, "issue": "入睡慢", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": ["脊柱屈曲负荷禁忌（来自A9）", "术后恢复期（来自A7）"], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示", "饮食睡眠建议"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261029-01", "B2_body_feeling": {"text": "腰部酸胀4/10，无放射痛", "pain_score": 4, "acute_signals": []}, "B3_fatigue": 7, "B4_sleep_last": {"hours": 5, "quality": 2}, "B5_vitals": {"resting_hr": 68, "temperature_c": 36.5, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-29T10:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}, {"schema_version": "1.0", "A14_availability": {"days_per_week": 3, "minutes_per_session": 60, "preferred_time": "工作日晚上", "equipment": ["普拉提训练床", "弹力带", "普拉提圈"], "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "_note": "常规会员对照样本（合成）。用于演示“无风险标记 → 继续训练 → 直接拿到计划”，与 L-0231 的复核路径形成对比。", "A1_member_id": "L-0247", "A2_display_name": "周先生（合成）", "A3_age_band": "40-49", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善", "增肌"], "A5_experience": {"years": 3, "equipment": "中级", "long_term_coach": true, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 3, "items": ["普拉提私教", "快走"], "minutes_per_session": 60, "intensity_self": "中", "intensity_increase_pct": 10, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [], "A8_professional_advice": [], "A9_restrictions": [], "A9_confirmation": {"status": "confirmed_none", "source": "专业人员", "recorded_at": "2026-10-21T19:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律，无特殊限制", "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "23:30", "average_hours": 7.2, "quality": 4, "issue": "无", "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": [], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示", "饮食睡眠建议"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-21T19:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261026-01", "B2_body_feeling": {"text": "无明显不适，肩颈略紧", "pain_score": 0, "acute_signals": []}, "B3_fatigue": 3, "B4_sleep_last": {"hours": 7, "quality": 4}, "B5_vitals": {"resting_hr": 72, "temperature_c": 36.6, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-26T18:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}, {"schema_version": "1.0", "A14_availability": {"days_per_week": 2, "minutes_per_session": 50, "preferred_time": "周末上午", "equipment": ["普拉提训练床", "弹力带", "普拉提圈"], "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "_note": "压力测试样本（合成）：到店主诉胸痛，用于验证急性信号一票否决。非演示主路径。", "A1_member_id": "L-0305", "A2_display_name": "王女士（合成）", "A3_age_band": "50-59", "A3_sex": "未提供（本人声明）", "A4_goal": ["体态改善"], "A5_experience": {"years": 2, "equipment": "初级", "long_term_coach": false, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A6_recent_activity": {"weeks": 4, "sessions_per_week": 2, "items": ["普拉提团课"], "minutes_per_session": 50, "intensity_self": "低", "intensity_increase_pct": 0, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A7_diagnoses": [], "A8_professional_advice": [], "A9_restrictions": [], "A9_confirmation": {"status": "confirmed_none", "source": "专业人员", "recorded_at": "2026-10-20T09:10:00+08:00", "recorded_by": "合成教练"}, "A10_diet": {"text": "三餐规律", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A11_sleep_profile": {"bedtime": "23:00", "average_hours": 7.0, "quality": 3, "issue": "无", "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "A12_risk_flags": [], "A13_consent": {"voluntary": true, "scope": ["训练计划", "风险提示"], "synthetic": true, "desensitized": true, "source": "会员本人", "recorded_at": "2026-10-20T09:00:00+08:00", "recorded_by": "合成会员"}, "B_current": {"B1_visit_id": "V-20261027-01", "B2_body_feeling": {"text": "今天来时觉得胸口发闷，有点痛", "pain_score": 0, "acute_signals": ["胸痛"]}, "B3_fatigue": 5, "B4_sleep_last": {"hours": 6, "quality": 3}, "B5_vitals": {"resting_hr": 88, "temperature_c": 36.7, "acute_injury_within_24h": false}, "source": "会员本人", "recorded_at": "2026-10-27T10:00:00+08:00", "recorded_by": "合成会员"}, "C1_visits": [], "C2_plans": [], "C3_appointments": [], "C4_followups": [], "C5_reviews": [], "C6_assessments": [], "C7_revisions": [], "C8_movements": [], "C9_quests": [], "data_quality_conflicts": []}];
+const MEMBERS = window.DEMO_MEMBERS || [];
 /* ---------------- 确定性引擎（从 chulian.py 移植） ---------------- */
 const STATUS = {pause:'暂停活动', review:'提交专业复核', missing:'补充资料', continue:'继续训练'};
 const TONE = {pause:'stop', review:'warn', missing:'info', continue:'ok'};
@@ -1092,6 +1093,12 @@ const COACHES = {
   'L-0247': { id: 'T-102', name: '张教练', credential: 'T-102', field: '康复与术后恢复' },
   'L-0305': { id: 'T-108', name: '李教练', credential: 'T-108', field: '力量与体能' }
 };
+function coachFor(m){
+  if(!m) return null;
+  if(COACHES[m.A1_member_id]) return COACHES[m.A1_member_id];
+  if(m.coach_id) return { id: m.coach_id, name: m.coach_name || '场馆教练', credential: m.coach_id, field: '' };
+  return null;
+}
 const FAQ = [
   { q: /营业时间|几点开|几点关|开门|关门/, a: '工作日 7:00–22:00，周末 8:00–21:00。' },
   { q: /停车|车位/, a: '楼下地库 B2 有会员车位，前台登记车牌即可。' },
@@ -1115,6 +1122,20 @@ function load(){
   return {members: JSON.parse(JSON.stringify(MEMBERS)), current: 0, draft: {}, need: [], stage: 'idle', last: null, pendingFollowup: null};
 }
 function save(nopush){ try{ localStorage.setItem(KEY, JSON.stringify(state)); }catch(e){} if(!nopush) schedulePush(); }
+
+/* 旧浏览器里可能只存了部分演示会员，补齐后教练端才看得到对应教练名下的人 */
+function mergeDemoMembers(){
+  if(!state || !Array.isArray(state.members)) return false;
+  let changed = false;
+  MEMBERS.forEach(dm => {
+    if(!state.members.some(m => m.A1_member_id === dm.A1_member_id)){
+      state.members.push(JSON.parse(JSON.stringify(dm)));
+      changed = true;
+    }
+  });
+  return changed;
+}
+if(mergeDemoMembers()) save(true);
 
 /* ---------------- 与服务端同步（网页版可用；file:// 自动退回本地） ---------------- */
 const SYNC_ON = location.protocol !== 'file:';
@@ -1168,7 +1189,7 @@ function reviewNotify(m, force){
   if(!seen && !force){ state.reviewSeen[m.A1_member_id] = latest.review_id; return false; }
   if(!force && latest.review_id === seen) return false;
   state.reviewSeen[m.A1_member_id] = latest.review_id;
-  const coach = (typeof COACHES !== 'undefined' && COACHES[m.A1_member_id]) || null;
+  const coach = coachFor(m);
   const who = latest.recorded_by || (coach ? coach.name : '教练');
   const when = (latest.recorded_at || '').slice(0, 16).replace('T', ' ');
   if(latest.decision === 'approved'){
@@ -1519,7 +1540,7 @@ function reply(text, u){
         line += `\n和上次比：疼痛 ${dp === 0 ? '持平' : (dp > 0 ? '+' : '') + dp}，功能 ${df === 0 ? '持平' : (df > 0 ? '+' : '') + df}。`;
       }
       if(rec.red_flags.length){
-        const coach = COACHES[db().A1_member_id];
+        const coach = coachFor(db());
         line += `\n出现红色信号：${rec.red_flags.join('、')}。已转给${coach ? coach.name : '教练'}确认处理，处理前不安排新计划和预约。`;
       } else {
         line += '\n没有红色信号，记录已保存。';
@@ -1564,7 +1585,7 @@ function reply(text, u){
     const detail = JSON.stringify({分档:ev.status, 规则:ev.rule, 依据字段:ev.basis_field_ids, 理由:ev.reasons, 下一步:ev.next_step}, null, 2);
     const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
     if(ev.status_code === 'review'){
-      const coach = COACHES[m.A1_member_id];
+      const coach = coachFor(m);
       const at = new Date().toLocaleString('zh-CN', {hour12:false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
       if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），提交时间 ${at}。教练端显示为待复核，通过后这里会出现「出计划」。`);
     }
@@ -1616,7 +1637,7 @@ function reply(text, u){
   }
 
   if(intent === 'review' || /复核/.test(t)){
-    const coach = COACHES[db().A1_member_id];
+    const coach = coachFor(db());
     bubble('a', `复核由教练在教练端完成，会员端不能放行。${coach ? `已通知 ${coach.name}（${coach.id}）。` : ''}`);
     return;
   }
@@ -1686,7 +1707,7 @@ function reply(text, u){
   const detail = JSON.stringify({分档:ev.status, 规则:ev.rule, 依据字段:ev.basis_field_ids, 理由:ev.reasons, 下一步:ev.next_step}, null, 2);
   const row = bubble('a', `${ev.status}（${ev.rule}）。\n依据：${ev.basis_field_ids.slice(0,6).join('、')}。\n${ev.reasons[0] || ''}\n${ev.next_step}\n${DISCLAIMER}`, detail, TONE[ev.status_code]);
   if(ev.status_code === 'review'){
-    const coach = COACHES[m.A1_member_id];
+    const coach = coachFor(m);
     const at = new Date().toLocaleString('zh-CN', {hour12:false, month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit'});
     if(coach) bubble('a', `已提交给 ${coach.name}（${coach.id}），提交时间 ${at}。教练端显示为待复核，通过后这里会出现「出计划」。`);
   }
@@ -1922,7 +1943,8 @@ const SERVICE_CAP = { '普拉提私教': 1, '普拉提小班': 4, '康复评估'
 function serviceDuration(name){ return SERVICE_MIN[name] || 60; }
 function coachOf(db, explicit){
   if(explicit) return explicit;
-  if(typeof COACHES !== 'undefined' && COACHES[db.A1_member_id]) return COACHES[db.A1_member_id].name;
+  const c = coachFor(db);
+  if(c) return c.name;
   return '场馆教练（合成）';
 }
 function fmtHM(mins){
@@ -2198,7 +2220,7 @@ setTimeout(consumeReviewReceipt, 900);
     const plain = (m.A2_display_name || '').replace(/（合成）/, '');
     $('memberAv').textContent = plain.slice(0, 1) || '会';
     $('memberName').textContent = plain;
-    const coach = COACHES[m.A1_member_id];
+    const coach = coachFor(m);
     const chip = $('coachChip');
     if (chip) {
       chip.textContent = coach ? `教练 ${coach.name}` : '';
@@ -2413,6 +2435,7 @@ setTimeout(consumeReviewReceipt, 900);
     const seq = (api().members.length + 1).toString().padStart(4, '0');
     const m = {
       schema_version: '1.0', A1_member_id: 'L-' + seq, A2_display_name: name + '（合成）',
+      coach_id: 'T-102', coach_name: '张教练',
       A3_age_band: '', A3_sex: '未提供（本人声明）', A4_goal: goals,
       A5_experience: Object.assign({ years, equipment: levelMap, long_term_coach: false }, meta),
       A6_recent_activity: Object.assign({ weeks: 4, sessions_per_week: 2, items: ['普拉提私教'],
