@@ -384,6 +384,26 @@ function renderDetail() {
       '<div class="acts"><button class="btn primary" id="fu-handle">确认处理</button><span class="hint" id="fu-hint"></span></div></div>';
   }
 
+  const lastAdvice = (m.A8_professional_advice || []).slice(-1)[0];
+  const restrList = (m.A9_restrictions || []).map(r => typeof r === 'string' ? r : (r.item || '') + (r.level ? '|' + r.level : ''));
+  const hist = (m.A15_professional_history || []).slice(-3).reverse();
+  const profBlock = '<div class="card"><h3>专业档案</h3>' +
+    '<div class="kv"><span class="k">专业意见</span><span>' + esc(lastAdvice ? lastAdvice.content : '无') + '</span></div>' +
+    '<div class="kv"><span class="k">活动限制</span><span>' + (m.A9_restrictions && m.A9_restrictions.length
+      ? m.A9_restrictions.map(r => '<span class="chip">' + esc(typeof r === 'string' ? r : r.item) + '</span>').join('')
+      : '无') + '</span></div>' +
+    '<div class="acts"><button class="btn" id="prof-edit">编辑专业档案</button></div>' +
+    '<div id="prof-form" style="display:none;margin-top:10px">' +
+      '<label class="lab">专业意见</label><textarea id="prof-advice" rows="3" style="width:100%">' + esc(lastAdvice ? lastAdvice.content : '') + '</textarea>' +
+      '<label class="lab">活动限制（一行一项，格式：限制内容|禁用或限制）</label><textarea id="prof-restrict" rows="3" style="width:100%">' + esc(restrList.join('\n')) + '</textarea>' +
+      '<label class="lab">修改原因（必填）</label><input id="prof-reason" style="width:100%" placeholder="例：复诊后调整负重限制">' +
+      '<div class="acts"><button class="btn primary" id="prof-save">签名保存</button><span class="hint" id="prof-hint"></span></div>' +
+    '</div>' +
+    (hist.length ? '<div class="note">' + hist.map(h =>
+      esc((h.at || '').slice(0, 10)) + ' · ' + esc(h.by || '') + ' · ' + esc(h.reason || '') +
+      ' · 限制 ' + esc(((h.after && h.after.restrictions) || []).join('、') || '无')).join('<br>') + '</div>' : '') +
+    '<div class="note">修改会追加一条带教练工号与时间的记录，不覆盖历史；下一次判定生效。</div></div>';
+
   box.innerHTML =
     '<div class="head"><h1>' + esc((m.A2_display_name || '').replace(/（合成）/, '')) + '</h1>' +
     '<span>' + esc(m.A1_member_id) + ' · 负责教练 ' + esc(coach.name) + '（' + esc(coach.id) + '）' + (goal ? ' · 目标 ' + esc(goal) : '') + '</span></div>' +
@@ -400,6 +420,7 @@ function renderDetail() {
     '</div>' +
     reviewBlock +
     fuBlock +
+    profBlock +
     '<div class="card"><h3>训练计划</h3>' +
       (plan ? '<div class="kv"><span class="k">版本</span><span>' + esc(plan.version) + ' · ' + esc(plan.status) + '</span></div>' +
               '<div class="kv"><span class="k">训练</span><span>' + esc(plan.training || '—') + '</span></div>' +
@@ -413,6 +434,59 @@ function renderDetail() {
     '</div>' +
     timeline +
     '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。</div>';
+
+  const profEdit = document.getElementById('prof-edit');
+  if (profEdit) profEdit.onclick = () => {
+    const f = document.getElementById('prof-form');
+    if (f) f.style.display = f.style.display === 'none' ? 'block' : 'none';
+  };
+  const profSave = document.getElementById('prof-save');
+  if (profSave) profSave.onclick = () => {
+    const target = list.find(x => x.A1_member_id === selected);
+    const hint = document.getElementById('prof-hint');
+    if (!target) return;
+    const advice = (document.getElementById('prof-advice').value || '').trim();
+    const lines = (document.getElementById('prof-restrict').value || '').split(/\n+/).map(s => s.trim()).filter(Boolean);
+    const reason = (document.getElementById('prof-reason').value || '').trim();
+    if (!advice) { if (hint) hint.textContent = '请填写专业意见'; return; }
+    if (!reason) { if (hint) hint.textContent = '请填写修改原因'; return; }
+    const now = new Date().toISOString();
+    const by = coach.name + '（' + coach.id + '）';
+    const prevAdvice = (target.A8_professional_advice || []).slice(-1)[0];
+    const before = {
+      advice: prevAdvice ? prevAdvice.content : '',
+      restrictions: (target.A9_restrictions || []).map(r => typeof r === 'string' ? r : (r.item || ''))
+    };
+    const adviceId = 'A8-' + String((target.A8_professional_advice || []).length + 1).padStart(2, '0');
+    target.A8_professional_advice = (target.A8_professional_advice || []).concat([{
+      advice_id: adviceId, content: advice, by: by, date: now.slice(0, 10),
+      prohibit_training: false, source: '专业人员', recorded_at: now, recorded_by: by
+    }]);
+    const restrictions = lines.map(s => {
+      const parts = s.split('|');
+      return { item: (parts[0] || '').trim(), level: (parts[1] || '限制').trim(), ref: adviceId,
+        source: '专业人员', recorded_at: now, recorded_by: by };
+    }).filter(r => r.item);
+    target.A9_restrictions = restrictions;
+    target.A9_confirmation = {
+      status: restrictions.length ? 'confirmed' : 'confirmed_none',
+      source: '专业人员', recorded_at: now, recorded_by: by
+    };
+    target.A15_professional_history = (target.A15_professional_history || []).concat([{
+      at: now, by: by, reason: reason, advice_id: adviceId,
+      before: before, after: { advice: advice, restrictions: restrictions.map(r => r.item) }
+    }]);
+    localStorage.setItem(KEY, JSON.stringify(state));
+    render();
+    pushState(st => {
+      const mm = (st.members || []).find(x => x.A1_member_id === target.A1_member_id);
+      if (!mm) return;
+      mm.A8_professional_advice = target.A8_professional_advice;
+      mm.A9_restrictions = target.A9_restrictions;
+      mm.A9_confirmation = target.A9_confirmation;
+      mm.A15_professional_history = target.A15_professional_history;
+    });
+  };
 
   const fuBtn = document.getElementById('fu-handle');
   if (fuBtn) fuBtn.onclick = () => {
