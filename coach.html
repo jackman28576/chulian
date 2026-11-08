@@ -373,6 +373,17 @@ function renderDetail() {
       ).join('') + '</div>'
     : '';
 
+  const redFollowups = (m.C4_followups || []).filter(f => (f.red_flags || []).length && !f.handled_at);
+  let fuBlock = '';
+  if (redFollowups.length) {
+    const r = redFollowups[redFollowups.length - 1];
+    fuBlock = '<div class="card"><h3>随访待处理</h3>' +
+      '<div class="kv"><span class="k">红色信号</span><span>' + r.red_flags.map(esc).join('、') + '</span></div>' +
+      '<div class="kv"><span class="k">随访</span><span>' + esc((r.recorded_at || '').slice(0, 10)) + ' · ' + esc(r.content || '') + '</span></div>' +
+      '<label class="lab">处理意见</label><input id="fu-note" placeholder="例：已电话确认，先暂停负重，下次复核" style="width:100%">' +
+      '<div class="acts"><button class="btn primary" id="fu-handle">确认处理</button><span class="hint" id="fu-hint"></span></div></div>';
+  }
+
   box.innerHTML =
     '<div class="head"><h1>' + esc((m.A2_display_name || '').replace(/（合成）/, '')) + '</h1>' +
     '<span>' + esc(m.A1_member_id) + ' · 负责教练 ' + esc(coach.name) + '（' + esc(coach.id) + '）' + (goal ? ' · 目标 ' + esc(goal) : '') + '</span></div>' +
@@ -388,6 +399,7 @@ function renderDetail() {
          : '<div class="empty" style="padding:0">会员还没有填报今天的状态。</div>') +
     '</div>' +
     reviewBlock +
+    fuBlock +
     '<div class="card"><h3>训练计划</h3>' +
       (plan ? '<div class="kv"><span class="k">版本</span><span>' + esc(plan.version) + ' · ' + esc(plan.status) + '</span></div>' +
               '<div class="kv"><span class="k">训练</span><span>' + esc(plan.training || '—') + '</span></div>' +
@@ -401,6 +413,27 @@ function renderDetail() {
     '</div>' +
     timeline +
     '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。</div>';
+
+  const fuBtn = document.getElementById('fu-handle');
+  if (fuBtn) fuBtn.onclick = () => {
+    const note = (document.getElementById('fu-note').value || '').trim();
+    const fuHint = document.getElementById('fu-hint');
+    if (!note) { if (fuHint) fuHint.textContent = '请写处理意见'; return; }
+    const target = list.find(x => x.A1_member_id === selected);
+    const rec = (target.C4_followups || []).filter(f => (f.red_flags || []).length && !f.handled_at).slice(-1)[0];
+    if (!rec) return;
+    rec.handled_at = new Date().toISOString();
+    rec.handled_by = coach.name + '（' + coach.id + '）';
+    rec.handling = note;
+    localStorage.setItem(KEY, JSON.stringify(state));
+    render();
+    pushState(st => {
+      const mm = (st.members || []).find(x => x.A1_member_id === target.A1_member_id);
+      if (!mm) return;
+      const rr = (mm.C4_followups || []).filter(f => f.followup_id === rec.followup_id)[0];
+      if (rr) { rr.handled_at = rec.handled_at; rr.handled_by = rec.handled_by; rr.handling = rec.handling; }
+    });
+  };
 
   const copyBtn = document.getElementById('rv-copy');
   if (copyBtn) copyBtn.onclick = () => {
