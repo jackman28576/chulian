@@ -33,6 +33,11 @@
   main{position:relative;z-index:2;display:grid;grid-template-columns:320px 1fr;height:calc(100% - 61px)}
   .rail{border-right:1px solid var(--line);overflow-y:auto;padding:16px}
   .rail h2{font-size:11px;letter-spacing:.14em;color:var(--muted);font-weight:500;margin:0 0 10px}
+  .rail-filters{display:flex;flex-direction:column;gap:6px;margin:0 0 10px}
+  .rail-filters > input{width:100%;background:rgba(255,255,255,.06);border:1px solid var(--line);border-radius:9px;color:var(--ink);padding:7px 10px;font-size:12px;outline:none}
+  .rail-filters > input::placeholder{color:var(--muted)}
+  .rail-filters label{display:flex;align-items:center;gap:6px;font-size:11.5px;color:var(--muted)}
+  .rail-filters label input{width:auto}
   .m{display:flex;gap:10px;align-items:center;padding:11px 12px;border-radius:14px;cursor:pointer;
      border:1px solid transparent;margin-bottom:8px;transition:.2s}
   .m:hover{background:rgba(255,255,255,.05)}
@@ -110,6 +115,7 @@
   <div class="tabs" id="tabs"></div>
   <div class="spacer"></div>
   <span class="pending" id="pending"></span>
+  <a class="link" id="exportBtn" href="#" style="display:none">导出记录</a>
   <a class="link" id="logout" href="#" style="display:none">退出</a>
   <a class="link" href="index.html">返回会员端 →</a>
 </div>
@@ -117,6 +123,10 @@
 <main>
   <aside class="rail">
     <h2>我负责的会员</h2>
+    <div class="rail-filters">
+      <input id="q" placeholder="搜索姓名或编号">
+      <label><input type="checkbox" id="onlyReview"> 只看待复核</label>
+    </div>
     <div id="list"></div>
     <div class="tools">
       <div class="rail-h">演示工具</div>
@@ -260,10 +270,16 @@ function renderTabs() {
 
 function renderList() {
   const box = document.getElementById('list');
-  const list = membersOf(coachId);
+  const qEl = document.getElementById('q');
+  const onlyEl = document.getElementById('onlyReview');
+  const q = qEl ? qEl.value.trim() : '';
+  const only = !!(onlyEl && onlyEl.checked);
+  let list = membersOf(coachId);
+  if (q) list = list.filter(m => String(m.A2_display_name || '').includes(q) || String(m.A1_member_id || '').includes(q));
+  if (only) list = list.filter(m => { const v = m.A16_last_verdict; return v && v.code === 'review' && !currentReview(m); });
   box.innerHTML = '';
   if (!list.length) {
-    box.innerHTML = '<div class="empty">这个教练还没有绑定会员。</div>';
+    box.innerHTML = '<div class="empty">' + (q || only ? '没有匹配的会员。' : '这个教练还没有绑定会员。') + '</div>';
     return;
   }
   list.forEach(m => {
@@ -446,6 +462,22 @@ function renderDetail() {
       if (!m.C5_reviews.some(r => r.review_id === rvObj.review_id)) m.C5_reviews.push(rvObj);
     });
   };
+
+  const exp = document.getElementById('exportBtn');
+  if (exp) {
+    exp.style.display = selected ? 'inline' : 'none';
+    exp.onclick = e => {
+      e.preventDefault();
+      const member = list.find(x => x.A1_member_id === selected);
+      if (!member) return;
+      const blob = new Blob([JSON.stringify(member, null, 2)], { type: 'application/json' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = (member.A1_member_id || 'member') + '-record.json';
+      a.click();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    };
+  }
 }
 
 function render() {
@@ -454,6 +486,13 @@ function render() {
   renderDetail();
   refreshBadge();
 }
+
+(function bindFilters(){
+  const qEl = document.getElementById('q');
+  const onlyEl = document.getElementById('onlyReview');
+  if (qEl) qEl.oninput = renderList;
+  if (onlyEl) onlyEl.onchange = renderList;
+})();
 
 function refreshBadge() {
   const n = membersOf(coachId).filter(m => {
