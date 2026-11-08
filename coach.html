@@ -138,9 +138,9 @@
       <div class="rail-h">演示工具</div>
       <div class="lan" id="lanUrl">—</div>
       <div class="qr" id="lanQr"></div>
-      <div class="qr-note" id="qrNote">扫码进入会员端 / 教练端</div>
+      <div class="qr-note" id="qrNote">扫码进入会员端</div>
       <div class="acts">
-        <button class="btn" id="copyUrl">复制双端地址</button>
+        <button class="btn" id="copyUrl">复制手机地址</button>
         <button class="btn" id="refreshUrl">刷新地址</button>
         <button class="btn" id="resetData">重置数据</button>
       </div>
@@ -155,7 +155,7 @@
     <label>工号后四位<input id="lg-pin" inputmode="numeric" maxlength="4" placeholder="4 位数字"></label>
     <button id="lg-go">进入教练端</button>
     <div class="hint bad" id="lg-err"></div>
-    <div class="hint" id="lg-ver">演示数据 v3.2 · 本地双端二维码</div>
+    <div class="hint" id="lg-ver">演示数据 v3.3 · 扫码直接进会员端</div>
   </div>
 </div>
 
@@ -266,8 +266,8 @@ function initTools() {
   };
 
   const applyInfo = d => {
-    const join = d && (d.join_url || (d.lan_url ? d.lan_url.replace(/\/$/, '') + '/join.html' : ''));
-    if (!join) {
+    const target = d && (d.member_url || d.lan_url);
+    if (!target) {
       currentJoin = '';
       if (urlEl) urlEl.textContent = '当前为线上页面';
       if (noteEl) noteEl.textContent = '本地互联二维码需在电脑上运行 start.bat';
@@ -276,12 +276,12 @@ function initTools() {
       lastUrl = '';
       return;
     }
-    currentJoin = join;
-    if (urlEl) urlEl.textContent = join.replace(/^https?:\/\//, '');
-    if (noteEl) noteEl.textContent = '扫码进入会员端 / 教练端';
-    if (join !== lastUrl) {
-      drawQr(join);
-      lastUrl = join;
+    currentJoin = target;
+    if (urlEl) urlEl.textContent = target.replace(/^https?:\/\//, '');
+    if (noteEl) noteEl.textContent = '扫码进入会员端';
+    if (target !== lastUrl) {
+      drawQr(target);
+      lastUrl = target;
     }
   };
 
@@ -520,7 +520,7 @@ function renderDetail() {
              : '<div class="empty" style="padding:0">还没有到店记录。</div>') +
     '</div>' +
     timeline +
-    '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。数据版本 v3.2。</div>';
+    '<div class="note">演示环境：数据由本地服务同步；账号体系为演示级口令，真实部署需要接入场馆账号。数据版本 v3.3。</div>';
 
   const profEdit = document.getElementById('prof-edit');
   if (profEdit) profEdit.onclick = () => {
