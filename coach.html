@@ -193,6 +193,12 @@ const COACHES = [
 ];
 const MAP = { 'L-0231': 'T-102', 'L-0247': 'T-102', 'L-0305': 'T-108' };
 const TONE = { pause: 'stop', review: 'warn', supplement: 'info', continue: 'ok' };
+function fmtDateTime(iso){
+  if(!iso) return '—';
+  const d = new Date(iso);
+  if(isNaN(d)) return String(iso);
+  return d.toLocaleString('zh-CN', {timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',second:'2-digit',hour12:false});
+}
 
 let state = null;
 try { state = JSON.parse(localStorage.getItem(KEY) || 'null'); } catch (e) {}
@@ -424,7 +430,7 @@ function renderDetail() {
   const coach = COACHES.find(c => c.id === coachId) || {};
   const goal = (m.A4_goal || []).join('、');
   const pains = (m.A9_restrictions || []).map(r => typeof r === 'string' ? r : [r.item, r.level].filter(Boolean).join(' · '));
-  const when = v && v.at ? new Date(v.at).toLocaleString('zh-CN', { hour12: false }) : '';
+  const when = v && v.at ? new Date(v.at).toLocaleString('zh-CN', { timeZone:'Asia/Shanghai', hour12: false }) : '';
   const b = m.B_current || {};
   const feel = b.B2_body_feeling || {};
   const sleepH = (b.B4_sleep_last || {}).hours;
@@ -436,7 +442,7 @@ function renderDetail() {
   const vReasons = (v && Array.isArray(v.reasons)) ? v.reasons : [];
 
   let reviewLine = '还没有复核记录';
-  if (rv) reviewLine = (rv.decision === 'approved' ? '已复核通过' : '已否决') + ' · ' + esc(rv.recorded_by || '教练') + ' · ' + esc((rv.recorded_at || '').slice(0, 16).replace('T', ' '));
+  if (rv) reviewLine = (rv.decision === 'approved' ? '已复核通过' : '已否决') + ' · ' + esc(rv.recorded_by || '教练') + ' · ' + esc(fmtDateTime(rv.recorded_at));
   else if (v && v.code === 'review') reviewLine = '待复核';
 
   let reviewBlock;
@@ -444,7 +450,7 @@ function renderDetail() {
     reviewBlock = '<div class="card"><h3>复核记录</h3>' +
       '<div class="kv"><span class="k">结论</span><span>' + (rv.decision === 'approved' ? '通过' : '否决') + '</span></div>' +
       '<div class="kv"><span class="k">复核人</span><span>' + esc(rv.recorded_by || '—') + '</span></div>' +
-      '<div class="kv"><span class="k">时间</span><span>' + esc((rv.recorded_at || '').slice(0, 16).replace('T', ' ')) + '</span></div>' +
+      '<div class="kv"><span class="k">时间</span><span>' + esc(fmtDateTime(rv.recorded_at)) + '</span></div>' +
       '<div class="kv"><span class="k">意见</span><span>' + esc(rv.note || '—') + '</span></div>' +
       '<div class="acts"><button class="btn" id="rv-copy">复制复核回执</button><span class="hint" id="rv-copy-hint"></span></div></div>';
   } else if (v && v.code === 'review') {
@@ -479,7 +485,7 @@ function renderDetail() {
   events.sort((a, c) => a.t - c.t);
   const timeline = events.length
     ? '<div class="card"><h3>时间线</h3>' + events.slice(-8).map(e =>
-        '<div class="tl"><span class="tt">' + (e.t ? new Date(e.t).toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '—') + '</span>' +
+        '<div class="tl"><span class="tt">' + (e.t ? new Date(e.t).toLocaleString('zh-CN', { timeZone:'Asia/Shanghai', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit', hour12: false }) : '—') + '</span>' +
         '<span class="tl-dot"></span><span class="tl-body"><b>' + esc(e.label) + '</b>' + (e.text ? esc(e.text) : '') + '</span></div>'
       ).join('') + '</div>'
     : '';
