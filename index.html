@@ -1192,7 +1192,9 @@ function reviewNotify(m, force){
   state.reviewSeen[m.A1_member_id] = latest.review_id;
   const coach = coachFor(m);
   const who = latest.recorded_by || (coach ? coach.name : '教练');
-  const when = (latest.recorded_at || '').slice(0, 16).replace('T', ' ');
+  const when = latest.recorded_at
+    ? new Date(latest.recorded_at).toLocaleString('zh-CN', {timeZone:'Asia/Shanghai',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hour12:false})
+    : '—';
   if(latest.decision === 'approved'){
     state.stage = 'reviewed';
     const row = bubble('a', `${who} 已复核通过（${when}）。\n意见：${latest.note || '—'}\n复核不改动活动限制，那条限制仍然生效。`);
