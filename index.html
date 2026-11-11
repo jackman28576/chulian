@@ -3237,8 +3237,9 @@ setTimeout(consumeReviewReceipt, 900);
     }
     const done = checked.length + (breathDone ? 1 : 0);
     const pct = total ? Math.round(done / total * 100) : 0;
-    const frozen = !!(q && q.status === 'frozen');
-    return {q: q, items: items, total: total, checked: checked, breathDone: breathDone, done: done, pct: pct, frozen: frozen};
+    const gate = planGate(m, assess(m));
+    const frozen = !gate[0];
+    return {q: q, items: items, total: total, checked: checked, breathDone: breathDone, done: done, pct: pct, frozen: frozen, gateReason: gate[1] || ''};
   }
   function saveQuestState(m, checked, breathDone, message){
     const st = questState(m);
@@ -3298,15 +3299,16 @@ setTimeout(consumeReviewReceipt, 900);
     const st = questState(m);
     const q = st.q;
     const plan = (m.C2_plans || []).slice(-1)[0];
+    const frozenReason = st.frozen ? (st.gateReason || (q && q.reason) || '当前状态未通过计划门控') : '';
     window.__sceneTask = {progress: st.frozen ? 0 : st.pct, frozen: st.frozen, complete: !st.frozen && st.pct >= 100, updated: Date.now()};
-    $('q-state').textContent = q ? (st.frozen ? '已冻结' : q.badge) : (plan ? '待打卡' : '');
+    $('q-state').textContent = st.frozen ? '已冻结' : (q ? (q.badge === '暂不下发' ? '待打卡' : q.badge) : (plan ? '待打卡' : ''));
     if(!plan){
       $('q-body').innerHTML = '<div class="empty">生成计划后，这里会按动作下发打卡任务。</div>';
       return;
     }
     const running = questBreathEnd > Date.now() && questBreathMember === m.A1_member_id;
     const left = running ? Math.max(0, Math.ceil((questBreathEnd - Date.now()) / 1000)) : 60;
-    const badge = q ? q.badge : '继续积累';
+    const badge = q ? (q.badge === '暂不下发' && !st.frozen ? '继续积累' : q.badge) : '继续积累';
     const score = q ? q.score : 0;
     const qid = q ? q.quest_id : '待下发';
     const itemsHtml = st.items.map(name => {
@@ -3316,7 +3318,7 @@ setTimeout(consumeReviewReceipt, 900);
     }).join('');
     const leds = Array.from({length: 12}, (_, i) => `<i class="${i < Math.round(st.pct / 100 * 12) ? 'on' : ''}"></i>`).join('');
     $('q-body').innerHTML =
-      `<div class="arow" style="border-top:0;padding-top:0"><span>${st.frozen ? '任务冻结 · ' + esc(q.reason) : '任务进行中 · 关联 ' + esc((q && q.plan_version) || plan.version)}</span>
+      `<div class="arow" style="border-top:0;padding-top:0"><span>${st.frozen ? '任务冻结 · ' + esc(frozenReason) : '任务进行中 · 关联 ' + esc((q && q.plan_version) || plan.version)}</span>
         <span class="st ${st.frozen ? 'cancelled' : 'booked'}">${st.frozen ? '冻结' : '进行中'}</span></div>
       <div class="bigbar"><i style="width:${st.pct}%"></i></div>
       <div class="wrapnote">已完成 ${st.done}/${st.total} 项 · 场景灯带 ${st.pct}%</div>
@@ -3544,7 +3546,8 @@ setTimeout(consumeReviewReceipt, 900);
     const mv = (m.C8_movements || []).slice(-1)[0];
     set('adMove', mv ? mv.rank : '未评估');
     const q = (m.C9_quests || []).slice(-1)[0];
-    set('adQuest', q ? (q.status === 'frozen' ? '冻结' : q.progress_pct + '%') : '未开始');
+    const qs = window.__sceneTask || {};
+    set('adQuest', qs.frozen ? '冻结' : (q ? (q.progress_pct + '%') : '未开始'));
     const red = (m.C4_followups || []).filter(f => (f.red_flags || []).length && !f.handled_at);
     set('adFollow', red.length ? ('待处理 ' + red.length) : ((m.C4_followups || []).length ? (m.C4_followups.length + ' 次') : '未随访'));
   }
