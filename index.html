@@ -951,13 +951,23 @@ const SYS_PROMPT = `你是「初练」，健身场馆的会员健康档案助手
 身份：熟悉会员档案、训练安排与场馆规则，负责记录、解释与转交；医生和教练的职责不在你这里。
 说话：短句，一次说一件事；先复述再追问；数字具体；不确定就问；不哄人也不吓人。
 边界：不诊断、不判断病因、不解读检查报告、不生成治疗或康复处方、不作安全承诺。
-把用户说的话转成结构化字段和意图，供确定性规则引擎使用。只输出 JSON：
-{"intent":"visit|review|plan|feedback|diagnosis|switch|appointment|smalltalk",
+把用户说的话转成结构化字段、意图和可执行动作，供应用执行。只输出 JSON：
+{"intent":"visit|review|plan|feedback|diagnosis|switch|appointment|smalltalk|agent",
  "fields":{"fatigue":数字或null,"sleep_hours":数字或null,"pain":数字或null,
            "pain_text":"部位描述","acute_signals":[],
            "action":"create|reschedule|cancel 或 null",
            "start_at":"ISO 时间或 null","service":"项目名或 null","reason":"原因或 null"},
- "ack":"一句自然的回话，两行以内，不要下结论，也不要提问（追问由系统决定）"}
+ "ack":"一句自然的回话，两行以内，不要下结论，也不要提问（追问由系统决定）",
+ "reply":"可直接给会员看的中文回答，没有就空字符串",
+ "action":{"name":"answer|open_screen|update_profile|create_plan|appointment|add_followup|add_feedback","args":{}}}
+可用动作：
+- answer：直接回答档案/计划/预约/动作/随访/状态等问题，reply 写回答；只能使用快照中的数据，不编造。
+- open_screen：args.screen 为 home/state/plan/visits/appointment/movement/quest/followup。
+- update_profile：可改 goal 数组、years、level、days_per_week、minutes_per_session、diet、sleep_hours、name；活动限制和专业意见不能由会员改。
+- create_plan：制定/重新制定训练计划；复核未通过时不要调用。
+- appointment：args.action 为 create/reschedule/cancel，args 带 start_at/service/reason。
+- add_followup：args 带 pain_score/function_score/adherence_pct/sleep_hours/worsening。
+- add_feedback：args 带 completion_pct/fatigue 等。
 规则：fatigue/pain 0-10；sleep_hours 以小时计，半小时记 0.5；
 用户没有明确说出数字时，fatigue/sleep_hours/pain 一律填 null，禁止根据语气推测；
 只有明确说出胸痛/胸口疼/胸闷/心慌/晕倒才填 acute_signals；
@@ -967,7 +977,7 @@ const SYS_PROMPT = `你是「初练」，健身场馆的会员健康档案助手
 说"预约/约课/帮我约/约一节"→appointment，action 填 create；"改约/换个时间/改成"→reschedule；"取消预约/不去了"→cancel；
 今天日期：${new Date().toLocaleDateString('zh-CN',{year:'numeric',month:'2-digit',day:'2-digit',weekday:'long'})}。把"周三下午三点""明天上午十点"换算成 ISO 时间（+08:00）填 start_at，没说时间填 null；
 闲聊或与训练无关时 intent 填 smalltalk，ack 简短回应并引回今天的状态。
-分档结论由引擎输出，你不写。`;
+分档结论由引擎输出，你不写；动作只选一个，信息不足时 action 填 answer，reply 里追问。`;
 
 function llmCfg(){
   try { return JSON.parse(localStorage.getItem(CFG_KEY) || '{}'); } catch(e) { return {}; }
@@ -989,12 +999,22 @@ function memberBrief(m) {
   const plan = (m.C2_plans || []).slice(-1)[0];
   if (plan) {
     const s = plan.schedule || {};
-    bits.push('当前计划 ' + plan.version + '：每周 ' + (s.days_per_week || '—') + ' 次，' + (plan.actions || []).length + ' 个动作，限制 ' + ((plan.limitations || []).slice(0, 2).join('、') || '无'));
+    bits.push('当前计划 ' + plan.version + '：每周 ' + (s.days_per_week || '—') + ' 次，' + (plan.actions || []).length + ' 个动作，限制 ' + ((plan.limitations || []).slice(0, 2).join('、') || '无') +
+      '；训练 ' + String(plan.training || '').slice(0, 100) + '；饮食 ' + String(plan.diet || '').slice(0, 80) + '；睡眠 ' + String(plan.sleep || '').slice(0, 60));
   }
   const live = (m.C3_appointments || [])
     .filter(a => (a.status === 'booked' || a.status === 'rescheduled') && Date.parse(a.start_at) > Date.now())
     .sort((a, b) => Date.parse(a.start_at) - Date.parse(b.start_at))[0];
   if (live) bits.push('下次预约 ' + String(live.start_at).slice(5, 16).replace('T', ' ') + ' ' + live.service + (live.coach ? '，教练 ' + live.coach : ''));
+  const mv = (m.C8_movements || []).slice(-1)[0];
+  if (mv) bits.push('上次动作 ' + (mv.exercise || '—') + '：' + (mv.rank || '—') + '，稳定性 ' + (mv.tempo_stability_pct ?? '—') + '%，左右差 ' + (mv.left_right_difference_pct ?? '—') + '%');
+  const fu = (m.C4_followups || []).slice(-1)[0];
+  if (fu) bits.push('最近随访：疼痛 ' + (fu.pain_score ?? '—') + '/10、功能 ' + (fu.function_score ?? '—') + '/10');
+  const exp = m.A5_experience || {};
+  bits.push('训练经验 ' + (exp.years ?? '—') + ' 年、' + (exp.equipment || '—'));
+  bits.push('饮食偏好 ' + ((m.A10_diet && m.A10_diet.text) || '—'));
+  const avail = m.A14_availability || {};
+  bits.push('每周 ' + (avail.days_per_week ?? '—') + ' 次、每次 ' + (avail.minutes_per_session ?? '—') + ' 分钟');
   const recent = (state.recentUser || []).slice(-3);
   if (recent.length) bits.push('会员最近说 ' + recent.join(' / '));
   return bits.join('；');
@@ -1063,7 +1083,16 @@ function normalizeLLM(data) {
   if(typeof f.start_at === 'string' && !isNaN(Date.parse(f.start_at))) clean.start_at = f.start_at;
   if(typeof f.service === 'string' && f.service.trim()) clean.service = f.service.trim();
   if(typeof f.reason === 'string' && f.reason.trim()) clean.reason = f.reason.trim();
-  return {intent: String(data.intent || '').toLowerCase(), fields: clean, ack: String(data.ack || '')};
+  const rawAction = data.action && typeof data.action === 'object' ? data.action : null;
+  const actionName = rawAction ? String(rawAction.name || '').toLowerCase() : '';
+  const actionArgs = rawAction && rawAction.args && typeof rawAction.args === 'object' ? rawAction.args : {};
+  return {
+    intent: String(data.intent || '').toLowerCase(),
+    fields: clean,
+    ack: String(data.ack || ''),
+    reply: String(data.reply || data.ack || ''),
+    action: actionName ? {name: actionName, args: actionArgs} : null
+  };
 }
 const NUM_CUE = {
   fatigue: /(?:疲劳|累|困|疲惫|乏力|没劲|劲)[^\d]{0,6}(?:\d|[一二两三四五六七八九十])/,
@@ -1355,7 +1384,7 @@ function actionChip(row, label, fn){
 async function say(text){
   state.recentUser = (state.recentUser || []).concat([String(text || '')]).slice(-3);
   bubble('me', text);
-  if(agentScreenKey(text)){ reply(text, null); return; }
+  if(agentScreenKey(text) || isProfileCommand(text)){ reply(text, null); return; }
   const m = db();
   const cfg = llmCfg();
   const mode = (cloud && cloudModel && !cfg.key) ? '云模型' : (cfg.key ? '自有模型' : '离线规则');
@@ -1430,7 +1459,7 @@ function extract(t){
 function agentScreenKey(text){
   const t = String(text || '').trim();
   const nav = /打开|进入|切到|切换到|跳到|带我去|回到|显示|展示|查看|查一下|看一下|看看/.test(t);
-  const query = /我的.*(计划|预约|动作|运动|随访|复查|到店|状态|档案|任务)|预约记录|到店记录|动作怎么样|动作评估结果|计划是什么|今天练什么|下次.*(预约|到店)|最近.*随访|我.*预约.*(什么|哪|几点|记录)|练了几次|到店几次|能不能练|我.*状态.*(怎么样|如何|是什么|什么情况)|状态怎么样|状态如何|现在状态/.test(t);
+  const query = /我的.*(计划|预约|动作|运动|随访|复查|到店|状态|档案|任务)|预约记录|到店记录|动作怎么样|动作评估结果|计划是什么|今天.*练什么|应该练什么|练什么好|今天练什么|下次.*(预约|到店)|最近.*随访|我.*预约.*(什么|哪|几点|记录)|练了几次|到店几次|能不能练|我.*状态.*(怎么样|如何|是什么|什么情况)|状态怎么样|状态如何|现在状态/.test(t);
   if(!(nav || query)) return null;
   if(/计划|练什么|训练安排/.test(t)) return 'plan';
   if(/预约|约课|场馆|课程/.test(t)) return 'appointment';
@@ -1461,6 +1490,192 @@ function agentQuality(mv){
   return {score:q, label:q >= 85 ? '优秀' : q >= 70 ? '良好' : q >= 55 ? '需巩固' : '需复测'};
 }
 
+function isProfileCommand(text){
+  const t = String(text || '');
+  return /修改档案|改档案|更新档案|编辑档案|改一下我的|把我的.*(改成|改为|换成)|目标.*(改成|改为|换成|调整为|设为)|每周.*次|每次.*分钟|饮食.*(改成|改为|换成|调整为)|睡眠.*(改成|改为|换成|调整为)|训练经验.*(改成|改为)|水平.*(改成|改为)|称呼.*(改成|改为)|名字.*(改成|改为)|名字叫|活动限制.*(改成|改为)/.test(t);
+}
+
+function agentProfileEdit(text){
+  if(!isProfileCommand(text)) return false;
+  const t = String(text || '');
+  const m = db();
+  if(!m) return false;
+  if(/活动限制.*(改成|改为)/.test(t)){
+    bubble('a', '活动限制和专业意见只能由教练或专业人员修改；会员端不能自行放开。');
+    return true;
+  }
+  const changed = [];
+  let mt;
+  if((mt = t.match(/目标(?:改成|改为|换成|调整为|设为)\s*([^，。；;]+)/))){
+    m.A4_goal = mt[1].split(/[、,，\s]+/).filter(Boolean);
+    changed.push('目标：' + m.A4_goal.join('、'));
+  }
+  if((mt = t.match(/训练经验(?:改成|改为)?\s*(\d+)\s*年/))){
+    m.A5_experience = Object.assign({}, m.A5_experience || {}, {years: Math.max(0, Math.min(40, +mt[1]))});
+    changed.push('训练经验：' + m.A5_experience.years + ' 年');
+  }
+  if((mt = t.match(/水平(?:改成|改为)\s*(初|中|高)/))){
+    const lv = mt[1] === '高' ? '高级' : mt[1] === '中' ? '中级' : '初级';
+    m.A5_experience = Object.assign({}, m.A5_experience || {}, {equipment: lv});
+    changed.push('训练水平：' + lv);
+  }
+  if((mt = t.match(/每周(?:练|训练)?\s*([1-7一二三四五六七])\s*次/))){
+    const n = /[一二三四五六七]/.test(mt[1]) ? '一二三四五六七'.indexOf(mt[1]) + 1 : +mt[1];
+    m.A14_availability = Object.assign({}, m.A14_availability || {}, {days_per_week: n});
+    changed.push('每周训练：' + n + ' 次');
+  }
+  if((mt = t.match(/每次\s*(\d{2,3})\s*分钟/))){
+    m.A14_availability = Object.assign({}, m.A14_availability || {}, {minutes_per_session: Math.max(15, Math.min(120, +mt[1]))});
+    changed.push('每次时长：' + m.A14_availability.minutes_per_session + ' 分钟');
+  }
+  if((mt = t.match(/饮食(?:偏好)?(?:改成|改为|换成|调整为)\s*([^，。；;]+)/))){
+    m.A10_diet = Object.assign({}, m.A10_diet || {}, {text: mt[1].trim()});
+    changed.push('饮食偏好：' + m.A10_diet.text);
+  }
+  if((mt = t.match(/睡眠(?:目标|时间|偏好)?(?:改成|改为|换成|调整为)\s*(\d+(?:\.\d+)?)\s*(?:小时|h)/))){
+    m.A11_sleep_profile = Object.assign({}, m.A11_sleep_profile || {}, {average_hours: +mt[1]});
+    changed.push('睡眠目标：' + m.A11_sleep_profile.average_hours + ' 小时');
+  }
+  if((mt = t.match(/(?:称呼|名字|姓名)(?:改成|改为|叫)\s*([^，。；;]+)/))){
+    const name = mt[1].trim();
+    m.A2_display_name = /（合成）/.test(name) ? name : name + '（合成）';
+    changed.push('称呼：' + name);
+  }
+  if(!changed.length){
+    bubble('a', '可以改这几项：目标、训练经验、水平、每周次数、每次时长、饮食偏好、睡眠目标、称呼。活动限制只能教练改。你想改哪一项？');
+    return true;
+  }
+  save();
+  if(typeof window.__onDataChange === 'function') window.__onDataChange();
+  bubble('a', '档案已更新：' + changed.join('；') + '。如果计划需要按新档案重排，说“重新出计划”。');
+  return true;
+}
+
+function applyProfileArgs(args){
+  const m = db();
+  if(!m) return [];
+  const changed = [];
+  if(args.goal !== undefined){
+    const goals = Array.isArray(args.goal) ? args.goal : String(args.goal || '').split(/[、,，\s]+/);
+    m.A4_goal = goals.map(String).filter(Boolean);
+    if(m.A4_goal.length) changed.push('目标：' + m.A4_goal.join('、'));
+  }
+  if(args.years !== undefined){
+    m.A5_experience = Object.assign({}, m.A5_experience || {}, {years: Math.max(0, Math.min(40, Number(args.years) || 0))});
+    changed.push('训练经验：' + m.A5_experience.years + ' 年');
+  }
+  if(args.level !== undefined){
+    const lv = String(args.level);
+    const map = lv.indexOf('高') === 0 ? '高级' : lv.indexOf('中') === 0 ? '中级' : '初级';
+    m.A5_experience = Object.assign({}, m.A5_experience || {}, {equipment: map});
+    changed.push('训练水平：' + map);
+  }
+  if(args.days_per_week !== undefined){
+    const n = Math.max(1, Math.min(7, Number(args.days_per_week) || 2));
+    m.A14_availability = Object.assign({}, m.A14_availability || {}, {days_per_week: n});
+    changed.push('每周训练：' + n + ' 次');
+  }
+  if(args.minutes_per_session !== undefined){
+    const n = Math.max(15, Math.min(120, Number(args.minutes_per_session) || 50));
+    m.A14_availability = Object.assign({}, m.A14_availability || {}, {minutes_per_session: n});
+    changed.push('每次时长：' + n + ' 分钟');
+  }
+  if(args.diet !== undefined){
+    const text = String(args.diet || '').trim();
+    m.A10_diet = Object.assign({}, m.A10_diet || {}, {text});
+    changed.push('饮食偏好：' + (text || '未提供'));
+  }
+  if(args.sleep_hours !== undefined){
+    const h = Math.max(0, Math.min(24, Number(args.sleep_hours) || 0));
+    m.A11_sleep_profile = Object.assign({}, m.A11_sleep_profile || {}, {average_hours: h});
+    changed.push('睡眠目标：' + h + ' 小时');
+  }
+  if(args.name !== undefined){
+    const name = String(args.name || '').trim();
+    if(name){
+      m.A2_display_name = /（合成）/.test(name) ? name : name + '（合成）';
+      changed.push('称呼：' + name);
+    }
+  }
+  if(changed.length){
+    save();
+    if(typeof window.__onDataChange === 'function') window.__onDataChange();
+  }
+  return changed;
+}
+
+function applyAgentAction(u, text){
+  if(!u || !u.action) return false;
+  const a = u.action;
+  const args = a.args || {};
+  if(a.name === 'answer'){
+    if(/疲劳|累|困|疲惫|乏力|没劲|疼|痛|酸|麻|紧|胀|睡|胸|晕|心慌/.test(text) || (state.need && state.need.length)) return false;
+    if(u.reply) bubble('a', u.reply);
+    return !!u.reply;
+  }
+  if(a.name === 'open_screen'){
+    const screens = ['home','state','plan','visits','appointment','movement','quest','followup'];
+    const aliases = {首页:'home',状态:'state',计划:'plan',到店:'visits',预约:'appointment',动作:'movement',任务:'quest',随访:'followup',训练计划:'plan',个性化计划:'plan'};
+    const raw = String(args.screen || u.screen || '');
+    const screen = screens.includes(raw.toLowerCase()) ? raw.toLowerCase() : (aliases[raw] || '');
+    if(!screens.includes(screen)) return false;
+    if(typeof window.__showScreen === 'function') window.__showScreen(screen);
+    bubble('a', u.reply || '已打开对应页面。');
+    return true;
+  }
+  if(a.name === 'update_profile'){
+    const changed = applyProfileArgs(args);
+    bubble('a', changed.length ? '档案已更新：' + changed.join('；') + '。' : (u.reply || '要改哪一项？可以说目标、训练次数、时长、饮食或睡眠。'));
+    return true;
+  }
+  if(a.name === 'create_plan'){
+    try {
+      const plan = createPlan(db());
+      save(); state.stage = 'planned';
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      bubble('a', u.reply || ('已生成 ' + plan.version + '：训练 ' + (plan.training || '—') + '；饮食 ' + (plan.diet || '—') + '；睡眠 ' + (plan.sleep || '—') + '。'));
+    } catch(err) {
+      bubble('a', u.reply || err.message, null, 'warn');
+    }
+    return true;
+  }
+  if(a.name === 'appointment'){
+    const act = args.action || 'create';
+    try {
+      const rec = appointment(db(), act, {start_at: args.start_at, service: args.service, reason: args.reason, actor: '会员本人'});
+      save();
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      bubble('a', u.reply || ('预约已处理：' + act + (rec && rec.start_at ? ' · ' + rec.start_at : '')));
+    } catch(err) {
+      bubble('a', u.reply || err.message, null, 'warn');
+    }
+    return true;
+  }
+  if(a.name === 'add_followup'){
+    try {
+      const rec = addFollowup(db(), args, '会员本人');
+      save();
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      bubble('a', u.reply || ('随访已记录：疼痛 ' + (rec.pain_score ?? '—') + '/10、功能 ' + (rec.function_score ?? '—') + '/10。'));
+    } catch(err) {
+      bubble('a', u.reply || err.message, null, 'warn');
+    }
+    return true;
+  }
+  if(a.name === 'add_feedback'){
+    try {
+      const out = addFeedback(db(), args);
+      save();
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      bubble('a', u.reply || '训练反馈已记录，计划已按反馈更新。');
+    } catch(err) {
+      bubble('a', u.reply || err.message, null, 'warn');
+    }
+    return true;
+  }
+  return false;
+}
+
 function agentRespond(text){
   const screen = agentScreenKey(text);
   if(!screen) return false;
@@ -1474,8 +1689,15 @@ function agentRespond(text){
   let msg = '';
   if(screen === 'plan'){
     const p = (m.C2_plans || []).slice(-1)[0];
-    msg = p ? `已打开个性化计划。当前 ${p.version}：训练 ${p.training || '—'}；饮食 ${p.diet || '—'}；睡眠 ${p.sleep || '—'}；限制 ${(p.limitations || []).join('、') || '无'}。`
-            : '已打开个性化计划。当前还没有计划，先完成今日判定和教练复核。';
+    const gate = planGate(m, assess(m));
+    const prefix = navigate ? '已打开个性化计划。' : '';
+    if(!gate[0]){
+      msg = prefix + '今天先不要按计划训练：' + gate[1];
+    } else if(p){
+      msg = prefix + `今天按 ${p.version} 练：训练 ${p.training || '—'}；饮食 ${p.diet || '—'}；睡眠 ${p.sleep || '—'}；限制 ${(p.limitations || []).join('、') || '无'}。`;
+    } else {
+      msg = prefix + '当前还没有计划，先完成今日判定和教练复核，再出计划。';
+    }
   } else if(screen === 'appointment'){
     const list = (m.C3_appointments || []).filter(a => a.status === 'booked' || a.status === 'rescheduled').sort((a,b) => Date.parse(a.start_at || 0) - Date.parse(b.start_at || 0));
     const live = list[0];
@@ -1523,6 +1745,8 @@ function reply(text, u){
   // 急性信号一票优先：任何会话态下都先于反馈、出计划、预约等分支
   const acuteNow = (extract(t).acute || []).length > 0;
   if (acuteNow) { state.stage = 'idle'; }
+  if(!acuteNow && u && u.action && applyAgentAction(u, t)) return;
+  if (!acuteNow && agentProfileEdit(t)) return;
   if (!acuteNow && agentRespond(t)) return;
   const apptCommand = /预约|约课|约一节|约个|帮我约|改约到|改到|取消预约|不去了|改个时间/.test(t);
   const faq = !acuteNow && !apptCommand && FAQ.find(x => x.q.test(t));
