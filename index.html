@@ -141,6 +141,8 @@
   .hero h1{margin:0 0 12px;font-size:clamp(30px,4.6vw,46px);line-height:1.16;font-weight:640;letter-spacing:-.02em}
   .hero .sub{margin:0 0 26px;font-size:15px;color:rgba(255,255,255,.76);max-width:34em}
   .glass{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);border-radius:16px;padding:8px 8px 8px 16px;backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px);box-shadow:0 10px 40px rgba(0,0,0,.28)}
+  body.dock-on .hero .glass{display:none}
+  body.dock-on .hero{padding-bottom:calc(130px + env(safe-area-inset-bottom,0px))}
   .glass textarea{flex:1 1 0;min-width:0;width:100%;border:0;background:transparent;resize:none;color:#fff;font:inherit;font-size:15px;line-height:1.5;padding:6px 0;max-height:110px;min-height:24px;outline:none;overflow:hidden}
   .glass textarea::placeholder{color:rgba(255,255,255,.62)}
   .glass .go{width:38px;height:38px;border-radius:12px;background:#fff;color:#0B0E13;display:grid;place-items:center;flex:0 0 38px;transition:transform .2s}
@@ -366,7 +368,6 @@
     .top-right{gap:6px}
     .tbtn{height:28px;padding:0 10px;font-size:12px}
     .hero{padding:0 16px 30px}
-    body[data-screen="home"] .chatcard{min-height:68svh}
     .hero h1{font-size:29px;line-height:1.24;text-shadow:0 2px 26px rgba(0,0,0,.6)}
     .hero .sub{font-size:13.5px;margin-bottom:16px}
     .glass{padding:6px 6px 6px 12px;border-radius:14px}
@@ -2403,9 +2404,7 @@ setTimeout(consumeReviewReceipt, 900);
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
-    const topInput = document.querySelector('.hero .glass');
-    const topGone = !topInput || topInput.getBoundingClientRect().bottom < 0;
-    const dockOn = document.body.dataset.screen === 'home' && y > 80 && topGone;
+    const dockOn = document.body.dataset.screen === 'home' && y > 80;
     dock.classList.toggle('on', dockOn);
     document.body.classList.toggle('dock-on', dockOn);
   };
