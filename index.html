@@ -1355,6 +1355,7 @@ function actionChip(row, label, fn){
 async function say(text){
   state.recentUser = (state.recentUser || []).concat([String(text || '')]).slice(-3);
   bubble('me', text);
+  if(agentScreenKey(text)){ reply(text, null); return; }
   const m = db();
   const cfg = llmCfg();
   const mode = (cloud && cloudModel && !cfg.key) ? '云模型' : (cfg.key ? '自有模型' : '离线规则');
@@ -1426,6 +1427,92 @@ function extract(t){
   return d;
 }
 
+function agentScreenKey(text){
+  const t = String(text || '').trim();
+  const nav = /打开|进入|切到|切换到|跳到|带我去|回到|显示|展示|查看|查一下|看一下|看看/.test(t);
+  const query = /我的.*(计划|预约|动作|运动|随访|复查|到店|状态|档案|任务)|预约记录|到店记录|动作怎么样|动作评估结果|计划是什么|今天练什么|下次.*(预约|到店)|最近.*随访|我.*预约.*(什么|哪|几点|记录)|练了几次|到店几次|能不能练|我.*状态.*(怎么样|如何|是什么|什么情况)|状态怎么样|状态如何|现在状态/.test(t);
+  if(!(nav || query)) return null;
+  if(/计划|练什么|训练安排/.test(t)) return 'plan';
+  if(/预约|约课|场馆|课程/.test(t)) return 'appointment';
+  if(/到店记录|到店历史|训练记录|历史记录|去过|练了几次|到店几次/.test(t)) return 'visits';
+  if(/动作|运动模式|姿态/.test(t)) return 'movement';
+  if(/随访|复查|慢病/.test(t)) return 'followup';
+  if(/虚拟任务|任务|打卡/.test(t)) return 'quest';
+  if(/状态|判定|健康档案|档案|能不能练/.test(t)) return 'state';
+  if(/首页|主页/.test(t)) return 'home';
+  return null;
+}
+
+function agentQuality(mv){
+  if(!mv) return null;
+  const vm = mv.video_metrics || {};
+  const st = Number(mv.tempo_stability_pct);
+  const sym = mv.left_right_difference_pct;
+  const rom = Number(vm.rom_deg);
+  const trunk = Number(vm.trunk_lean_deg);
+  let score = 0, parts = 0;
+  if(isFinite(st)){ score += st * 0.45; parts += 0.45; }
+  if(sym != null && isFinite(Number(sym))){ score += Math.max(0, 100 - Number(sym) * 4) * 0.25; parts += 0.25; }
+  if(isFinite(rom)){ score += Math.min(100, rom / 80 * 100) * 0.2; parts += 0.2; }
+  if(isFinite(trunk)){ score += Math.max(0, 100 - trunk * 4) * 0.1; parts += 0.1; }
+  if(!parts) return null;
+  let q = Math.round(score / parts);
+  if(vm.quality === 'low') q = Math.min(q, 60);
+  return {score:q, label:q >= 85 ? '优秀' : q >= 70 ? '良好' : q >= 55 ? '需巩固' : '需复测'};
+}
+
+function agentRespond(text){
+  const screen = agentScreenKey(text);
+  if(!screen) return false;
+  const t = String(text || '');
+  const navigate = /打开|进入|切到|切换到|跳到|带我去|回到|显示|展示/.test(t);
+  const m = db();
+  const when = iso => {
+    const d = new Date(iso);
+    return isNaN(d) ? (iso || '—') : d.toLocaleString('zh-CN', {timeZone:'Asia/Shanghai', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false});
+  };
+  let msg = '';
+  if(screen === 'plan'){
+    const p = (m.C2_plans || []).slice(-1)[0];
+    msg = p ? `已打开个性化计划。当前 ${p.version}：训练 ${p.training || '—'}；饮食 ${p.diet || '—'}；睡眠 ${p.sleep || '—'}；限制 ${(p.limitations || []).join('、') || '无'}。`
+            : '已打开个性化计划。当前还没有计划，先完成今日判定和教练复核。';
+  } else if(screen === 'appointment'){
+    const list = (m.C3_appointments || []).filter(a => a.status === 'booked' || a.status === 'rescheduled').sort((a,b) => Date.parse(a.start_at || 0) - Date.parse(b.start_at || 0));
+    const live = list[0];
+    msg = live ? `已查看预约。你最近一次预约是 ${when(live.start_at)}，${live.service || '训练'}，教练 ${live.coach_name || live.coach || '—'}，状态 ${live.status === 'rescheduled' ? '已改约' : '已预约'}。`
+               : '已查看预约。现在还没有预约。';
+  } else if(screen === 'visits'){
+    const visits = (m.C1_visits || []).slice(-3).reverse();
+    msg = visits.length ? '已查看到店记录。最近：' + visits.map(v => `${when(v.recorded_at)} 完成度 ${v.completion_pct == null ? '—' : v.completion_pct + '%'}、疲劳 ${v.fatigue == null ? '—' : v.fatigue + '/10'}`).join('；') + '。'
+                        : '已查看到店记录。还没有到店记录。';
+  } else if(screen === 'movement'){
+    const mv = (m.C8_movements || []).slice(-1)[0];
+    const vm = mv && mv.video_metrics ? mv.video_metrics : {};
+    const q = agentQuality(mv);
+    msg = mv ? `上次${mv.exercise || '动作'}评估：${mv.rank || '—'}，稳定性 ${mv.tempo_stability_pct == null ? '—' : mv.tempo_stability_pct + '%'}，左右差 ${mv.left_right_difference_pct == null ? '—' : mv.left_right_difference_pct + '%'}，膝关节幅度 ${vm.rom_deg == null ? '—' : vm.rom_deg + '°'}，质量分 ${q ? q.score + '（' + q.label + '）' : '—'}。`
+            : '还没有动作评估记录。打开动作评估录一次，或上传现场视频。';
+  } else if(screen === 'followup'){
+    const f = (m.C4_followups || []).slice(-1)[0];
+    const red = (m.C4_followups || []).filter(x => (x.red_flags || []).length && !x.handled_at);
+    msg = f ? `最近随访 ${when(f.recorded_at)}：疼痛 ${f.pain_score == null ? '—' : f.pain_score + '/10'}、功能 ${f.function_score == null ? '—' : f.function_score + '/10'}、完成度 ${f.adherence_pct == null ? '—' : f.adherence_pct + '%'}、睡眠 ${f.sleep_hours == null ? '—' : f.sleep_hours + 'h'}。${red.length ? '有红色信号待处理。' : '没有待处理红色信号。'}`
+            : '还没有随访记录。';
+  } else if(screen === 'quest'){
+    const q = (m.C9_quests || []).slice(-1)[0];
+    msg = q ? `虚拟任务 ${q.quest_id}：${q.status === 'frozen' ? '已冻结' : '进行中'}，完成度 ${q.progress_pct || 0}%。${q.reason ? '原因：' + q.reason + '。' : ''}`
+            : '还没有虚拟任务。生成计划后才会下发。';
+  } else if(screen === 'state'){
+    const v = m.A16_last_verdict;
+    msg = v ? `当前判定：${v.status}（${v.rule}）。理由：${(v.reasons || []).join('；') || '—'}。` : '还没有今日判定，先说说今天的状态。';
+  } else if(screen === 'home'){
+    msg = '已回到首页。';
+  } else {
+    return false;
+  }
+  if(navigate && typeof window.__showScreen === 'function') window.__showScreen(screen);
+  bubble('a', msg);
+  return true;
+}
+
 function reply(text, u){
   const t = String(text || '').trim();
   const intent = (u && u.intent) || '';
@@ -1436,6 +1523,7 @@ function reply(text, u){
   // 急性信号一票优先：任何会话态下都先于反馈、出计划、预约等分支
   const acuteNow = (extract(t).acute || []).length > 0;
   if (acuteNow) { state.stage = 'idle'; }
+  if (!acuteNow && agentRespond(t)) return;
   const apptCommand = /预约|约课|约一节|约个|帮我约|改约到|改到|取消预约|不去了|改个时间/.test(t);
   const faq = !acuteNow && !apptCommand && FAQ.find(x => x.q.test(t));
   if (faq) { bubble('a', faq.a); return; }
@@ -1454,7 +1542,7 @@ function reply(text, u){
     !(u && u.fields && Object.keys(u.fields).length);
   if (smalltalk) {
     if (/你是谁|你能做什么|介绍一下/.test(t)) {
-      bubble('a', '我是初练，管你这张会员档案。今天的状态、训练计划、离店反馈都可以在这里说。');
+      bubble('a', '我是初练，管你这张会员档案。你可以说“打开个性化计划”“我的预约是什么”“我的动作怎么样”“最近随访怎么样”“我现在状态怎么样”，我会直接翻到对应页面或回答数据。');
     } else {
       bubble('a', '今天感觉怎么样？一句话说说就行。');
     }
