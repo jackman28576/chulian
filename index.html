@@ -1361,8 +1361,8 @@ function setupVoice(btn, target){
   if(!btn) return;
   if(!SR){
     btn.classList.add('unsupported');
-    btn.title = '当前浏览器不支持语音输入';
-    btn.onclick = () => showVoiceHud('浏览器不支持语音输入', '请用 Chrome / Safari 打开，或直接输入', true);
+    btn.title = '当前浏览器不支持网页语音输入';
+    btn.onclick = () => showVoiceHud('浏览器不支持网页语音', '请用 Chrome / Safari 打开，或使用输入法键盘上的麦克风', true);
     return;
   }
   let rec = null, active = false, committed = false;
@@ -1406,13 +1406,14 @@ function setupVoice(btn, target){
       active = false;
       btn.classList.remove('rec');
       const code = e && e.error;
-      const msg = code === 'not-allowed' || code === 'service-not-allowed' ? '麦克风没有授权，请在浏览器设置里允许'
+      const msg = code === 'not-allowed' || code === 'service-not-allowed' ? '麦克风没有授权，或浏览器禁止了语音服务。请用输入法键盘上的麦克风'
         : code === 'no-speech' ? '没有听到声音，再说一次'
         : code === 'audio-capture' ? '没有找到麦克风'
-        : code === 'network' ? '语音服务网络异常，请稍后再试'
-        : '语音识别失败，请重试';
+        : code === 'network' ? '网页语音服务网络不可用，请用输入法键盘上的麦克风'
+        : '语音识别失败，请用输入法键盘上的麦克风';
       showVoiceHud('语音输入没有完成', msg, true);
-      hideVoiceHud(2200);
+      hideVoiceHud(2600);
+      if(target) target.focus();
     };
     rec.onend = () => {
       active = false;
@@ -1423,8 +1424,9 @@ function setupVoice(btn, target){
     catch(e) {
       active = false;
       btn.classList.remove('rec');
-      showVoiceHud('无法启动语音输入', '请确认使用 HTTPS 并允许麦克风权限', true);
-      hideVoiceHud(2200);
+      showVoiceHud('无法启动语音输入', '请确认 HTTPS/麦克风权限，或使用输入法键盘上的麦克风', true);
+      hideVoiceHud(2600);
+      if(target) target.focus();
     }
   };
 }
