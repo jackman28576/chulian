@@ -853,7 +853,27 @@ function reportHtml(m){
     section('01 今日判定', verdictBody) + section('02 个性化计划', planBody) + section('03 动作评估', movementBody) +
     section('04 趋势', trendBody) + section('05 风险与下一步', riskBody) +
     '<p class="note">本报告为训练安排参考，不构成医疗诊断或治疗建议；专业判断由教练或专业人员签字。</p>' +
-    '<div class="report-actions"><button class="btn" id="reportClose">关闭</button><button class="btn primary" id="reportPrint">打印 / 保存 PDF</button></div>';
+    '<div class="report-actions"><button class="btn" id="reportClose">关闭</button><button class="btn" id="reportCsv">导出 CSV</button><button class="btn primary" id="reportPrint">打印 / 保存 PDF</button></div>';
+}
+
+function downloadCsv(m){
+  const cell = v => '"' + String(v == null ? '' : v).replace(/"/g, '""') + '"';
+  const rows = [['类型', '时间', '项目', '数值/内容']];
+  (m.C5_reviews || []).forEach(r => rows.push(['复核', fmtDateTime(r.recorded_at), r.decision === 'approved' ? '通过' : '否决', (r.recorded_by || '') + ' · ' + (r.note || '')]));
+  (m.C1_visits || []).forEach(v => rows.push(['到店', fmtDateTime(v.recorded_at), '完成度 / 疲劳', (v.completion_pct == null ? '—' : v.completion_pct + '%') + ' / ' + (v.fatigue == null ? '—' : v.fatigue + '/10')]));
+  (m.C4_followups || []).forEach(f => rows.push(['随访', fmtDateTime(f.recorded_at), '疼痛 / 功能 / 完成度 / 睡眠',
+    [f.pain_score == null ? '—' : f.pain_score + '/10', f.function_score == null ? '—' : f.function_score + '/10', f.adherence_pct == null ? '—' : f.adherence_pct + '%', f.sleep_hours == null ? '—' : f.sleep_hours + 'h'].join(' / ')]));
+  (m.C8_movements || []).forEach(x => {
+    const vm = x.video_metrics || {};
+    rows.push(['动作', fmtDateTime(x.recorded_at), x.exercise || '—', x.rank + ' · 稳定性 ' + (x.tempo_stability_pct == null ? '—' : x.tempo_stability_pct + '%') + ' · 左右差 ' + (x.left_right_difference_pct == null ? '—' : x.left_right_difference_pct + '%') + ' · 膝关节幅度 ' + (vm.rom_deg == null ? '—' : vm.rom_deg + '°')]);
+  });
+  const csv = '﻿' + rows.map(r => r.map(cell).join(',')).join('\r\n');
+  const blob = new Blob([csv], {type:'text/csv;charset=utf-8'});
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = (m.A1_member_id || 'member') + '-assessment.csv';
+  a.click();
+  setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }
 
 function openReport(){
@@ -866,6 +886,7 @@ function openReport(){
   overlay.classList.add('on');
   document.getElementById('reportClose').onclick = () => overlay.classList.remove('on');
   document.getElementById('reportPrint').onclick = () => window.print();
+  document.getElementById('reportCsv').onclick = () => downloadCsv(m);
 }
 
 function bindReportButton(){
