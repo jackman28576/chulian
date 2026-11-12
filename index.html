@@ -412,7 +412,7 @@
   <div class="ad-group">训练与记录</div>
   <button class="ad-item" type="button" data-screen="plan">
     <span class="ad-ic"><svg viewBox="0 0 24 24"><rect x="5" y="4" width="14" height="17" rx="2"/><path d="M9 3h6v3H9zM8 10h8M8 14h6"/></svg></span>
-    <span class="ad-label">训练计划</span><span class="ad-val" id="adPlan">—</span>
+    <span class="ad-label">个性化计划</span><span class="ad-val" id="adPlan">—</span>
   </button>
   <button class="ad-item" type="button" data-screen="visits">
     <span class="ad-ic"><svg viewBox="0 0 24 24"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M8 3v4M16 3v4M4 10h16"/></svg></span>
@@ -506,7 +506,7 @@
   </section>
 
   <section class="card" data-screen="plan">
-    <div class="card-h"><h3>训练计划</h3><span class="right" id="p-ver"></span></div>
+    <div class="card-h"><h3>个性化计划</h3><span class="right" id="p-ver"></span></div>
     <div id="p-body"><div class="empty">复核通过后生成第一版计划。</div></div>
   </section>
 
@@ -3521,7 +3521,7 @@ setTimeout(consumeReviewReceipt, 900);
     }catch(err){ hint('fl-hint', err.message, true); }
   };
 
-  const SCREEN_TITLES = {home: '首页', state: '今日状态', plan: '训练计划', visits: '到店记录', appointment: '预约与场馆服务', movement: '动作评估', quest: '虚拟任务 · 场景联动', followup: '随访与慢病管理'};
+  const SCREEN_TITLES = {home: '首页', state: '今日状态', plan: '个性化计划', visits: '到店记录', appointment: '预约与场馆服务', movement: '动作评估', quest: '虚拟任务 · 场景联动', followup: '随访与慢病管理'};
   const SCREEN_HERO = {
     state: {eyebrow: "TODAY'S STATUS", sub: '状态指数、今日判定与教练复核。'},
     plan: {eyebrow: 'TRAINING PLAN', sub: '按状态与限制排的动作、频次和器械。'},
