@@ -538,9 +538,11 @@ function renderDetail() {
     reviewBlock +
     fuBlock +
     profBlock +
-    '<div class="card"><h3>训练计划</h3>' +
+    '<div class="card"><h3>个性化计划</h3>' +
       (plan ? '<div class="kv"><span class="k">版本</span><span>' + esc(plan.version) + ' · ' + esc(plan.status) + '</span></div>' +
               '<div class="kv"><span class="k">训练</span><span>' + esc(plan.training || '—') + '</span></div>' +
+              '<div class="kv"><span class="k">饮食</span><span>' + esc(plan.diet || '—') + '</span></div>' +
+              '<div class="kv"><span class="k">睡眠</span><span>' + esc(plan.sleep || '—') + '</span></div>' +
               '<div class="kv"><span class="k">限制</span><span>' + (pains.length ? pains.map(p => '<span class="chip">' + esc(p) + '</span>').join('') : '无') + '</span></div>'
             : '<div class="empty" style="padding:0">还没有生成计划。</div>') +
     '</div>' +
