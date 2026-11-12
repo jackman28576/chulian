@@ -260,8 +260,8 @@
   .av.a{background:rgba(255,255,255,.9);color:#0B0E13}
   .av.m{background:rgba(255,255,255,.16);color:#fff}
   .bubble{max-width:82%;white-space:pre-wrap;word-break:break-word;font-size:14px;line-height:1.7}
-  .row.a .bubble{background:rgba(255,255,255,.10);border:1px solid rgba(255,255,255,.08);border-radius:4px 16px 16px 16px;padding:11px 14px}
-  .row.me .bubble{background:rgba(255,255,255,.22);color:#fff;border:1px solid rgba(255,255,255,.14);border-radius:16px 4px 16px 16px;padding:11px 14px}
+  .row.a .bubble{background:#11161d;color:#eef3f9;border:1px solid rgba(255,255,255,.14);border-radius:4px 16px 16px 16px;padding:11px 14px;box-shadow:0 8px 24px rgba(0,0,0,.18)}
+  .row.me .bubble{background:#2b323c;color:#fff;border:1px solid rgba(255,255,255,.16);border-radius:16px 4px 16px 16px;padding:11px 14px}
   .meta{margin-top:8px;display:flex;gap:12px;font-size:11.5px}
   .meta button{color:var(--muted);text-decoration:underline;text-underline-offset:2px}
   .meta button:hover{color:var(--ring-b)}
@@ -278,8 +278,9 @@
   /* 底部输入（滚动后出现） */
   .dock{position:fixed;left:0;right:0;bottom:0;z-index:50;padding:12px 20px calc(14px + env(safe-area-inset-bottom));background:linear-gradient(to top,rgba(8,10,14,.72) 55%,rgba(8,10,14,0));transform:translateY(110%);transition:transform .35s cubic-bezier(.22,.8,.24,1)}
   .dock.on{transform:none}
-  .dock .inner{width:100%;max-width:760px;min-width:0;margin:0 auto;display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.10);border:1px solid var(--glass-line);border-radius:16px;padding:7px 7px 7px 15px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
-  .dock textarea{flex:1 1 0;min-width:0;width:100%;border:0;background:transparent;resize:none;font:inherit;font-size:15px;line-height:1.5;padding:6px 0;max-height:100px;min-height:24px;outline:none;overflow:hidden}
+  .dock .inner{width:100%;max-width:760px;min-width:0;margin:0 auto;display:flex;align-items:center;gap:10px;background:rgba(12,16,22,.90);border:1px solid rgba(255,255,255,.18);border-radius:16px;padding:7px 7px 7px 15px;backdrop-filter:blur(24px);-webkit-backdrop-filter:blur(24px);box-shadow:0 12px 40px rgba(0,0,0,.3)}
+  .dock textarea{flex:1 1 0;min-width:0;width:100%;border:0;background:transparent;color:#eef3f9;caret-color:#7cf6df;resize:none;font:inherit;font-size:15px;line-height:1.5;padding:6px 0;max-height:100px;min-height:24px;outline:none;overflow:hidden}
+  .dock textarea::placeholder{color:rgba(238,243,249,.56)}
   .dock .go{width:34px;height:34px;border-radius:11px;background:rgba(255,255,255,.9);color:#0B0E13;display:grid;place-items:center;flex:0 0 34px}
   .dock .go svg{width:15px;height:15px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .foot{max-width:760px;margin:8px auto 0;text-align:center;font-size:10.5px;color:var(--muted)}
@@ -1703,7 +1704,7 @@ function agentRespond(text){
     if(!gate[0]){
       msg = prefix + '今天先不要按计划训练：' + gate[1];
     } else if(p){
-      msg = prefix + `今天按 ${p.version} 练：训练 ${p.training || '—'}；饮食 ${p.diet || '—'}；睡眠 ${p.sleep || '—'}；限制 ${(p.limitations || []).join('、') || '无'}。`;
+      msg = prefix + `今天按 ${p.version} 练：\n训练：${p.training || '—'}\n饮食：${p.diet || '—'}\n睡眠：${p.sleep || '—'}\n限制：${(p.limitations || []).join('、') || '无'}`;
     } else {
       msg = prefix + '当前还没有计划，先完成今日判定和教练复核，再出计划。';
     }
@@ -1759,7 +1760,7 @@ function reply(text, u){
       const plan = createPlan(db());
       save(); state.stage = 'planned';
       if(typeof window.__onDataChange === 'function') window.__onDataChange();
-      bubble('a', `${plan.version} 好了：训练 ${plan.training || '—'}；饮食 ${plan.diet || '—'}；睡眠 ${plan.sleep || '—'}。`);
+      bubble('a', `${plan.version} 好了：\n训练：${plan.training || '—'}\n饮食：${plan.diet || '—'}\n睡眠：${plan.sleep || '—'}`);
     } catch(err) {
       bubble('a', err.message, null, 'warn');
     }
