@@ -1354,6 +1354,13 @@ if(memberTrendEl) memberTrendEl.addEventListener('click', e => {
   memberTrendEl.innerHTML = memberTrendHtml(db());
 });
 
+function scrollToLatestMessage(){
+  const el = document.scrollingElement || document.documentElement;
+  const top = el.scrollHeight;
+  try { window.scrollTo({top, behavior:'smooth'}); }
+  catch(e) { window.scrollTo(0, top); }
+}
+
 function bubble(who, text, details, tone){
   const row = document.createElement('div');
   row.className = 'row ' + who;
@@ -1421,6 +1428,8 @@ async function say(text){
     row.remove();
   }
   reply(text, u || {intent:'', fields:{}, ack:''});
+  setTimeout(scrollToLatestMessage, 80);
+  setTimeout(scrollToLatestMessage, 420);
 }
 
 function cnNum(str){
@@ -2037,7 +2046,7 @@ function reply(text, u){
       return (cur.B2_body_feeling && cur.B2_body_feeling.pain_score !== undefined) ? cur.B2_body_feeling.pain_score : lastVisit.pain_score;
     };
     const labelOf = k => k === 'pain' ? '疼痛' : k === 'fatigue' ? '疲劳' : '睡眠';
-    const allUnchanged = /都没变|其他.*(没变|不变)|都照旧/.test(t);
+    const allUnchanged = /都没变|其他.*(没变|不变)|都照旧|跟之前一样|和之前一样|与之前一样|跟昨天一样/.test(t);
     const targets = allUnchanged ? state.need.slice() : [state.need[0]];
     const kept = [];
     for(const k of targets){
@@ -2057,6 +2066,44 @@ function reply(text, u){
     } else {
       bubble('a', '没有可沿用的上次记录，这一项直接给个数字就行。');
       return;
+    }
+  }
+
+  // 上一轮问过缺失项，用户回“5小时/疲劳2分”这类带关键词的数字也要接住
+  if(state.need && state.need.length){
+    const parsedNow = extract(t);
+    const labelOf = k => k === 'pain' ? '疼痛' : k === 'fatigue' ? '疲劳' : '睡眠';
+    const got = [];
+    ['fatigue','sleep_hours','pain'].forEach(k => {
+      if(state.need.includes(k) && parsedNow[k] !== undefined && parsedNow[k] !== null && isFinite(parsedNow[k])){
+        state.draft[k] = parsedNow[k];
+        if(k === 'pain') state.draft.pain_missing = false;
+        state.need = state.need.filter(x => x !== k);
+        got.push(labelOf(k) + ' ' + parsedNow[k] + (k === 'sleep_hours' ? 'h' : '/10'));
+      }
+    });
+    if(got.length){
+      bubble('a', '记下了：' + got.join('、') + '。');
+      if(state.need.length){
+        bubble('a', `还差 ${state.need.length} 项：${state.need.map(k => k === 'pain' ? '疼痛（0—10）' : k === 'fatigue' ? '疲劳（0—10）' : '昨晚睡了几小时').join('、')}。直接回数字也行，按顺序给就好。`);
+        return;
+      }
+    }
+  }
+
+  // 上一轮问的是睡眠时，"5小时/5h"这种带单位的回答也要接住
+  if(state.need && state.need.includes('sleep_hours') && /小时|钟头|\dh\b/i.test(t)){
+    const nums = (t.match(/\d+(?:\.\d+)?/g) || []).map(Number);
+    if(nums.length){
+      const v = nums[0];
+      if(v < 0 || v > 24){ bubble('a', '睡眠需在 0—24 小时，再给一个？'); return; }
+      state.draft.sleep_hours = v;
+      state.need = state.need.filter(x => x !== 'sleep_hours');
+      bubble('a', '记下了：睡眠 ' + v + 'h。');
+      if(state.need.length){
+        bubble('a', `还差 ${state.need.length} 项：${state.need.map(k => k === 'pain' ? '疼痛（0—10）' : k === 'fatigue' ? '疲劳（0—10）' : '昨晚睡了几小时').join('、')}。直接回数字也行，按顺序给就好。`);
+        return;
+      }
     }
   }
 
@@ -3024,13 +3071,6 @@ setTimeout(consumeReviewReceipt, 900);
     if (!v) return;
     i1.value = ''; i2.value = ''; taAdapt(i1); taAdapt(i2);
     api().say(v);
-    const chat = document.querySelector('.chatcard');
-    if (chat) {
-      const r = chat.getBoundingClientRect();
-      if (r.top < -20 || r.top > 160) {
-        setTimeout(() => chat.scrollIntoView({ behavior: 'smooth', block: 'end' }), 60);
-      }
-    }
   };
   $('send').onclick = submit;
   $('send2').onclick = submit;
@@ -3074,6 +3114,7 @@ setTimeout(consumeReviewReceipt, 900);
       state.restoringChat = true;
       saved.forEach(x => bubble(x.who, x.text, x.details, x.tone));
       state.restoringChat = false;
+      setTimeout(scrollToLatestMessage, 80);
     } else {
       const tail = parts.length ? '档案里记着：' + parts.join('；') + '。今天感觉怎么样？一句话说说就行。'
                                 : '今天感觉怎么样？一句话说说就行。';
