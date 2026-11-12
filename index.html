@@ -1374,6 +1374,14 @@ function bubble(who, text, details, tone){
   }
   row.appendChild(av); row.appendChild(body); wrap.appendChild(row);
   if (log) log.scrollTop = log.scrollHeight;
+  if(!state.restoringChat && state.members && state.members[state.current]){
+    const m = state.members[state.current];
+    state.chatLogs = state.chatLogs || {};
+    const items = state.chatLogs[m.A1_member_id] || (state.chatLogs[m.A1_member_id] = []);
+    items.push({who, text: String(text == null ? '' : text), details: details || '', tone: tone || ''});
+    if(items.length > 40) items.splice(0, items.length - 40);
+    save(true);
+  }
   return row;
 }
 function actionChip(row, label, fn){
@@ -3025,18 +3033,26 @@ setTimeout(consumeReviewReceipt, 900);
       const d = new Date(next.start_at);
       parts.unshift('预约提醒：' + d.toLocaleString('zh-CN', { month: '2-digit', day: '2-digit', weekday: 'short', hour: '2-digit', minute: '2-digit', hour12: false }) + ' 的' + next.service);
     }
-    const tail = parts.length ? '档案里记着：' + parts.join('；') + '。今天感觉怎么样？一句话说说就行。'
-                              : '今天感觉怎么样？一句话说说就行。';
-    bubble('a', name + '，' + tail);
+    const saved = (state.chatLogs && state.chatLogs[m.A1_member_id]) || [];
+    if(saved.length){
+      state.restoringChat = true;
+      saved.forEach(x => bubble(x.who, x.text, x.details, x.tone));
+      state.restoringChat = false;
+    } else {
+      const tail = parts.length ? '档案里记着：' + parts.join('；') + '。今天感觉怎么样？一句话说说就行。'
+                                : '今天感觉怎么样？一句话说说就行。';
+      bubble('a', name + '，' + tail);
+    }
 
     const visitId = m.B_current && m.B_current.B1_visit_id;
     const rv = visitId ? (m.C5_reviews || []).filter(r => r.visit_id === visitId).slice(-1)[0] : null;
     const hasPlan = (m.C2_plans || []).some(p => p.status === 'active');
-    if(rv && rv.decision === 'approved' && !hasPlan){
+    const hasReviewNotice = saved.some(x => (x.text || '').includes('已复核通过'));
+    if(rv && rv.decision === 'approved' && !hasPlan && !hasReviewNotice){
       const when = rv.recorded_at ? new Date(rv.recorded_at).toLocaleString('zh-CN', {timeZone:'Asia/Shanghai', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}) : '';
       const row = bubble('a', `${rv.recorded_by || '教练'} 已复核通过${when ? '（' + when + '）' : ''}。这次可以出计划了。`);
       actionChip(row, '出计划', () => api().say('出计划'));
-    } else if(rv && rv.decision !== 'approved'){
+    } else if(rv && rv.decision !== 'approved' && !saved.some(x => (x.text || '').includes('复核未通过'))){
       bubble('a', `复核未通过。${rv.note ? '意见：' + rv.note : ''}可以补充资料后重新填报。`);
     }
   }
