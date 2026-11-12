@@ -2707,6 +2707,7 @@ setTimeout(consumeReviewReceipt, 900);
     return rows.map(([k, v]) => '<div class="plan-row"><div class="k">' + k + '</div><div>' + escHtml(v || '—') + '</div></div>').join('');
   }
 
+  window.__onDataChange = refresh;
   function refresh() {
     if (!api()) return;
     const m = api().db();
