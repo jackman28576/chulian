@@ -268,6 +268,7 @@
   .typing{display:inline-flex;gap:4px;align-items:center;height:14px}
   .typing i{width:5px;height:5px;border-radius:50%;background:#B8C0CC;animation:pulse 1.2s infinite}
   .typing i:nth-child(2){animation-delay:.15s} .typing i:nth-child(3){animation-delay:.3s}
+  .thinking-text{font-size:12.5px;color:var(--muted);margin-left:6px}
   @keyframes pulse{0%,60%,100%{opacity:.3}30%{opacity:1}}
 
   /* 底部输入（滚动后出现） */
@@ -1074,21 +1075,22 @@ function guardFields(fields, text) {
 }
 
 async function llmUnderstand(text, label){
-  if (cloud && cloudModel) {
+  const ownCfg = llmCfg();
+  if (cloud && cloudModel && !ownCfg.key) {
     try {
       const data = await Promise.race([
         cloudUnderstand(text, label),
-        new Promise((_, rej) => setTimeout(() => rej(new Error('cloud timeout')), 9000))
+        new Promise((_, rej) => setTimeout(() => rej(new Error('cloud timeout')), 2500))
       ]);
       const u = normalizeLLM(data);
       u.fields = guardFields(u.fields, text);
       return u;
     } catch (e) { /* 云通道失败时落到 Key 通道或规则 */ }
   }
-  const cfg = llmCfg();
+  const cfg = ownCfg;
   if(!cfg.key) return null;
   const ctrl = new AbortController();
-  const timer = setTimeout(() => ctrl.abort(), 12000);
+  const timer = setTimeout(() => ctrl.abort(), 3000);
   try{
     const res = await fetch((cfg.base || 'https://api.deepseek.com').replace(/\/+$/,'') + '/chat/completions', {
       method: 'POST',
@@ -1340,7 +1342,31 @@ async function say(text){
   state.recentUser = (state.recentUser || []).concat([String(text || '')]).slice(-3);
   bubble('me', text);
   const m = db();
-  const u = await llmUnderstand(text, `${m.A2_display_name}（${m.A1_member_id}）`);
+  const cfg = llmCfg();
+  const mode = (cloud && cloudModel && !cfg.key) ? '云模型' : (cfg.key ? '自有模型' : '离线规则');
+  const row = document.createElement('div');
+  row.className = 'row a';
+  const av = document.createElement('div'); av.className = 'av a'; av.textContent = '初';
+  const body = document.createElement('div'); body.className = 'bubble';
+  const p = document.createElement('div');
+  p.setAttribute('aria-live', 'polite');
+  p.innerHTML = '<span class="typing"><i></i><i></i><i></i></span><span class="thinking-text">正在理解你的状态 · 0.0s · ' + mode + '</span>';
+  body.appendChild(p); row.appendChild(av); row.appendChild(body); wrap.appendChild(row);
+  if (log) log.scrollTop = log.scrollHeight;
+  const t0 = performance.now();
+  const timer = setInterval(() => {
+    const el = row.querySelector('.thinking-text');
+    if (el) el.textContent = '正在理解你的状态 · ' + ((performance.now() - t0) / 1000).toFixed(1) + 's · ' + mode;
+  }, 100);
+  let u = null;
+  try {
+    u = await llmUnderstand(text, `${m.A2_display_name}（${m.A1_member_id}）`);
+  } catch (e) {
+    u = null;
+  } finally {
+    clearInterval(timer);
+    row.remove();
+  }
   reply(text, u || {intent:'', fields:{}, ack:''});
 }
 
