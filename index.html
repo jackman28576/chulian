@@ -2246,7 +2246,7 @@ setTimeout(consumeReviewReceipt, 900);
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
-    dock.classList.toggle('on', document.body.dataset.screen === 'home' && y > hero.offsetHeight - 120);
+    dock.classList.toggle('on', document.body.dataset.screen === 'home' && y > 80);
   };
   addEventListener('scroll', onScroll, { passive: true });
   window.__shellScroll = onScroll;
