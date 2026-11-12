@@ -221,6 +221,12 @@
   .q-leds i{height:6px;flex:1;border-radius:99px;background:rgba(255,255,255,.10)}
   .q-leds i.on{background:#7cf6df;box-shadow:0 0 8px rgba(124,246,223,.6)}
   .fl-trend{width:100%;height:90px;margin-top:8px;background:rgba(0,0,0,.18);border-radius:10px}
+  .health-alert{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,120,90,.4);background:rgba(255,120,90,.10);color:#ffc0b8;font-size:12.5px;line-height:1.65}
+  .trend-row{display:grid;grid-template-columns:56px 1fr 48px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);font-size:12px}
+  .trend-row:first-of-type{border-top:0}
+  .trend-row .k{color:var(--muted)}
+  .trend-row .v{text-align:right;color:var(--ink);font-variant-numeric:tabular-nums}
+  .trend-spark{display:block;width:100%;height:28px}
   .fl-warn{margin-top:10px;padding:10px 12px;border-radius:10px;border:1px solid rgba(255,120,90,.4);
     background:rgba(255,120,90,.10);color:#ffb4a8;font-size:12.5px;line-height:1.6}
   .video-assess{margin-top:16px;padding-top:14px;border-top:1px solid rgba(255,255,255,.10)}
@@ -499,6 +505,18 @@
       <div class="metric"><span class="k">疼痛</span><span class="v" id="t-pain">—<small>/10</small></span><div class="bar"><i id="b-pain" style="width:0"></i></div></div>
     </div>
     <div class="coachline" id="coachLine"></div>
+  </section>
+
+  <div id="healthAlert" class="health-alert" data-screen="state" hidden></div>
+
+  <section class="card" data-screen="state">
+    <div class="card-h"><h3>会员画像</h3></div>
+    <div id="portraitBody"></div>
+  </section>
+
+  <section class="card" data-screen="state">
+    <div class="card-h"><h3>健康趋势</h3><span class="right">近 6 次</span></div>
+    <div id="memberTrend"></div>
   </section>
 
   <section class="card" data-screen="state">
@@ -2237,6 +2255,58 @@ setTimeout(consumeReviewReceipt, 900);
   const TONE = { '暂停活动':'stop', '提交专业复核':'warn', '补充资料':'info', '继续训练':'ok' };
   const RING = 390;
 
+  function escHtml(s){ return String(s == null ? '' : s).replace(/[&<>]/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;'}[c])); }
+
+  function memberSpark(vals, color){
+    if(!vals.length) return '<span class="note">—</span>';
+    const W = 120, H = 28, pad = 3;
+    const min = Math.min(...vals), max = Math.max(...vals), span = max - min || 1;
+    const pts = vals.map((v, i) => [
+      pad + (W - 2 * pad) * (vals.length === 1 ? 0.5 : i / (vals.length - 1)),
+      H - pad - (H - 2 * pad) * ((v - min) / span)
+    ]);
+    const line = pts.map(p => p.map(n => n.toFixed(1)).join(',')).join(' ');
+    return '<svg class="trend-spark" viewBox="0 0 ' + W + ' ' + H + '" preserveAspectRatio="none">' +
+      '<polyline points="' + line + '" fill="none" stroke="' + color + '" stroke-width="2"/>' +
+      pts.map(p => '<circle cx="' + p[0].toFixed(1) + '" cy="' + p[1].toFixed(1) + '" r="2" fill="' + color + '"/>').join('') +
+      '</svg>';
+  }
+
+  function memberTrendHtml(m){
+    const byTime = (a, b) => Date.parse(a.recorded_at || 0) - Date.parse(b.recorded_at || 0);
+    const visits = (m.C1_visits || []).slice().sort(byTime);
+    const followups = (m.C4_followups || []).slice().sort(byTime);
+    const pick = (arr, key, n) => arr.map(x => x[key]).filter(v => typeof v === 'number' && isFinite(v)).slice(-n);
+    const rows = [
+      ['完成率', pick(visits, 'completion_pct', 6), '#7cf6df', '%'],
+      ['疲劳', pick(visits, 'fatigue', 6), '#ff9f7a', '/10'],
+      ['睡眠', pick(followups, 'sleep_hours', 6), '#8fb3d9', 'h'],
+      ['疼痛', pick(followups, 'pain_score', 6), '#f5b65a', '/10']
+    ];
+    const recent = visits.filter(v => Date.parse(v.recorded_at || 0) > Date.now() - 28 * 86400000).length;
+    return rows.map(([label, vals, color, suffix]) =>
+      '<div class="trend-row"><span class="k">' + label + '</span><span>' + memberSpark(vals, color) + '</span><span class="v">' +
+      (vals.length ? vals[vals.length - 1] + suffix : '—') + '</span></div>'
+    ).join('') + '<div class="wrapnote">近 28 天到店 ' + recent + ' 次 · 基于现有到店与随访记录</div>';
+  }
+
+  function portraitHtml(m){
+    const exp = m.A5_experience || {};
+    const restr = (m.A9_restrictions || []).map(r => typeof r === 'string' ? r : r.item).filter(Boolean);
+    const diet = typeof m.A10_diet === 'string' ? m.A10_diet : (m.A10_diet && m.A10_diet.text);
+    const sleep = m.A11_sleep_profile || {};
+    const sleepText = sleep.target_hours ? sleep.target_hours + 'h 目标' : (sleep.bedtime || sleep.notes || '—');
+    const rows = [
+      ['目标', (m.A4_goal || []).join('、')],
+      ['基础', [m.A3_age_band, m.A3_sex].filter(Boolean).join(' · ')],
+      ['经验', exp.years != null ? exp.years + ' 年 · ' + (exp.equipment || '') : (exp.equipment || '—')],
+      ['活动限制', restr.join('、') || '无'],
+      ['饮食', diet || '—'],
+      ['睡眠', sleepText]
+    ];
+    return rows.map(([k, v]) => '<div class="plan-row"><div class="k">' + k + '</div><div>' + escHtml(v || '—') + '</div></div>').join('');
+  }
+
   function refresh() {
     if (!api()) return;
     const m = api().db();
@@ -2252,6 +2322,22 @@ setTimeout(consumeReviewReceipt, 900);
     }
     const cline = $('coachLine');
     if (cline) cline.innerHTML = coach ? `我的教练 <b>${coach.name}</b>（${coach.id}）· 复核由教练在教练端签字` : '';
+
+    const portraitEl = $('portraitBody');
+    if (portraitEl) portraitEl.innerHTML = portraitHtml(m);
+    const trendEl = $('memberTrend');
+    if (trendEl) trendEl.innerHTML = memberTrendHtml(m);
+    const alertEl = $('healthAlert');
+    if (alertEl) {
+      const openRed = (m.C4_followups || []).filter(f => (f.red_flags || []).length && !f.handled_at);
+      if (openRed.length) {
+        alertEl.hidden = false;
+        alertEl.textContent = '随访异常：' + openRed.map(f => f.red_flags.join('、')).join('；') + '。处理前不能生成新计划或新建预约，等教练确认。';
+      } else {
+        alertEl.hidden = true;
+        alertEl.textContent = '';
+      }
+    }
 
     const hasAcute = !!(b.B2_body_feeling && (b.B2_body_feeling.acute_signals || []).length);
     const hasVisit = !!(b.B1_visit_id && (b.B3_fatigue !== undefined || hasAcute));
@@ -2930,11 +3016,30 @@ setTimeout(consumeReviewReceipt, 900);
     else hint('ap-hint', '');
   }
 
+  function movementQuality(mv){
+    if(!mv) return null;
+    const vm = mv.video_metrics || {};
+    const st = Number(mv.tempo_stability_pct);
+    const sym = mv.left_right_difference_pct;
+    const rom = Number(vm.rom_deg);
+    const trunk = Number(vm.trunk_lean_deg);
+    let score = 0, parts = 0;
+    if(isFinite(st)){ score += st * 0.45; parts += 0.45; }
+    if(sym != null && isFinite(Number(sym))){ score += Math.max(0, 100 - Number(sym) * 4) * 0.25; parts += 0.25; }
+    if(isFinite(rom)){ score += Math.min(100, rom / 80 * 100) * 0.2; parts += 0.2; }
+    if(isFinite(trunk)){ score += Math.max(0, 100 - trunk * 4) * 0.1; parts += 0.1; }
+    if(!parts) return null;
+    let q = Math.round(score / parts);
+    if(vm.quality === 'low') q = Math.min(q, 60);
+    return {score:q, label:q >= 85 ? '优秀' : q >= 70 ? '良好' : q >= 55 ? '需巩固' : '需复测'};
+  }
+
   function renderMovement(){
     const m = api().db();
     const list = (m.C8_movements || []);
     const last = list.slice(-1)[0];
     const prev = list.length > 1 ? list[list.length - 2] : null;
+    const mq = movementQuality(last);
     $('mv-state').textContent = last ? (last.exercise + ' · ' + last.rank) : '';
     $('mv-body').innerHTML = last ? `
       <div class="kpis">
@@ -2942,6 +3047,7 @@ setTimeout(consumeReviewReceipt, 900);
         <div class="kpi"><b>${last.left_right_difference_pct == null ? '—' : last.left_right_difference_pct + '%'}</b><span>左右差异</span></div>
         <div class="kpi"><b>${esc(last.rank)}</b><span>本次评级</span></div>
       </div>
+      ${mq ? `<div class="wrapnote">动作质量分 <b>${mq.score}</b>（${mq.label}）· 稳定性、左右对称、幅度、躯干前倾综合，不是诊断。</div>` : ''}
       ${last.video_metrics ? `<div class="kpis">
         <div class="kpi"><b>${last.video_metrics.reps}</b><span>完整次数</span></div>
         <div class="kpi"><b>${last.video_metrics.rom_deg}°</b><span>膝关节幅度</span></div>
@@ -3086,6 +3192,7 @@ setTimeout(consumeReviewReceipt, 900);
       grab.width = canvas.width; grab.height = canvas.height;
       const gctx = grab.getContext('2d');
       const frames = [];
+      const trail = [];
       const draw = lm => {
         ctx.clearRect(0, 0, canvas.width, canvas.height);
         ctx.strokeStyle = 'rgba(120,220,190,.9)';
@@ -3116,6 +3223,23 @@ setTimeout(consumeReviewReceipt, 900);
         if(rk && P(24) && P(28)) label(rk, 'R 膝 ' + vaAngle(P(24), rk, P(28)).toFixed(0) + '°');
         if(le && P(11) && P(15)) label(le, 'L 肘 ' + vaAngle(P(11), le, P(15)).toFixed(0) + '°');
         if(re && P(12) && P(16)) label(re, 'R 肘 ' + vaAngle(P(12), re, P(16)).toFixed(0) + '°');
+        const hipL = P(23), hipR = P(24);
+        if(hipL && hipR){
+          trail.push({x: (hipL.x + hipR.x) / 2, y: (hipL.y + hipR.y) / 2});
+          if(trail.length > 36) trail.shift();
+          ctx.strokeStyle = 'rgba(124,246,223,.38)';
+          ctx.lineWidth = 2;
+          ctx.beginPath();
+          trail.forEach((p, i) => i ? ctx.lineTo(p.x, p.y) : ctx.moveTo(p.x, p.y));
+          ctx.stroke();
+        }
+        const kneeAvg = (lk && P(23) && P(27) ? vaAngle(P(23), lk, P(27)) : 0) + (rk && P(24) && P(28) ? vaAngle(P(24), rk, P(28)) : 0);
+        const phase = kneeAvg && kneeAvg / 2 < 110 ? '下蹲' : kneeAvg && kneeAvg / 2 > 150 ? '站立' : '过渡';
+        ctx.font = '600 ' + Math.max(11, Math.round(canvas.width / 42)) + 'px "Microsoft YaHei", sans-serif';
+        ctx.fillStyle = 'rgba(7,8,11,.72)';
+        ctx.fillRect(10, 10, 92, 23);
+        ctx.fillStyle = '#7cf6df';
+        ctx.fillText('阶段：' + phase, 17, 27);
       };
       const collect = (lm, t) => {
         const P = i => lm[i] ? {x: lm[i].x * (v.videoWidth || 640), y: lm[i].y * (v.videoHeight || 360)} : null;
