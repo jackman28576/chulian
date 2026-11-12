@@ -1557,14 +1557,23 @@ function reply(text, u){
   const faq = !acuteNow && !apptCommand && FAQ.find(x => x.q.test(t));
   if (faq) { bubble('a', faq.a); return; }
   const statusCue = /疲劳|累|困|疲惫|乏力|没劲|疼|痛|酸|麻|紧|胀|睡|胸|晕|心慌/.test(t);
-  const smalltalk = !acuteNow && !statusCue && (intent === 'smalltalk' ||
+  const recentText = (state.recentUser || []).slice(-2, -1)[0] || '';
+  if(/我不是说了吗|我刚说了|刚才说了|上面说了|前面说了|我说过了/.test(t)){
+    const needLabel = k => k === 'pain' ? '疼痛（0—10）' : k === 'fatigue' ? '疲劳（0—10）' : '昨晚睡了几小时';
+    const tail = (state.need && state.need.length)
+      ? '现在只差 ' + state.need.map(needLabel).join('、') + '。'
+      : (recentText ? '我按你刚才说的「' + recentText + '」继续。' : '我这边没有保留上一句，麻烦再说一次。');
+    bubble('a', (recentText ? '你刚才说的是「' + recentText + '」。' : '') + tail);
+    return;
+  }
+  const smalltalk = !acuteNow && !statusCue && !(state.need && state.need.length) && (intent === 'smalltalk' ||
     /^(你好|您好|在吗|你是谁|你能做什么|介绍一下|嗨|hi|hello)/i.test(t)) &&
     !(u && u.fields && Object.keys(u.fields).length);
   if (smalltalk) {
     if (/你是谁|你能做什么|介绍一下/.test(t)) {
       bubble('a', '我是初练，管你这张会员档案。今天的状态、训练计划、离店反馈都可以在这里说。');
     } else {
-      bubble('a', ((u && u.ack) ? u.ack + '\n' : '') + '今天感觉怎么样？一句话说说就行。');
+      bubble('a', '今天感觉怎么样？一句话说说就行。');
     }
     return;
   }
@@ -1869,7 +1878,7 @@ function reply(text, u){
     if(d.pain !== undefined) got.push('疼痛 ' + d.pain + '/10');
     if(d.fatigue !== undefined) got.push('疲劳 ' + d.fatigue + '/10');
     if(d.sleep_hours !== undefined) got.push('睡眠 ' + d.sleep_hours + 'h');
-    const head = (u && u.ack) ? u.ack + '\n' : (got.length ? '记下了：' + got.join('、') + '。\n' : '');
+    const head = got.length ? '记下了：' + got.join('、') + '。\n' : '';
     const ask = needKeys[0] === 'pain'
       ? `${d.pain_text || '疼的地方'}大概几分（0—10）？`
       : `还差 ${needKeys.length} 项就能判断：${needKeys.map(labelOf).join('、')}。直接回数字也行，按顺序给就好。`;
@@ -1895,7 +1904,7 @@ function reply(text, u){
   if(!hasAcute){
     const fTxt = m.B_current.B3_fatigue === undefined ? '不清楚' : m.B_current.B3_fatigue + '/10';
     const sTxt = m.B_current.B4_sleep_last.hours === undefined ? '不清楚' : m.B_current.B4_sleep_last.hours + 'h';
-    let line = ((u && u.ack) ? u.ack + '\n' : '') + `好，按你说的记下了：疲劳 ${fTxt}、睡眠 ${sTxt}` +
+    let line = `好，按你说的记下了：疲劳 ${fTxt}、睡眠 ${sTxt}` +
       (m.B_current.B2_body_feeling.pain_score ? `、疼痛 ${m.B_current.B2_body_feeling.pain_score}/10` : '') + '。说“改一下，疲劳改成6”可以更正。';
     const prior = (m.C1_visits || []).slice(-1)[0];
     if (prior && prior.fatigue !== undefined && m.B_current.B3_fatigue !== undefined) {
