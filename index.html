@@ -2402,7 +2402,7 @@ setTimeout(consumeReviewReceipt, 900);
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
-    const dockOn = document.body.dataset.screen === 'home';
+    const dockOn = document.body.dataset.screen === 'home' && y > 80;
     dock.classList.toggle('on', dockOn);
     document.body.classList.toggle('dock-on', dockOn);
   };
