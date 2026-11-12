@@ -3028,6 +3028,17 @@ setTimeout(consumeReviewReceipt, 900);
     const tail = parts.length ? '档案里记着：' + parts.join('；') + '。今天感觉怎么样？一句话说说就行。'
                               : '今天感觉怎么样？一句话说说就行。';
     bubble('a', name + '，' + tail);
+
+    const visitId = m.B_current && m.B_current.B1_visit_id;
+    const rv = visitId ? (m.C5_reviews || []).filter(r => r.visit_id === visitId).slice(-1)[0] : null;
+    const hasPlan = (m.C2_plans || []).some(p => p.status === 'active');
+    if(rv && rv.decision === 'approved' && !hasPlan){
+      const when = rv.recorded_at ? new Date(rv.recorded_at).toLocaleString('zh-CN', {timeZone:'Asia/Shanghai', month:'2-digit', day:'2-digit', hour:'2-digit', minute:'2-digit', hour12:false}) : '';
+      const row = bubble('a', `${rv.recorded_by || '教练'} 已复核通过${when ? '（' + when + '）' : ''}。这次可以出计划了。`);
+      actionChip(row, '出计划', () => api().say('出计划'));
+    } else if(rv && rv.decision !== 'approved'){
+      bubble('a', `复核未通过。${rv.note ? '意见：' + rv.note : ''}可以补充资料后重新填报。`);
+    }
   }
   setTimeout(greetMember, 600);
 })();
