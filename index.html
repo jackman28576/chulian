@@ -151,6 +151,16 @@
   .clip.mic{padding:0 9px}
   .clip.mic svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .clip.rec{background:rgba(255,120,90,.20);border-color:rgba(255,120,90,.55);color:#ffc0b8}
+  .clip.unsupported{opacity:.45}
+  .voice-hud{position:fixed;left:50%;bottom:calc(104px + env(safe-area-inset-bottom,0px));z-index:80;transform:translate(-50%,12px);display:flex;align-items:center;gap:10px;max-width:calc(100vw - 32px);padding:10px 14px;border-radius:14px;border:1px solid rgba(124,246,223,.30);background:rgba(10,14,18,.94);color:#eaf7f4;box-shadow:0 14px 40px rgba(0,0,0,.35);opacity:0;pointer-events:none;transition:.2s ease}
+  .voice-hud.on{opacity:1;transform:translate(-50%,0)}
+  .voice-bars{display:flex;align-items:center;gap:3px;height:18px;flex:0 0 24px}
+  .voice-bars i{width:3px;height:6px;border-radius:2px;background:#7cf6df;animation:voicebar .8s ease-in-out infinite}
+  .voice-bars i:nth-child(2){animation-delay:.12s;height:11px}.voice-bars i:nth-child(3){animation-delay:.24s;height:16px}.voice-bars i:nth-child(4){animation-delay:.36s;height:9px}
+  @keyframes voicebar{0%,100%{transform:scaleY(.45);opacity:.55}50%{transform:scaleY(1);opacity:1}}
+  .voice-hud b{display:block;font-size:12px;color:#cffff6}
+  .voice-hud small{display:block;font-size:11px;color:var(--muted);max-width:230px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .voice-hud.error{border-color:rgba(255,120,90,.45)} .voice-hud.error b{color:#ffc0b8} .voice-hud.error .voice-bars i{background:#ff9f7a;animation:none;height:4px}
   .chat-video{display:block;max-width:240px;max-height:160px;border-radius:10px;margin-top:8px;background:#000}
   .glass .go svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .hero .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
@@ -621,6 +631,11 @@
     </div>
   </section>
 </main>
+
+<div class="voice-hud" id="voiceHud" aria-live="polite">
+  <span class="voice-bars"><i></i><i></i><i></i><i></i></span>
+  <span><b id="voiceTitle">正在听…</b><small id="voiceText">请说话</small></span>
+</div>
 
 <div class="dock" id="dock">
   <div class="inner">
@@ -1323,11 +1338,34 @@ if(window.visualViewport){
 addEventListener('resize', fitDockToViewport);
 fitDockToViewport();
 
+let voiceHudTimer = null;
+function showVoiceHud(title, text, error){
+  const hud = document.getElementById('voiceHud');
+  if(!hud) return;
+  clearTimeout(voiceHudTimer);
+  hud.classList.toggle('error', !!error);
+  hud.classList.add('on');
+  const t = document.getElementById('voiceTitle'), s = document.getElementById('voiceText');
+  if(t) t.textContent = title;
+  if(s) s.textContent = text || '';
+}
+function hideVoiceHud(delay){
+  clearTimeout(voiceHudTimer);
+  voiceHudTimer = setTimeout(() => {
+    const hud = document.getElementById('voiceHud');
+    if(hud) hud.classList.remove('on');
+  }, delay || 0);
+}
 function setupVoice(btn, target){
   const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
   if(!btn) return;
-  if(!SR){ btn.style.display = 'none'; return; }
-  let rec = null, active = false;
+  if(!SR){
+    btn.classList.add('unsupported');
+    btn.title = '当前浏览器不支持语音输入';
+    btn.onclick = () => showVoiceHud('浏览器不支持语音输入', '请用 Chrome / Safari 打开，或直接输入', true);
+    return;
+  }
+  let rec = null, active = false, committed = false;
   btn.onclick = () => {
     if(active){
       try { rec.stop(); } catch(e) {}
@@ -1335,20 +1373,59 @@ function setupVoice(btn, target){
     }
     rec = new SR();
     rec.lang = 'zh-CN';
-    rec.interimResults = false;
+    rec.interimResults = true;
     rec.continuous = false;
-    rec.onstart = () => { active = true; btn.classList.add('rec'); };
+    committed = false;
+    rec.onstart = () => {
+      active = true;
+      btn.classList.add('rec');
+      showVoiceHud('正在听…', '请说话，识别结果会显示在这里');
+    };
     rec.onresult = e => {
-      const text = Array.from(e.results || []).map(r => r[0] && r[0].transcript || '').join('').trim();
-      if(text && target){
-        target.value = (target.value ? target.value + ' ' : '') + text;
-        target.dispatchEvent(new Event('input', {bubbles:true}));
-        target.focus();
+      let interim = '', finalText = '';
+      for(let i = e.resultIndex || 0; i < e.results.length; i++){
+        const r = e.results[i];
+        const t = r[0] && r[0].transcript || '';
+        if(r.isFinal) finalText += t; else interim += t;
+      }
+      if(finalText && !committed){
+        committed = true;
+        const text = finalText.trim();
+        if(target){
+          target.value = (target.value ? target.value + ' ' : '') + text;
+          target.dispatchEvent(new Event('input', {bubbles:true}));
+          target.focus();
+        }
+        showVoiceHud('已转写', text || '没有听清');
+        hideVoiceHud(900);
+      } else if(interim){
+        showVoiceHud('正在听…', interim);
       }
     };
-    rec.onend = () => { active = false; btn.classList.remove('rec'); };
-    rec.onerror = () => { active = false; btn.classList.remove('rec'); };
-    try { rec.start(); } catch(e) { active = false; btn.classList.remove('rec'); }
+    rec.onerror = e => {
+      active = false;
+      btn.classList.remove('rec');
+      const code = e && e.error;
+      const msg = code === 'not-allowed' || code === 'service-not-allowed' ? '麦克风没有授权，请在浏览器设置里允许'
+        : code === 'no-speech' ? '没有听到声音，再说一次'
+        : code === 'audio-capture' ? '没有找到麦克风'
+        : code === 'network' ? '语音服务网络异常，请稍后再试'
+        : '语音识别失败，请重试';
+      showVoiceHud('语音输入没有完成', msg, true);
+      hideVoiceHud(2200);
+    };
+    rec.onend = () => {
+      active = false;
+      btn.classList.remove('rec');
+      if(!committed && !document.getElementById('voiceHud').classList.contains('error')) hideVoiceHud(700);
+    };
+    try { rec.start(); }
+    catch(e) {
+      active = false;
+      btn.classList.remove('rec');
+      showVoiceHud('无法启动语音输入', '请确认使用 HTTPS 并允许麦克风权限', true);
+      hideVoiceHud(2200);
+    }
   };
 }
 setupVoice(document.getElementById('voiceBtn'), document.getElementById('input'));
