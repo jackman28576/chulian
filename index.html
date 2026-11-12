@@ -130,7 +130,7 @@
   #stage{position:fixed;inset:0;width:100%;height:100%;z-index:1;display:none;pointer-events:none}
 
   /* 大图首屏 */
-  .hero{position:relative;z-index:2;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 24px calc(130px + env(safe-area-inset-bottom,0px));color:#fff;overflow:hidden}
+  .hero{position:relative;z-index:2;min-height:100svh;display:flex;flex-direction:column;justify-content:flex-end;padding:0 24px calc(46px + env(safe-area-inset-bottom,0px));color:#fff;overflow:hidden}
   .hero .media{position:absolute;inset:0;background-size:cover;background-position:center;transform:scale(1.02);transition:transform 1.2s ease,filters .6s ease}
   .hero .media::after{content:"";position:absolute;inset:0;background:
     linear-gradient(90deg,rgba(4,6,10,.78) 0%,rgba(4,6,10,.42) 38%,rgba(4,6,10,0) 68%),
@@ -365,7 +365,7 @@
     #badge{display:none}
     .top-right{gap:6px}
     .tbtn{height:28px;padding:0 10px;font-size:12px}
-    .hero{padding:0 16px calc(130px + env(safe-area-inset-bottom,0px))}
+    .hero{padding:0 16px 30px}
     .hero h1{font-size:29px;line-height:1.24;text-shadow:0 2px 26px rgba(0,0,0,.6)}
     .hero .sub{font-size:13.5px;margin-bottom:16px}
     .glass{padding:6px 6px 6px 12px;border-radius:14px}
@@ -2402,9 +2402,7 @@ setTimeout(consumeReviewReceipt, 900);
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
-    const dockOn = document.body.dataset.screen === 'home' && y > 80;
-    dock.classList.toggle('on', dockOn);
-    document.body.classList.toggle('dock-on', dockOn);
+    dock.classList.toggle('on', document.body.dataset.screen === 'home' && y > hero.offsetHeight - 120);
   };
   addEventListener('scroll', onScroll, { passive: true });
   window.__shellScroll = onScroll;
