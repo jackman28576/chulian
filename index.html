@@ -140,8 +140,7 @@
   .hero .eyebrow{font-size:12px;letter-spacing:.18em;text-transform:uppercase;color:rgba(255,255,255,.62);margin-bottom:14px}
   .hero h1{margin:0 0 12px;font-size:clamp(30px,4.6vw,46px);line-height:1.16;font-weight:640;letter-spacing:-.02em}
   .hero .sub{margin:0 0 26px;font-size:15px;color:rgba(255,255,255,.76);max-width:34em}
-  .glass{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);border-radius:16px;padding:8px 8px 8px 16px;backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px);box-shadow:0 10px 40px rgba(0,0,0,.28);transition:opacity .2s ease,visibility .2s ease}
-  body.dock-on .hero .glass{opacity:0;visibility:hidden;pointer-events:none}
+  .glass{display:flex;align-items:center;gap:10px;background:rgba(255,255,255,.14);border:1px solid rgba(255,255,255,.26);border-radius:16px;padding:8px 8px 8px 16px;backdrop-filter:saturate(160%) blur(18px);-webkit-backdrop-filter:saturate(160%) blur(18px);box-shadow:0 10px 40px rgba(0,0,0,.28)}
   .glass textarea{flex:1 1 0;min-width:0;width:100%;border:0;background:transparent;resize:none;color:#fff;font:inherit;font-size:15px;line-height:1.5;padding:6px 0;max-height:110px;min-height:24px;outline:none;overflow:hidden}
   .glass textarea::placeholder{color:rgba(255,255,255,.62)}
   .glass .go{width:38px;height:38px;border-radius:12px;background:#fff;color:#0B0E13;display:grid;place-items:center;flex:0 0 38px;transition:transform .2s}
@@ -384,6 +383,7 @@
     .chat-head{padding:4px 16px 12px}
     .dock{padding:10px 14px calc(16px + env(safe-area-inset-bottom))}
     .dock .inner{gap:8px;padding:6px 6px 6px 12px}
+    body[data-screen="home"] .content{padding-bottom:520px}
     .bubble{max-width:88%}
   }
   @media (prefers-reduced-motion:reduce){*{animation-duration:.001s !important;transition-duration:.001s !important}}
@@ -2403,7 +2403,9 @@ setTimeout(consumeReviewReceipt, 900);
     topbar.classList.toggle('solid', y > 120);
     const hh = hero.offsetHeight || innerHeight;
     hero.classList.toggle('faded', y > hh * 0.35);
-    const dockOn = document.body.dataset.screen === 'home' && y > 80;
+    const topInput = document.querySelector('.hero .glass');
+    const topGone = !topInput || topInput.getBoundingClientRect().bottom < 0;
+    const dockOn = document.body.dataset.screen === 'home' && y > 80 && topGone;
     dock.classList.toggle('on', dockOn);
     document.body.classList.toggle('dock-on', dockOn);
   };
