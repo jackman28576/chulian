@@ -148,6 +148,9 @@
   .glass .clip,.dock .clip{height:34px;padding:0 10px;border-radius:10px;border:1px solid rgba(255,255,255,.18);
     background:rgba(255,255,255,.08);color:rgba(255,255,255,.86);font-size:12px;cursor:pointer;flex:0 0 auto}
   .dock .clip{height:32px;color:var(--ink);border-color:var(--glass-line);background:rgba(255,255,255,.06)}
+  .clip.mic{padding:0 9px}
+  .clip.mic svg{width:14px;height:14px;stroke:currentColor;stroke-width:1.9;fill:none;stroke-linecap:round;stroke-linejoin:round}
+  .clip.rec{background:rgba(255,120,90,.20);border-color:rgba(255,120,90,.55);color:#ffc0b8}
   .chat-video{display:block;max-width:240px;max-height:160px;border-radius:10px;margin-top:8px;background:#000}
   .glass .go svg{width:16px;height:16px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
   .hero .chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:14px}
@@ -222,6 +225,10 @@
   .q-leds i.on{background:#7cf6df;box-shadow:0 0 8px rgba(124,246,223,.6)}
   .fl-trend{width:100%;height:90px;margin-top:8px;background:rgba(0,0,0,.18);border-radius:10px}
   .health-alert{margin:0 0 14px;padding:10px 12px;border-radius:12px;border:1px solid rgba(255,120,90,.4);background:rgba(255,120,90,.10);color:#ffc0b8;font-size:12.5px;line-height:1.65}
+  .train-warn{margin:0 0 12px;padding:10px 12px;border-radius:12px;border:1px solid rgba(245,182,90,.42);background:rgba(245,182,90,.10);color:#ffd9a8;font-size:12.5px;line-height:1.65}
+  .trend-range{display:flex;gap:6px;margin:0 0 8px}
+  .trend-range button{padding:4px 9px;border-radius:999px;border:1px solid rgba(255,255,255,.14);background:rgba(255,255,255,.05);color:var(--muted);font-size:11px}
+  .trend-range button.on{background:rgba(124,246,223,.14);border-color:rgba(124,246,223,.35);color:#cffff6}
   .trend-row{display:grid;grid-template-columns:56px 1fr 48px;gap:10px;align-items:center;padding:8px 0;border-top:1px solid rgba(255,255,255,.08);font-size:12px}
   .trend-row:first-of-type{border-top:0}
   .trend-row .k{color:var(--muted)}
@@ -459,6 +466,9 @@
     <p class="sub" id="heroSub">说一句就能开始。判断交给规则，解释留给人。</p>
     <div class="glass">
       <textarea id="input" rows="1" placeholder="说说今天的状态…"></textarea>
+      <button class="clip mic" id="voiceBtn" type="button" aria-label="语音输入" title="语音输入">
+        <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+      </button>
       <button class="clip" id="chat-video-btn" type="button">视频</button>
       <button class="go" id="send" aria-label="发送">
         <svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"></path></svg>
@@ -516,7 +526,7 @@
   </section>
 
   <section class="card" data-screen="state">
-    <div class="card-h"><h3>健康趋势</h3><span class="right">近 6 次</span></div>
+    <div class="card-h"><h3>健康趋势</h3><span class="right">7 / 30 天</span></div>
     <div id="memberTrend"></div>
   </section>
 
@@ -615,6 +625,9 @@
 <div class="dock" id="dock">
   <div class="inner">
     <textarea id="input2" rows="1" placeholder="说说今天的状态…"></textarea>
+    <button class="clip mic" id="voiceBtn2" type="button" aria-label="语音输入" title="语音输入">
+      <svg viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></svg>
+    </button>
     <button class="clip" id="chat-video-btn2" type="button">视频</button>
     <button class="go" id="send2" aria-label="发送">
       <svg viewBox="0 0 24 24"><path d="M12 19V5M5.5 11.5 12 5l6.5 6.5"></path></svg>
@@ -1309,6 +1322,45 @@ if(window.visualViewport){
 }
 addEventListener('resize', fitDockToViewport);
 fitDockToViewport();
+
+function setupVoice(btn, target){
+  const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+  if(!btn) return;
+  if(!SR){ btn.style.display = 'none'; return; }
+  let rec = null, active = false;
+  btn.onclick = () => {
+    if(active){
+      try { rec.stop(); } catch(e) {}
+      return;
+    }
+    rec = new SR();
+    rec.lang = 'zh-CN';
+    rec.interimResults = false;
+    rec.continuous = false;
+    rec.onstart = () => { active = true; btn.classList.add('rec'); };
+    rec.onresult = e => {
+      const text = Array.from(e.results || []).map(r => r[0] && r[0].transcript || '').join('').trim();
+      if(text && target){
+        target.value = (target.value ? target.value + ' ' : '') + text;
+        target.dispatchEvent(new Event('input', {bubbles:true}));
+        target.focus();
+      }
+    };
+    rec.onend = () => { active = false; btn.classList.remove('rec'); };
+    rec.onerror = () => { active = false; btn.classList.remove('rec'); };
+    try { rec.start(); } catch(e) { active = false; btn.classList.remove('rec'); }
+  };
+}
+setupVoice(document.getElementById('voiceBtn'), document.getElementById('input'));
+setupVoice(document.getElementById('voiceBtn2'), document.getElementById('input2'));
+
+const memberTrendEl = document.getElementById('memberTrend');
+if(memberTrendEl) memberTrendEl.addEventListener('click', e => {
+  const b = e.target.closest('[data-trend-days]');
+  if(!b) return;
+  memberTrendDays = Number(b.dataset.trendDays) || 30;
+  memberTrendEl.innerHTML = memberTrendHtml(db());
+});
 
 function bubble(who, text, details, tone){
   const row = document.createElement('div');
@@ -2299,10 +2351,13 @@ setTimeout(consumeReviewReceipt, 900);
       '</svg>';
   }
 
+  let memberTrendDays = 30;
   function memberTrendHtml(m){
     const byTime = (a, b) => Date.parse(a.recorded_at || 0) - Date.parse(b.recorded_at || 0);
-    const visits = (m.C1_visits || []).slice().sort(byTime);
-    const followups = (m.C4_followups || []).slice().sort(byTime);
+    const cutoff = Date.now() - memberTrendDays * 86400000;
+    const inRange = arr => arr.filter(x => { const t = Date.parse(x.recorded_at || 0); return !t || t >= cutoff; });
+    const visits = inRange((m.C1_visits || []).slice().sort(byTime));
+    const followups = inRange((m.C4_followups || []).slice().sort(byTime));
     const pick = (arr, key, n) => arr.map(x => x[key]).filter(v => typeof v === 'number' && isFinite(v)).slice(-n);
     const rows = [
       ['完成率', pick(visits, 'completion_pct', 6), '#7cf6df', '%'],
@@ -2310,11 +2365,21 @@ setTimeout(consumeReviewReceipt, 900);
       ['睡眠', pick(followups, 'sleep_hours', 6), '#8fb3d9', 'h'],
       ['疼痛', pick(followups, 'pain_score', 6), '#f5b65a', '/10']
     ];
-    const recent = visits.filter(v => Date.parse(v.recorded_at || 0) > Date.now() - 28 * 86400000).length;
-    return rows.map(([label, vals, color, suffix]) =>
+    const range = '<div class="trend-range">' +
+      '<button type="button" data-trend-days="7" class="' + (memberTrendDays === 7 ? 'on' : '') + '">近 7 天</button>' +
+      '<button type="button" data-trend-days="30" class="' + (memberTrendDays === 30 ? 'on' : '') + '">近 30 天</button>' +
+      '</div>';
+    return range + rows.map(([label, vals, color, suffix]) =>
       '<div class="trend-row"><span class="k">' + label + '</span><span>' + memberSpark(vals, color) + '</span><span class="v">' +
       (vals.length ? vals[vals.length - 1] + suffix : '—') + '</span></div>'
-    ).join('') + '<div class="wrapnote">近 28 天到店 ' + recent + ' 次 · 基于现有到店与随访记录</div>';
+    ).join('') + '<div class="wrapnote">近 ' + memberTrendDays + ' 天到店 ' + visits.length + ' 次 · 基于现有到店与随访记录</div>';
+  }
+
+  function restrictionBanner(m){
+    const restr = (m.A9_restrictions || []).map(r => typeof r === 'string' ? r : r.item).filter(Boolean);
+    return restr.length
+      ? '<div class="train-warn">训练前检查：今日禁用 ' + restr.map(escHtml).join('、') + '。计划已按此过滤。</div>'
+      : '';
   }
 
   function portraitHtml(m){
@@ -2429,7 +2494,7 @@ setTimeout(consumeReviewReceipt, 900);
       const diffs = (p.diff_from_previous || []).map(d => `${d.section}：${String(d.before || '—').slice(0, 60)} → ${String(d.after || '—').slice(0, 60)}`).join('；');
       const adjustment = ((p.change_reasons || []).length || diffs)
         ? `<div class="plan-adjust"><b>本次调整</b>${esc((p.change_reasons || []).join('；'))}${diffs ? '<br>' + esc(diffs) : ''}</div>` : '';
-      let html = adjustment + rows.map(([k, v]) => `<div class="plan-row"><div class="k">${k}</div><div>${v}</div></div>`).join('');
+      let html = restrictionBanner(m) + adjustment + rows.map(([k, v]) => `<div class="plan-row"><div class="k">${k}</div><div>${v}</div></div>`).join('');
       if (p.actions && p.actions.length) {
         html += `<div class="tagline">${p.actions.map(a => `<span class="chip">${a.name} × ${a.sets} 组</span>`).join('')}</div>`;
         html += `<details class="plan-more"><summary>动作清单与依据</summary>` +
@@ -3510,7 +3575,9 @@ setTimeout(consumeReviewReceipt, 900);
         <span class="q-check">${on ? '✓' : ''}</span><span>${esc(name)}</span></button>`;
     }).join('');
     const leds = Array.from({length: 12}, (_, i) => `<i class="${i < Math.round(st.pct / 100 * 12) ? 'on' : ''}"></i>`).join('');
-    $('q-body').innerHTML =
+    const qRestr = (m.A9_restrictions || []).map(r => typeof r === 'string' ? r : r.item).filter(Boolean);
+    const qWarn = qRestr.length ? `<div class="train-warn">训练前检查：今日禁用 ${qRestr.map(esc).join('、')}。计划已按此过滤。</div>` : '';
+    $('q-body').innerHTML = qWarn +
       `<div class="arow" style="border-top:0;padding-top:0"><span>${st.frozen ? '任务冻结 · ' + esc(frozenReason) : '任务进行中 · 关联 ' + esc((q && q.plan_version) || plan.version)}</span>
         <span class="st ${st.frozen ? 'cancelled' : 'booked'}">${st.frozen ? '冻结' : '进行中'}</span></div>
       <div class="bigbar"><i style="width:${st.pct}%"></i></div>
@@ -3691,10 +3758,17 @@ setTimeout(consumeReviewReceipt, 900);
     if(adh !== undefined && (adh < 0 || adh > 100)){ hint('fl-hint', '完成度需在 0—100', true); return; }
     if(sleep !== undefined && (sleep < 0 || sleep > 24)){ hint('fl-hint', '睡眠需在 0—24 小时', true); return; }
     if([pain, func, adh, sleep].every(v => v === undefined)){ hint('fl-hint', '至少填疼痛、功能、完成度或睡眠中的一项', true); return; }
+    const worse = $('fl-worse').value === '1';
+    if(pain === 0 && worse && !state.zeroPainConfirm){
+      state.zeroPainConfirm = true;
+      hint('fl-hint', '疼痛 0 分但又标记“加重”，可能矛盾。再点一次“记录随访”确认。', true);
+      return;
+    }
+    state.zeroPainConfirm = false;
     try{
       const rec = addFollowup(m, {
         pain_score: pain, function_score: func, adherence_pct: adh, sleep_hours: sleep,
-        worsening: $('fl-worse').value === '1',
+        worsening: worse,
         content: $('fl-content').value.trim(),
         professional_advice_ref: $('fl-ref').value,
         activity_tags: [$('fl-tags').value],
