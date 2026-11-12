@@ -1384,7 +1384,7 @@ function actionChip(row, label, fn){
 async function say(text){
   state.recentUser = (state.recentUser || []).concat([String(text || '')]).slice(-3);
   bubble('me', text);
-  if(agentScreenKey(text) || isProfileCommand(text)){ reply(text, null); return; }
+  if(agentScreenKey(text) || isProfileCommand(text) || /出计划|生成计划|重新出计划|计划呢|看看计划/.test(text)){ reply(text, null); return; }
   const m = db();
   const cfg = llmCfg();
   const mode = (cloud && cloudModel && !cfg.key) ? '云模型' : (cfg.key ? '自有模型' : '离线规则');
@@ -1606,6 +1606,7 @@ function applyProfileArgs(args){
 
 function applyAgentAction(u, text){
   if(!u || !u.action) return false;
+  if(/疲劳|累|困|疲惫|乏力|没劲|疼|痛|酸|麻|紧|胀|睡|胸|晕|心慌/.test(text) || (state.need && state.need.length) || /^\d+(?:\.\d+)?$/.test(String(text || '').trim())) return false;
   const a = u.action;
   const args = a.args || {};
   if(a.name === 'answer'){
@@ -1745,6 +1746,21 @@ function reply(text, u){
   // 急性信号一票优先：任何会话态下都先于反馈、出计划、预约等分支
   const acuteNow = (extract(t).acute || []).length > 0;
   if (acuteNow) { state.stage = 'idle'; }
+  if(!acuteNow && /出计划|生成计划|重新出计划/.test(t)){
+    try {
+      const plan = createPlan(db());
+      save(); state.stage = 'planned';
+      if(typeof window.__onDataChange === 'function') window.__onDataChange();
+      bubble('a', `${plan.version} 好了：训练 ${plan.training || '—'}；饮食 ${plan.diet || '—'}；睡眠 ${plan.sleep || '—'}。`);
+    } catch(err) {
+      bubble('a', err.message, null, 'warn');
+    }
+    return;
+  }
+  if(!acuteNow && /计划呢|看看计划|我的计划|训练计划/.test(t) && !/打开|进入/.test(t)){
+    agentRespond('我的计划');
+    return;
+  }
   if(!acuteNow && u && u.action && applyAgentAction(u, t)) return;
   if (!acuteNow && agentProfileEdit(t)) return;
   if (!acuteNow && agentRespond(t)) return;
