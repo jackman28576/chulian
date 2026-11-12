@@ -2026,6 +2026,40 @@ function reply(text, u){
     return;
   }
 
+  // 上一轮问过缺失项，用户说“没变/照旧”时沿用上次记录
+  if(state.need && state.need.length && /没变|不变|一样|照旧|还是|没有变化|和之前一样|跟之前一样|不用改|没改/.test(t)){
+    const m0 = db();
+    const cur = m0.B_current || {};
+    const lastVisit = (m0.C1_visits || []).slice(-1)[0] || {};
+    const priorOf = k => {
+      if(k === 'fatigue') return cur.B3_fatigue !== undefined ? cur.B3_fatigue : lastVisit.fatigue;
+      if(k === 'sleep_hours') return (cur.B4_sleep_last && cur.B4_sleep_last.hours !== undefined) ? cur.B4_sleep_last.hours : lastVisit.sleep_hours;
+      return (cur.B2_body_feeling && cur.B2_body_feeling.pain_score !== undefined) ? cur.B2_body_feeling.pain_score : lastVisit.pain_score;
+    };
+    const labelOf = k => k === 'pain' ? '疼痛' : k === 'fatigue' ? '疲劳' : '睡眠';
+    const allUnchanged = /都没变|其他.*(没变|不变)|都照旧/.test(t);
+    const targets = allUnchanged ? state.need.slice() : [state.need[0]];
+    const kept = [];
+    for(const k of targets){
+      const v = priorOf(k);
+      if(v === undefined || v === null || !isFinite(v)) continue;
+      state.draft[k] = v;
+      if(k === 'pain') state.draft.pain_missing = false;
+      state.need = state.need.filter(x => x !== k);
+      kept.push(labelOf(k) + ' ' + v + (k === 'sleep_hours' ? 'h' : '/10'));
+    }
+    if(kept.length){
+      bubble('a', '沿用之前：' + kept.join('、') + '。');
+      if(state.need.length){
+        bubble('a', `还差 ${state.need.length} 项：${state.need.map(k => k === 'pain' ? '疼痛（0—10）' : k === 'fatigue' ? '疲劳（0—10）' : '昨晚睡了几小时').join('、')}。`);
+        return;
+      }
+    } else {
+      bubble('a', '没有可沿用的上次记录，这一项直接给个数字就行。');
+      return;
+    }
+  }
+
   // 上一轮问过“还差哪几项”，用户只回数字也能接住
   if(state.need && state.need.length && /不清楚|不知道|不确定|没测|忘了|没量/.test(t)){
     const k = state.need.shift();
